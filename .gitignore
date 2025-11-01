@@ -36,3 +36,5 @@ logs/
 
 # ---- D1 local DB (wrangler dev) ----
 *.db
+
+/src/generated/prisma
