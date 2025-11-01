@@ -1,6 +1,7 @@
 name = "notarium-backend"
 main = "src/index.ts"
 compatibility_date = "2025-10-31"
+compatibility_flags = ["nodejs_compat"] 
 
 [[d1_databases]]
 binding = "DB"
