@@ -1,0 +1,8 @@
+name = "notarium-backend"
+main = "src/index.ts"
+compatibility_date = "2025-10-31"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "notarium-db"
+database_id = "17779d22-7479-479c-8de7-dfe102916ba3"
