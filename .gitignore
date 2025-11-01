@@ -17,6 +17,63 @@ dist/
 .wrangler
 npm-debug.log*
 yarn-debug.log*
+
+# ---- Environment variables ----
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# ---- Wrangler ----
+.wrangler/
+.mf/
+
+# ---- Build outputs ----
+build/
+*.tgz
+*.tar.gz
+
+# ---- Logs ----
+logs
+*.log
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ---- Runtime data ----
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# ---- Coverage directory ----
+coverage/
+*.lcov
+
+# ---- Optional npm cache directory ----
+.npm
+
+# ---- Optional eslint cache ----
+.eslintcache# ---- macOS system folders 
+(never track) ----
+.DS_Store
+*.DS_Store
+.Trash/
+Library/
+Applications/
+System/
+Volumes/
+private/
+tmp/
+temp/
+
+# ---- Node / build ----
+node_modules/
+dist/
+.vercel
+.wrangler
+npm-debug.log*
+yarn-debug.log*
 yarn-error.log*
 
 # ---- Environment ----
