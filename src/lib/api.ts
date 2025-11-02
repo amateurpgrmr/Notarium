@@ -1,5 +1,5 @@
 const baseURL = import.meta.env.MODE === 'development'
-  ? 'http://localhost:56533'
+  ? 'http://localhost:8787'
   : 'https://notarium-backend.notarium-backend.workers.dev';
 
 export interface User {

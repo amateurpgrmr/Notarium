@@ -41,7 +41,7 @@ export default function Signup() {
       });
 
       localStorage.setItem('token', response.token);
-      navigate('/onboarding');
+      navigate('/');
     } catch (err: any) {
       setError(err.message);
     } finally {
