@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://notarium-backend.workers.dev'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://notarium-backend.notarium-backend.workers.dev'
 
 // Types
 export interface User {
@@ -106,10 +106,10 @@ class ApiClient {
 
   // ==================== AUTH ====================
 
-  async loginWithGoogle(code: string): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/api/auth/callback', {
+  async register(email: string, password: string, name: string, role: string = 'student'): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ email, password, name, role }),
     })
     
     if (response.success && response.token) {
@@ -119,12 +119,35 @@ class ApiClient {
     return response
   }
 
-  getGoogleAuthUrl(): string {
-    return `${this.baseURL}/api/auth/google`
+  async login(email: string, password: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    })
+    
+    if (response.success && response.token) {
+      this.setToken(response.token)
+    }
+    
+    return response
   }
 
   async getCurrentUser(): Promise<{ user: User }> {
     return this.request<{ user: User }>('/api/auth/me')
+  }
+
+  async updateProfile(data: { name: string; class?: string; photo_url?: string }): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
   }
 
   logout() {
@@ -187,29 +210,21 @@ class ApiClient {
     })
   }
 
-  // ==================== CHAT ====================
+  // ==================== ADMIN ====================
 
-  async createChatSession(data: {
-    subject: string
-    topic: string
-  }): Promise<{ success: boolean; sessionId: number }> {
-    return this.request<{ success: boolean; sessionId: number }>(
-      '/api/chat/session',
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }
-    )
+  async getAllUsers(): Promise<{ users: User[] }> {
+    return this.request<{ users: User[] }>('/api/admin/users')
   }
 
-  async sendChatMessage(data: {
-    sessionId: number
-    role: 'user' | 'assistant'
-    content: string
-  }): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>('/api/chat/message', {
+  async suspendUser(userId: number): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/api/admin/users/${userId}/suspend`, {
       method: 'POST',
-      body: JSON.stringify(data),
+    })
+  }
+
+  async unsuspendUser(userId: number): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/api/admin/users/${userId}/unsuspend`, {
+      method: 'POST',
     })
   }
 }
