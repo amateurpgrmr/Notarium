@@ -399,45 +399,46 @@ export default function NoteDetailModal({
               {isLiked ? 'Liked' : 'Like'}
             </button>
 
-            {isAdmin && (
-              <button
-                onClick={handleUpvote}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  background: isUpvoted ? '#ff6b00' : darkTheme.colors.bgSecondary,
-                  color: isUpvoted ? 'white' : darkTheme.colors.textPrimary,
-                  border: `1px solid ${isUpvoted ? '#ff6b00' : darkTheme.colors.borderColor}`,
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  transition: 'all 0.3s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-                onMouseOver={(e) => {
-                  if (!isUpvoted) {
-                    e.currentTarget.style.background = '#ff6b0015';
-                    e.currentTarget.style.borderColor = '#ff6b00';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!isUpvoted) {
-                    e.currentTarget.style.background = darkTheme.colors.bgSecondary;
-                    e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
-                  }
-                }}
-              >
-                <i
-                  className="fas fa-crown"
-                  style={{ fontSize: '16px' }}
-                ></i>
-                {isUpvoted ? 'Upvoted' : 'Admin Upvote'}
-              </button>
-            )}
+            <button
+              onClick={handleUpvote}
+              disabled={!isAdmin}
+              title={isAdmin ? 'Upvote this note' : 'Only admins can upvote'}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                background: isUpvoted ? '#ff6b00' : darkTheme.colors.bgSecondary,
+                color: isUpvoted ? 'white' : darkTheme.colors.textPrimary,
+                border: `1px solid ${isUpvoted ? '#ff6b00' : darkTheme.colors.borderColor}`,
+                borderRadius: '12px',
+                cursor: isAdmin ? 'pointer' : 'not-allowed',
+                fontSize: '15px',
+                fontWeight: '600',
+                transition: 'all 0.3s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                opacity: isAdmin ? 1 : 0.5
+              }}
+              onMouseOver={(e) => {
+                if (!isUpvoted && isAdmin) {
+                  e.currentTarget.style.background = '#ff6b0015';
+                  e.currentTarget.style.borderColor = '#ff6b00';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!isUpvoted && isAdmin) {
+                  e.currentTarget.style.background = darkTheme.colors.bgSecondary;
+                  e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
+                }
+              }}
+            >
+              <i
+                className="fas fa-crown"
+                style={{ fontSize: '16px' }}
+              ></i>
+              {isUpvoted ? 'Upvoted' : 'Admin Upvote'} {!isAdmin && '(Admins only)'}
+            </button>
           </div>
 
           {/* Summarize Button */}
