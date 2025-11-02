@@ -30,6 +30,12 @@ export default function NoteDetailModal({
   // Check if user is admin
   const isAdmin = currentUser?.email?.endsWith('@notarium.site') || currentUser?.role === 'admin';
 
+  // Debug logging
+  console.log('NoteDetailModal - Current User:', currentUser);
+  console.log('NoteDetailModal - Is Admin:', isAdmin);
+  console.log('NoteDetailModal - User Email:', currentUser?.email);
+  console.log('NoteDetailModal - User Role:', currentUser?.role);
+
   const handleLike = () => {
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
@@ -126,9 +132,27 @@ export default function NoteDetailModal({
             zIndex: 10
           }}
         >
-          <h2 style={{ fontSize: '20px', fontFamily: 'Playfair Display, serif', margin: 0 }}>
-            Note Details
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <h2 style={{ fontSize: '20px', fontFamily: 'Playfair Display, serif', margin: 0 }}>
+              Note Details
+            </h2>
+            {isAdmin && (
+              <span
+                style={{
+                  background: '#ff6b00',
+                  color: 'white',
+                  padding: '4px 12px',
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                👑 Admin
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             style={{

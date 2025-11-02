@@ -45,6 +45,10 @@ export default function SubjectNotesPage({
   const [filterTag, setFilterTag] = useState<string>('all');
   const [allTags, setAllTags] = useState<string[]>([]);
 
+  // Debug logging
+  console.log('SubjectNotesPage - Current User:', currentUser);
+  console.log('SubjectNotesPage - Is Admin:', currentUser?.email?.endsWith('@notarium.site') || currentUser?.role === 'admin');
+
   useEffect(() => {
     loadNotes();
   }, [subject]);
