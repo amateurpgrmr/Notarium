@@ -1,40 +1,49 @@
-# ---- macOS system folders (never track) ----
-.DS_Store
-*.DS_Store
-.Trash/
-Library/
-Applications/
-System/
-Volumes/
-private/
-tmp/
-temp/
-
-# ---- Node / build ----
+# Dependencies
 node_modules/
-dist/
-.vercel
-.wrangler
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+.pnpm-store/
 
-# ---- Environment ----
+# Environment variables
 .env
 .env.local
 .env.*.local
 
-# ---- IDE ----
+# Build outputs
+dist/
+build/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.DS_Store
 
-# ---- Logs ----
-logs/
-*.log
+# OS
+Thumbs.db
 
-# ---- D1 local DB (wrangler dev) ----
-*.db
+# Backups
+*.backup
+*.bak
+*_backup
 
-/src/generated/prisma
+# Source maps
+*.map
+
+# Test coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/
+
+# Node version
+.node-version
+

@@ -1,78 +1,84 @@
-PRAGMA defer_foreign_keys=TRUE;
-
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL UNIQUE,
-    display_name TEXT,
-    photo_url TEXT,
-    role TEXT NOT NULL DEFAULT 'student' CHECK(role IN ('student', 'admin')),
-    points INTEGER NOT NULL DEFAULT 0,
-    notes_count INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    class TEXT CHECK(class IN ('10.1', '10.2', '10.3')),
-    suspended INTEGER NOT NULL DEFAULT 0 CHECK(suspended IN (0, 1))
-) STRICT;
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT,
+  display_name TEXT,
+  photo_url TEXT,
+  class TEXT,
+  role TEXT DEFAULT 'student',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME
+);
 
-CREATE TABLE IF NOT EXISTS notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    author_id INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    file_key TEXT,
-    subject TEXT,
-    tags TEXT,
-    views INTEGER NOT NULL DEFAULT 0,
-    rating_avg REAL NOT NULL DEFAULT 0.0,
-    rating_count INTEGER NOT NULL DEFAULT 0,
-    is_public INTEGER NOT NULL DEFAULT 1 CHECK(is_public IN (0, 1)),
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
-) STRICT;
-
+-- Subjects table
 CREATE TABLE IF NOT EXISTS subjects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    icon TEXT NOT NULL,
-    note_count INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-) STRICT;
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  icon TEXT,
+  description TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
+-- Notes table
+CREATE TABLE IF NOT EXISTS notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT,
+  author_id INTEGER NOT NULL,
+  subject_id INTEGER NOT NULL,
+  extracted_text TEXT,
+  summary TEXT,
+  image_path TEXT,
+  likes INTEGER DEFAULT 0,
+  admin_upvotes INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME,
+  FOREIGN KEY(author_id) REFERENCES users(id),
+  FOREIGN KEY(subject_id) REFERENCES subjects(id)
+);
+
+-- Chat sessions table
 CREATE TABLE IF NOT EXISTS chat_sessions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    subject TEXT,
-    topic TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) STRICT;
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  subject TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(user_id) REFERENCES users(id)
+);
 
+-- Chat messages table
 CREATE TABLE IF NOT EXISTS chat_messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    session_id INTEGER NOT NULL,
-    role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
-    content TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
-) STRICT;
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(session_id) REFERENCES chat_sessions(id)
+);
 
+-- Leaderboard view
+CREATE VIEW IF NOT EXISTS leaderboard AS
+SELECT 
+  u.id,
+  u.display_name,
+  u.photo_url,
+  u.class,
+  COUNT(DISTINCT n.id) as notes_uploaded,
+  COALESCE(SUM(n.likes), 0) as total_likes,
+  COALESCE(SUM(n.admin_upvotes), 0) as admin_upvotes
+FROM users u
+LEFT JOIN notes n ON u.id = n.author_id AND n.deleted_at IS NULL
+WHERE u.deleted_at IS NULL
+GROUP BY u.id
+ORDER BY total_likes DESC, notes_uploaded DESC;
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_notes_author ON notes(author_id);
-CREATE INDEX IF NOT EXISTS idx_notes_created ON notes(created_at DESC);
-
-INSERT INTO subjects (name, icon, note_count) VALUES
-('Filsafat', 'fa-brain', 0),
-('Fisika', 'fa-atom', 0),
-('Matematika', 'fa-square-root-variable', 0),
-('Bahasa Indonesia', 'fa-language', 0),
-('Bahasa Inggris', 'fa-language', 0),
-('Sosiologi', 'fa-users', 0),
-('Sejarah Indonesia', 'fa-landmark', 0),
-('Geografi', 'fa-globe-americas', 0),
-('Ekonomi', 'fa-chart-line', 0),
-('Sains', 'fa-flask', 0),
-('PKN', 'fa-flag', 0),
-('PAK', 'fa-church', 0),
-('Biologi', 'fa-dna', 0),
-('Kimia', 'fa-vial', 0);
+CREATE INDEX IF NOT EXISTS idx_notes_subject ON notes(subject_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id);

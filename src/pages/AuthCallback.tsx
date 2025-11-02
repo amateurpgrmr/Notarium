@@ -13,7 +13,11 @@ export default function AuthCallback() {
       return;
     }
 
-    fetch(`/api/auth/callback?code=${code}`)
+    const baseURL = import.meta.env.MODE === 'development'
+      ? 'http://localhost:56533'
+      : 'https://notarium-backend.notarium-backend.workers.dev';
+
+    fetch(`${baseURL}/api/auth/callback?code=${code}`)
       .then((res) => {
         if (!res.ok) throw new Error('Auth failed');
         return res.json();

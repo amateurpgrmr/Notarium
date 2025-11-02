@@ -1,6 +1,6 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   /* SpaceX-inspired dark theme */
@@ -120,4 +120,9 @@ html {
 .animate-scaleIn {
   animation: scaleIn 0.4s ease-out forwards;
 }
-@layer components { .chat-input { @apply text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500; } }
+
+@layer components {
+  .chat-input {
+    @apply text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500;
+  }
+}

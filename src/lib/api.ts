@@ -1,234 +1,145 @@
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://notarium-backend.notarium-backend.workers.dev'
+const baseURL = import.meta.env.MODE === 'development'
+  ? 'http://localhost:56533'
+  : 'https://notarium-backend.notarium-backend.workers.dev';
 
-// Types
 export interface User {
-  id: number
-  email: string
-  name: string
-  picture?: string
-  role: string
-  points: number
-  notes_count: number
-  class?: string
+  id: number;
+  email: string;
+  name: string;
+  class: string;
+  role: 'student' | 'admin';
+  points: number;
+  notes_count: number;
 }
 
-export interface Note {
-  id: number
-  author_id: number
-  title: string
-  content: string
-  subject?: string
-  tags?: string
-  views: number
-  rating_avg: number
-  rating_count: number
-  is_public: boolean
-  created_at: string
-  updated_at: string
-  author_name?: string
-  author_photo?: string
+export interface LoginResponse {
+  success: boolean;
+  user: User;
+  token: string;
 }
 
-export interface Subject {
-  id: number
-  name: string
-  icon: string
-  note_count: number
+export interface LoginCredentials {
+  email: string;
+  password: string;
 }
 
-export interface AuthResponse {
-  success: boolean
-  token: string
-  user: User
+let token: string | null = null;
+
+// Initialize token from localStorage
+if (typeof window !== 'undefined') {
+  token = localStorage.getItem('token');
 }
 
-// API Client Class
-class ApiClient {
-  private baseURL: string
-  private token: string | null = null
+export const api = {
+  async request(endpoint: string, options: any = {}) {
+    const url = `${baseURL}${endpoint}`;
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL
-    this.token = localStorage.getItem('notarium_token')
-  }
+    console.log('API Request:', url);
 
-  setToken(token: string) {
-    this.token = token
-    localStorage.setItem('notarium_token', token)
-  }
-
-  clearToken() {
-    this.token = null
-    localStorage.removeItem('notarium_token')
-  }
-
-  getToken(): string | null {
-    return this.token
-  }
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`
-    
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    }
-
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
-    }
-
-    const config: RequestInit = {
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      },
       ...options,
-      headers,
+    };
+
+    if (config.body && typeof config.body === 'object') {
+      config.body = JSON.stringify(config.body);
     }
 
     try {
-      const response = await fetch(url, config)
-      
+      const response = await fetch(url, config);
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json().catch(() => ({
-          error: `HTTP ${response.status}: ${response.statusText}`
-        }))
-        throw new Error(error.error || error.message || 'Request failed')
+        throw new Error(data.error || `API request failed: ${response.status}`);
       }
 
-      return await response.json()
+      return data;
     } catch (error) {
-      console.error('API Error:', error)
-      throw error
+      console.error('API Error:', error);
+      throw error;
     }
-  }
+  },
 
-  // ==================== AUTH ====================
+  isAuthenticated: () => !!token,
 
-  async register(email: string, password: string, name: string, role: string = 'student'): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, name, role }),
-    })
-    
-    if (response.success && response.token) {
-      this.setToken(response.token)
+  clearToken: () => {
+    token = null;
+    localStorage.removeItem('token');
+  },
+
+  logout: () => {
+    api.clearToken();
+  },
+
+  // Auth endpoints
+  auth: {
+    signup: (data: any) =>
+      api.request('/api/auth/signup', {
+        method: 'POST',
+        body: data
+      }),
+    login: (credentials: LoginCredentials): Promise<LoginResponse> =>
+      api.request('/api/auth/login', {
+        method: 'POST',
+        body: credentials
+      }),
+  },
+
+  // Legacy auth methods for compatibility
+  register: async (email: string, password: string, name: string, role: string, classValue: string) => {
+    const response = await api.auth.signup({ email, password, name, class: classValue });
+    if (response.token) {
+      token = response.token;
+      localStorage.setItem('token', response.token);
     }
-    
-    return response
-  }
+    return { success: true, user: response.user, token: response.token };
+  },
 
-  async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    })
-    
-    if (response.success && response.token) {
-      this.setToken(response.token)
+  login: async (email: string, password: string) => {
+    const response = await api.auth.login({ email, password });
+    if (response.token) {
+      token = response.token;
+      localStorage.setItem('token', response.token);
     }
-    
-    return response
-  }
+    return { success: true, user: response.user, token: response.token };
+  },
 
-  async getCurrentUser(): Promise<{ user: User }> {
-    return this.request<{ user: User }>('/api/auth/me')
-  }
+  getCurrentUser: async () => {
+    const response = await api.request('/api/auth/me', {
+      method: 'GET'
+    });
+    return response;
+  },
 
-  async updateProfile(data: { name: string; class?: string; photo_url?: string }): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>('/api/auth/profile', {
+  updateProfile: async (data: any) => {
+    const response = await api.request('/api/auth/profile', {
       method: 'PUT',
-      body: JSON.stringify(data),
-    })
-  }
+      body: data
+    });
+    return response;
+  },
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-    return this.request<{ success: boolean; message: string }>('/api/auth/change-password', {
+  // Notes endpoints
+  notes: {
+    getAll: () => api.request('/api/notes'),
+    create: (note: any) => api.request('/api/notes', {
       method: 'POST',
-      body: JSON.stringify({ currentPassword, newPassword }),
-    })
-  }
+      body: note
+    }),
+  },
 
-  logout() {
-    this.clearToken()
-  }
+  getNotes: () => api.request('/api/notes'),
 
-  isAuthenticated(): boolean {
-    return !!this.token
-  }
+  // Subjects endpoints
+  subjects: {
+    getAll: () => api.request('/api/subjects'),
+  },
 
-  // ==================== SUBJECTS ====================
+  getSubjects: () => api.request('/api/subjects'),
+};
 
-  async getSubjects(): Promise<{ subjects: Subject[] }> {
-    return this.request<{ subjects: Subject[] }>('/api/subjects')
-  }
-
-  // ==================== NOTES ====================
-
-  async getNotes(subject?: string): Promise<{ notes: Note[] }> {
-    const query = subject ? `?subject=${encodeURIComponent(subject)}` : ''
-    return this.request<{ notes: Note[] }>(`/api/notes${query}`)
-  }
-
-  async getNote(id: number): Promise<{ note: Note }> {
-    return this.request<{ note: Note }>(`/api/notes/${id}`)
-  }
-
-  async createNote(data: {
-    title: string
-    content: string
-    subject?: string
-    tags?: string
-    is_public?: boolean
-  }): Promise<{ success: boolean; noteId: number }> {
-    return this.request<{ success: boolean; noteId: number }>('/api/notes', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async updateNote(
-    id: number,
-    data: {
-      title: string
-      content: string
-      subject?: string
-      tags?: string
-      is_public?: boolean
-    }
-  ): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>(`/api/notes/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async deleteNote(id: number): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>(`/api/notes/${id}`, {
-      method: 'DELETE',
-    })
-  }
-
-  // ==================== ADMIN ====================
-
-  async getAllUsers(): Promise<{ users: User[] }> {
-    return this.request<{ users: User[] }>('/api/admin/users')
-  }
-
-  async suspendUser(userId: number): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>(`/api/admin/users/${userId}/suspend`, {
-      method: 'POST',
-    })
-  }
-
-  async unsuspendUser(userId: number): Promise<{ success: boolean }> {
-    return this.request<{ success: boolean }>(`/api/admin/users/${userId}/unsuspend`, {
-      method: 'POST',
-    })
-  }
-}
-
-// Export singleton instance
-export const api = new ApiClient(API_BASE_URL)
-export default api
+export default api;
