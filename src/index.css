@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  /* SpaceX-inspired dark theme */
+  /* Notarium dark theme */
   --primary: #000000;
   --secondary: #0a0a0a;
-  --accent: #005288;
-  --accent-hover: #0066aa;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
   --text: #ffffff;
-  --text-secondary: #a0a0a0;
-  --border: #1a1a1a;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --border: rgba(255, 255, 255, 0.1);
   --success: #4ade80;
   --danger: #ef4444;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  --shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+  --shadow-lg: 0 20px 25px -5px rgba(99, 102, 241, 0.3);
 }
 
 * {

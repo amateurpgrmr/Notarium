@@ -129,14 +129,16 @@
 }
 
 .login-button.primary {
-  background: #ffffff;
-  color: #000000;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #ffffff;
   margin-bottom: 0.5rem;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
 }
 
 .login-button.primary:hover:not(:disabled) {
-  background: #f0f0f0;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
   transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
 }
 
 .login-button.google {

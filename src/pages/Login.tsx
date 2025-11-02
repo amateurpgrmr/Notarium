@@ -17,10 +17,14 @@ export default function Login() {
 
     try {
       const response = await api.auth.login({ email, password });
-      localStorage.setItem('token', response.token);
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        // Give a moment for the token to be available for the next request
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
       navigate('/');
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to sign in');
     } finally {
       setIsLoading(false);
     }
