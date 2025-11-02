@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import UploadNoteModal from '../components/UploadNoteModal';
+import NoteDetailModal from '../components/NoteDetailModal';
 import { Subject } from './SubjectsPage';
 import { darkTheme } from '../theme';
 
@@ -37,6 +38,7 @@ export default function SubjectNotesPage({
 }: SubjectNotesPageProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'mostUpvoted'>('newest');
   const [filterTag, setFilterTag] = useState<string>('all');
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -57,6 +59,7 @@ export default function SubjectNotesPage({
           id: 1,
           title: `Introduction to ${subject.name}`,
           description: `Learn the fundamentals of ${subject.name}. This comprehensive note covers all basics.`,
+          content: `# Introduction to ${subject.name}\n\n## Key Concepts\n1. Foundation Principles\n2. Core Definitions\n3. Basic Applications\n\n## Learning Objectives\n- Understand fundamental concepts\n- Apply basic principles\n- Solve introductory problems\n\n## Study Tips\n- Review flashcards regularly\n- Practice problems daily\n- Form study groups`,
           author_name: 'Alice Johnson',
           author_class: '10-A',
           subject_id: subject.id,
@@ -65,11 +68,14 @@ export default function SubjectNotesPage({
           likes: 24,
           admin_upvotes: 3,
           created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          liked_by_me: false,
+          upvoted_by_me: false,
         },
         {
           id: 2,
           title: `Advanced Topics in ${subject.name}`,
           description: `Deep dive into advanced concepts. Perfect for exam preparation.`,
+          content: `# Advanced Topics in ${subject.name}\n\n## Complex Theories\n- Theory A: Detailed explanation\n- Theory B: Comparative analysis\n- Theory C: Real-world applications\n\n## Problem-Solving Strategies\n1. Analysis methods\n2. Systematic approach\n3. Optimization techniques\n\n## Practice Questions\n- Multiple choice problems\n- Essay questions\n- Case studies`,
           author_name: 'Bob Smith',
           author_class: '10-B',
           subject_id: subject.id,
@@ -78,11 +84,14 @@ export default function SubjectNotesPage({
           likes: 18,
           admin_upvotes: 5,
           created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          liked_by_me: false,
+          upvoted_by_me: false,
         },
         {
           id: 3,
           title: `Quick Summary of ${subject.name}`,
           description: `Quick revision notes for last-minute preparation.`,
+          content: `# Quick Summary of ${subject.name}\n\n## Quick Facts\n- Point 1: Brief explanation\n- Point 2: Key takeaway\n- Point 3: Important detail\n\n## Memory Aids\n- Acronyms: ABC = Always Be Clear\n- Mnemonics: Remember by association\n- Visual maps: Create diagrams\n\n## Common Mistakes\n✗ Don't confuse A with B\n✗ Avoid oversimplifying concepts\n✗ Check your work twice\n\n## Last-Minute Tips\n✓ Focus on key points\n✓ Review practice problems\n✓ Get good sleep before exam`,
           author_name: 'Carol White',
           author_class: '10-C',
           subject_id: subject.id,
@@ -91,6 +100,8 @@ export default function SubjectNotesPage({
           likes: 42,
           admin_upvotes: 2,
           created_at: new Date().toISOString(),
+          liked_by_me: false,
+          upvoted_by_me: false,
         }
       ];
 
@@ -320,6 +331,7 @@ export default function SubjectNotesPage({
           {filteredAndSortedNotes.map((note) => (
             <div
               key={note.id}
+              onClick={() => setSelectedNote(note)}
               style={{
                 background: darkTheme.colors.bgSecondary,
                 borderRadius: darkTheme.borderRadius.md,
@@ -538,6 +550,16 @@ export default function SubjectNotesPage({
           subjects={[subject]}
           onSuccess={handleUploadSuccess}
           preselectedSubject={subject.id}
+        />
+      )}
+
+      {/* Note Detail Modal */}
+      {selectedNote && (
+        <NoteDetailModal
+          note={selectedNote}
+          onClose={() => setSelectedNote(null)}
+          onLike={toggleLike}
+          onUpvote={toggleAdminUpvote}
         />
       )}
     </div>
