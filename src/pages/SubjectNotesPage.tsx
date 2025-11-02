@@ -3,6 +3,7 @@ import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import UploadNoteModal from '../components/UploadNoteModal';
 import NoteDetailModal from '../components/NoteDetailModal';
+import { useAuth } from '../App';
 import { Subject } from './SubjectsPage';
 import { darkTheme } from '../theme';
 
@@ -36,13 +37,13 @@ export default function SubjectNotesPage({
   isLoading,
   setIsLoading
 }: SubjectNotesPageProps) {
+  const { user: currentUser } = useAuth();
   const [notes, setNotes] = useState<Note[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'mostUpvoted'>('newest');
   const [filterTag, setFilterTag] = useState<string>('all');
   const [allTags, setAllTags] = useState<string[]>([]);
-  const [currentUser] = useState({ userClass: '10-A' }); // Mock current user
 
   useEffect(() => {
     loadNotes();
@@ -560,6 +561,7 @@ export default function SubjectNotesPage({
           onClose={() => setSelectedNote(null)}
           onLike={toggleLike}
           onUpvote={toggleAdminUpvote}
+          currentUser={currentUser}
         />
       )}
     </div>

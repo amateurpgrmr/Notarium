@@ -9,7 +9,6 @@ import LeaderboardPage from './pages/LeaderboardPage'
 import ChatPage from './pages/ChatPage'
 import AdminPage from './pages/AdminPage'
 import ProfileEditor from './components/ProfileEditor'
-import UploadNoteModal from './components/UploadNoteModal'
 import LoadingSpinner from './components/LoadingSpinner'
 import { darkTheme, darkThemeStyles } from './theme'
 import './index.css'
@@ -79,7 +78,6 @@ function HomePage() {
   const [currentSubject, setCurrentSubject] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [showProfileEditor, setShowProfileEditor] = useState(false)
-  const [showUploadModal, setShowUploadModal] = useState(false)
   const [subjects, setSubjects] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -154,29 +152,6 @@ function HomePage() {
             onFocus={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'}
             onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
           />
-
-          {/* Upload Note Button */}
-          <button
-            onClick={() => setShowUploadModal(true)}
-            style={{
-              padding: '8px 16px',
-              background: darkTheme.colors.accent,
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: darkTheme.transitions.default,
-              borderRadius: darkTheme.borderRadius.md,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.opacity = '0.9')}
-            onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
-          >
-            <i className="fas fa-plus"></i>Upload Note
-          </button>
 
           {/* Nav buttons */}
           <button
@@ -360,19 +335,6 @@ function HomePage() {
       {/* Profile Editor Modal */}
       {showProfileEditor && (
         <ProfileEditor onClose={() => setShowProfileEditor(false)} />
-      )}
-
-      {/* Upload Note Modal */}
-      {showUploadModal && (
-        <UploadNoteModal
-          onClose={() => setShowUploadModal(false)}
-          subjects={subjects}
-          onSuccess={() => {
-            setShowUploadModal(false)
-            // Optionally refresh notes or navigate to subjects
-            loadSubjects()
-          }}
-        />
       )}
     </div>
   )

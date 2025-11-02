@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Note } from '../pages/SubjectNotesPage';
+import { User } from '../lib/api';
 import { darkTheme } from '../theme';
 
 interface NoteDetailModalProps {
@@ -7,13 +8,15 @@ interface NoteDetailModalProps {
   onClose: () => void;
   onLike?: (noteId: number) => void;
   onUpvote?: (noteId: number) => void;
+  currentUser?: User | null;
 }
 
 export default function NoteDetailModal({
   note,
   onClose,
   onLike,
-  onUpvote
+  onUpvote,
+  currentUser
 }: NoteDetailModalProps) {
   if (!note) return null;
 
@@ -21,6 +24,11 @@ export default function NoteDetailModal({
   const [isUpvoted, setIsUpvoted] = useState(note.upvoted_by_me || false);
   const [likeCount, setLikeCount] = useState(note.likes);
   const [upvoteCount, setUpvoteCount] = useState(note.admin_upvotes);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+
+  // Check if user is admin
+  const isAdmin = currentUser?.email?.endsWith('@notarium.site') || currentUser?.role === 'admin';
 
   const handleLike = () => {
     const newLikedState = !isLiked;
@@ -34,6 +42,33 @@ export default function NoteDetailModal({
     setIsUpvoted(newUpvotedState);
     setUpvoteCount(prev => newUpvotedState ? prev + 1 : prev - 1);
     onUpvote?.(note.id);
+  };
+
+  const generateSummary = async () => {
+    setIsGeneratingSummary(true);
+    try {
+      const response = await fetch('/api/gemini/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: note.title,
+          description: note.description,
+          content: note.content
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSummary(data.summary);
+      } else {
+        setSummary('Failed to generate summary. Please try again.');
+      }
+    } catch (error) {
+      console.error('Summary error:', error);
+      setSummary('Error generating summary');
+    } finally {
+      setIsGeneratingSummary(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -340,44 +375,115 @@ export default function NoteDetailModal({
               {isLiked ? 'Liked' : 'Like'}
             </button>
 
-            <button
-              onClick={handleUpvote}
+            {isAdmin && (
+              <button
+                onClick={handleUpvote}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  background: isUpvoted ? '#ff6b00' : darkTheme.colors.bgSecondary,
+                  color: isUpvoted ? 'white' : darkTheme.colors.textPrimary,
+                  border: `1px solid ${isUpvoted ? '#ff6b00' : darkTheme.colors.borderColor}`,
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  transition: 'all 0.3s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                onMouseOver={(e) => {
+                  if (!isUpvoted) {
+                    e.currentTarget.style.background = '#ff6b0015';
+                    e.currentTarget.style.borderColor = '#ff6b00';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isUpvoted) {
+                    e.currentTarget.style.background = darkTheme.colors.bgSecondary;
+                    e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
+                  }
+                }}
+              >
+                <i
+                  className="fas fa-crown"
+                  style={{ fontSize: '16px' }}
+                ></i>
+                {isUpvoted ? 'Upvoted' : 'Admin Upvote'}
+              </button>
+            )}
+          </div>
+
+          {/* Summarize Button */}
+          <button
+            onClick={generateSummary}
+            disabled={isGeneratingSummary}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: darkTheme.colors.accent,
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              cursor: isGeneratingSummary ? 'not-allowed' : 'pointer',
+              fontSize: '15px',
+              fontWeight: '600',
+              transition: 'all 0.3s',
+              marginBottom: '12px',
+              opacity: isGeneratingSummary ? 0.7 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => {
+              if (!isGeneratingSummary) {
+                e.currentTarget.style.opacity = '0.9';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!isGeneratingSummary) {
+                e.currentTarget.style.opacity = '1';
+              }
+            }}
+          >
+            <i
+              className={`fas fa-${isGeneratingSummary ? 'spinner fa-spin' : 'lightbulb'}`}
+              style={{ fontSize: '16px' }}
+            ></i>
+            {isGeneratingSummary ? 'Generating Summary...' : 'Generate AI Summary'}
+          </button>
+
+          {/* Summary Display */}
+          {summary && (
+            <div
               style={{
-                flex: 1,
-                padding: '12px 16px',
-                background: isUpvoted ? '#ff6b00' : darkTheme.colors.bgSecondary,
-                color: isUpvoted ? 'white' : darkTheme.colors.textPrimary,
-                border: `1px solid ${isUpvoted ? '#ff6b00' : darkTheme.colors.borderColor}`,
+                background: darkTheme.colors.bgSecondary,
+                border: `1px solid ${darkTheme.colors.accent}`,
                 borderRadius: '12px',
-                cursor: 'pointer',
-                fontSize: '15px',
-                fontWeight: '600',
-                transition: 'all 0.3s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-              onMouseOver={(e) => {
-                if (!isUpvoted) {
-                  e.currentTarget.style.background = '#ff6b0015';
-                  e.currentTarget.style.borderColor = '#ff6b00';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!isUpvoted) {
-                  e.currentTarget.style.background = darkTheme.colors.bgSecondary;
-                  e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
-                }
+                padding: '16px',
+                marginBottom: '12px',
+                color: darkTheme.colors.textPrimary,
+                fontSize: '14px',
+                lineHeight: '1.6'
               }}
             >
-              <i
-                className="fas fa-crown"
-                style={{ fontSize: '16px' }}
-              ></i>
-              {isUpvoted ? 'Upvoted' : 'Admin Upvote'}
-            </button>
-          </div>
+              <div
+                style={{
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  marginBottom: '8px',
+                  color: darkTheme.colors.accent,
+                  textTransform: 'uppercase'
+                }}
+              >
+                AI Summary
+              </div>
+              <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{summary}</p>
+            </div>
+          )}
 
           <button
             onClick={onClose}

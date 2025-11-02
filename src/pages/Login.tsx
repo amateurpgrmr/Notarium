@@ -30,13 +30,6 @@ export default function Login() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    const baseURL = import.meta.env.MODE === 'development'
-      ? 'http://localhost:56533'
-      : 'https://notarium-backend.notarium-backend.workers.dev';
-    window.location.href = `${baseURL}/api/auth/google`;
-  };
-
   return (
     <div className="login-container">
       <style>{`
@@ -94,17 +87,6 @@ export default function Login() {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-
-          <div className="login-divider">OR</div>
-
-          <button
-            onClick={handleGoogleLogin}
-            type="button"
-            className="login-button google"
-          >
-            <i className="fab fa-google"></i>
-            Continue with Google
-          </button>
 
           <p className="login-footer">
             Don't have an account? <a href="/signup">Sign up</a>
