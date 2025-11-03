@@ -62,8 +62,8 @@ export default function SubjectsPage({
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-          gap: '16px'
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '24px'
         }}>
           {subjects.map((subject) => (
             <div
@@ -71,32 +71,41 @@ export default function SubjectsPage({
               onClick={() => onSelectSubject(subject)}
               style={{
                 ...cardStyle,
-                padding: '24px',
+                padding: '40px 32px',
                 cursor: 'pointer',
                 textAlign: 'center',
-                position: 'relative'
+                position: 'relative',
+                minHeight: '220px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: darkTheme.transitions.default,
+                border: `2px solid ${darkTheme.colors.accent}`
               } as React.CSSProperties}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = darkTheme.colors.bgTertiary;
                 e.currentTarget.style.borderColor = darkTheme.colors.accent;
                 e.currentTarget.style.boxShadow = darkTheme.shadows.default;
+                e.currentTarget.style.transform = 'translateY(-4px)';
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = darkTheme.colors.bgSecondary;
                 e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
                 e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
               <i style={{
-                fontSize: '36px',
-                marginBottom: '12px',
+                fontSize: '64px',
+                marginBottom: '20px',
                 color: darkTheme.colors.accent,
                 display: 'block'
               }} className={`fas ${subject.icon}`}></i>
-              <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '12px', color: darkTheme.colors.textPrimary }}>
                 {subject.name}
               </h3>
-              <p style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>
+              <p style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>
                 {subject.note_count} notes
               </p>
             </div>

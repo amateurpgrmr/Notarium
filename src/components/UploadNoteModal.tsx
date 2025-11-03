@@ -26,6 +26,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [showCamera, setShowCamera] = useState(false);
   const [extractedText, setExtractedText] = useState('');
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [noteTitle, setNoteTitle] = useState('');
   const [noteDescription, setNoteDescription] = useState('');
   const [noteSubject, setNoteSubject] = useState<number | null>(preselectedSubject || null);
@@ -77,41 +78,90 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     }
   };
 
+  const generateQuickSummary = async (content: string, title: string): Promise<string> => {
+    try {
+      const response = await api.request('/api/gemini/quick-summary', {
+        method: 'POST',
+        body: {
+          title: title,
+          content: content
+        }
+      });
+      return response.summary || '';
+    } catch (error) {
+      console.error('Summary generation error:', error);
+      return '';
+    }
+  };
+
+  const generateAutoTags = async (content: string, title: string): Promise<string[]> => {
+    try {
+      const response = await api.request('/api/gemini/auto-tags', {
+        method: 'POST',
+        body: {
+          title: title,
+          content: content
+        }
+      });
+      return response.tags || [];
+    } catch (error) {
+      console.error('Tag generation error:', error);
+      return [];
+    }
+  };
+
   const handleSubmit = async () => {
     if (!noteTitle || !uploadImage || !noteSubject || !noteClass) {
       alert('Please fill in all required fields (Title, Image, Subject, and Class)');
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      // Parse tags from comma-separated string
-      const tagsArray = noteTags
-        .split(',')
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
+      // Generate 1-sentence summary
+      const contentForSummary = extractedText || noteDescription;
+      let quickSummary = '';
+      let autoTags: string[] = [];
 
-      // In a real app, you would submit the note to the backend
-      console.log({
+      if (contentForSummary) {
+        // Generate summary and tags in parallel for speed
+        const [summary, tags] = await Promise.all([
+          generateQuickSummary(contentForSummary, noteTitle),
+          generateAutoTags(contentForSummary, noteTitle)
+        ]);
+        quickSummary = summary;
+        autoTags = tags;
+      }
+
+      const noteData = {
         title: noteTitle,
-        description: noteDescription,
+        description: noteDescription || quickSummary, // Use auto-summary if no description
         subject_id: noteSubject,
-        author_class: noteClass,
-        tags: tagsArray,
-        image: uploadImage,
-        extracted_text: extractedText,
-        mode: uploadMode
+        extracted_text: extractedText || 'No extracted text',
+        image_path: uploadImage, // Store base64 image
+        quick_summary: quickSummary, // Store the 1-sentence summary separately
+        tags: autoTags.length > 0 ? autoTags : noteTags.split(',').map(t => t.trim()).filter(t => t) // Use auto-tags or manual tags
+      };
+
+      const response = await api.request('/api/notes', {
+        method: 'POST',
+        body: noteData
       });
 
-      alert('Note uploaded successfully!');
-      onSuccess?.();
-      onClose();
-    } catch (error) {
+      if (response.note) {
+        alert('Note uploaded successfully with auto-generated tags!');
+        onSuccess?.();
+        onClose();
+      }
+    } catch (error: any) {
       console.error('Submit Error:', error);
-      alert('Failed to upload note');
+      alert(`Failed to upload note: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const canSubmit = noteTitle && uploadImage && noteSubject && noteClass && !isProcessingOCR;
+  const canSubmit = noteTitle && uploadImage && noteSubject && noteClass && !isProcessingOCR && !isSubmitting;
 
   return (
     <div
@@ -263,7 +313,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 style={{
                   flex: 1,
                   padding: '20px',
-                  background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, #27ae60 100%)`,
+                  background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, ${darkTheme.colors.accentHover} 100%)`,
                   color: 'white',
                   border: 'none',
                   borderRadius: '12px',
@@ -285,7 +335,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 style={{
                   flex: 1,
                   padding: '20px',
-                  background: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+                  background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, ${darkTheme.colors.accentHover} 100%)`,
                   color: 'white',
                   border: 'none',
                   borderRadius: '12px',
@@ -534,7 +584,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             opacity: canSubmit ? 1 : 0.5
           }}
         >
-          {isProcessingOCR ? 'Processing OCR...' : 'Upload Note'}
+          {isProcessingOCR ? 'Processing OCR...' : isSubmitting ? 'Uploading...' : 'Upload Note'}
         </button>
       </div>
 

@@ -41,7 +41,7 @@ export default function SubjectNotesPage({
   const [notes, setNotes] = useState<Note[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'mostUpvoted'>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'popular'>('newest');
   const [filterTag, setFilterTag] = useState<string>('all');
   const [allTags, setAllTags] = useState<string[]>([]);
 
@@ -136,9 +136,8 @@ export default function SubjectNotesPage({
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       } else if (sortBy === 'popular') {
         return b.likes - a.likes;
-      } else {
-        return b.admin_upvotes - a.admin_upvotes;
       }
+      return 0;
     });
 
   const toggleLike = (noteId: number) => {
@@ -148,19 +147,6 @@ export default function SubjectNotesPage({
           ...note,
           liked_by_me: !note.liked_by_me,
           likes: note.liked_by_me ? note.likes - 1 : note.likes + 1
-        };
-      }
-      return note;
-    }));
-  };
-
-  const toggleAdminUpvote = (noteId: number) => {
-    setNotes(notes.map(note => {
-      if (note.id === noteId) {
-        return {
-          ...note,
-          upvoted_by_me: !note.upvoted_by_me,
-          admin_upvotes: note.upvoted_by_me ? note.admin_upvotes - 1 : note.admin_upvotes + 1
         };
       }
       return note;
@@ -262,7 +248,6 @@ export default function SubjectNotesPage({
             >
               <option value="newest">Newest</option>
               <option value="popular">Most Liked</option>
-              <option value="mostUpvoted">Most Upvoted</option>
             </select>
           </div>
 
@@ -506,34 +491,6 @@ export default function SubjectNotesPage({
                     {note.likes}
                   </button>
 
-                  {/* Admin Upvote Button */}
-                  <button
-                    onClick={() => toggleAdminUpvote(note.id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: note.upvoted_by_me ? '#ff6b00' : darkTheme.colors.textSecondary,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: darkTheme.transitions.default,
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '13px',
-                      fontWeight: '500'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = note.upvoted_by_me ? 'rgba(255, 107, 0, 0.1)' : `rgba(255,255,255,0.1)`;
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'none';
-                    }}
-                  >
-                    <i className={`fas fa-crown${note.upvoted_by_me ? '' : ''}`}></i>
-                    {note.admin_upvotes}
-                  </button>
-
                   {/* Date */}
                   <span style={{
                     fontSize: '12px',
@@ -564,7 +521,6 @@ export default function SubjectNotesPage({
           note={selectedNote}
           onClose={() => setSelectedNote(null)}
           onLike={toggleLike}
-          onUpvote={toggleAdminUpvote}
           currentUser={currentUser}
         />
       )}

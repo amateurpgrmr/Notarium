@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Note } from '../pages/SubjectNotesPage';
 import { User } from '../lib/api';
+import api from '../lib/api';
 import { darkTheme } from '../theme';
 
 interface NoteDetailModalProps {
   note: Note | null;
   onClose: () => void;
   onLike?: (noteId: number) => void;
-  onUpvote?: (noteId: number) => void;
   currentUser?: User | null;
 }
 
@@ -15,26 +15,14 @@ export default function NoteDetailModal({
   note,
   onClose,
   onLike,
-  onUpvote,
   currentUser
 }: NoteDetailModalProps) {
   if (!note) return null;
 
   const [isLiked, setIsLiked] = useState(note.liked_by_me || false);
-  const [isUpvoted, setIsUpvoted] = useState(note.upvoted_by_me || false);
   const [likeCount, setLikeCount] = useState(note.likes);
-  const [upvoteCount, setUpvoteCount] = useState(note.admin_upvotes);
   const [summary, setSummary] = useState<string | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
-
-  // Check if user is admin
-  const isAdmin = currentUser?.email?.endsWith('@notarium.site') || currentUser?.role === 'admin';
-
-  // Debug logging
-  console.log('NoteDetailModal - Current User:', currentUser);
-  console.log('NoteDetailModal - Is Admin:', isAdmin);
-  console.log('NoteDetailModal - User Email:', currentUser?.email);
-  console.log('NoteDetailModal - User Role:', currentUser?.role);
 
   const handleLike = () => {
     const newLikedState = !isLiked;
@@ -43,29 +31,20 @@ export default function NoteDetailModal({
     onLike?.(note.id);
   };
 
-  const handleUpvote = () => {
-    const newUpvotedState = !isUpvoted;
-    setIsUpvoted(newUpvotedState);
-    setUpvoteCount(prev => newUpvotedState ? prev + 1 : prev - 1);
-    onUpvote?.(note.id);
-  };
-
   const generateSummary = async () => {
     setIsGeneratingSummary(true);
     try {
-      const response = await fetch('/api/gemini/summarize', {
+      const response = await api.request('/api/gemini/summarize', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           title: note.title,
           description: note.description,
           content: note.content
-        })
+        }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setSummary(data.summary);
+      if (response.success) {
+        setSummary(response.summary);
       } else {
         setSummary('Failed to generate summary. Please try again.');
       }
@@ -136,22 +115,6 @@ export default function NoteDetailModal({
             <h2 style={{ fontSize: '20px', fontFamily: 'Playfair Display, serif', margin: 0 }}>
               Note Details
             </h2>
-            {isAdmin && (
-              <span
-                style={{
-                  background: '#ff6b00',
-                  color: 'white',
-                  padding: '4px 12px',
-                  borderRadius: '12px',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}
-              >
-                👑 Admin
-              </span>
-            )}
           </div>
           <button
             onClick={onClose}
@@ -339,21 +302,13 @@ export default function NoteDetailModal({
               marginBottom: '24px'
             }}
           >
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
               <div>
                 <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginBottom: '4px' }}>
                   LIKES
                 </div>
                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: darkTheme.colors.accent }}>
                   {likeCount}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginBottom: '4px' }}>
-                  ADMIN UPVOTES
-                </div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff6b00' }}>
-                  {upvoteCount}
                 </div>
               </div>
             </div>
@@ -397,47 +352,6 @@ export default function NoteDetailModal({
                 style={{ fontSize: '16px' }}
               ></i>
               {isLiked ? 'Liked' : 'Like'}
-            </button>
-
-            <button
-              onClick={handleUpvote}
-              disabled={!isAdmin}
-              title={isAdmin ? 'Upvote this note' : 'Only admins can upvote'}
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                background: isUpvoted ? '#ff6b00' : darkTheme.colors.bgSecondary,
-                color: isUpvoted ? 'white' : darkTheme.colors.textPrimary,
-                border: `1px solid ${isUpvoted ? '#ff6b00' : darkTheme.colors.borderColor}`,
-                borderRadius: '12px',
-                cursor: isAdmin ? 'pointer' : 'not-allowed',
-                fontSize: '15px',
-                fontWeight: '600',
-                transition: 'all 0.3s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                opacity: isAdmin ? 1 : 0.5
-              }}
-              onMouseOver={(e) => {
-                if (!isUpvoted && isAdmin) {
-                  e.currentTarget.style.background = '#ff6b0015';
-                  e.currentTarget.style.borderColor = '#ff6b00';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!isUpvoted && isAdmin) {
-                  e.currentTarget.style.background = darkTheme.colors.bgSecondary;
-                  e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
-                }
-              }}
-            >
-              <i
-                className="fas fa-crown"
-                style={{ fontSize: '16px' }}
-              ></i>
-              {isUpvoted ? 'Upvoted' : 'Admin Upvote'} {!isAdmin && '(Admins only)'}
             </button>
           </div>
 

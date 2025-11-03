@@ -123,11 +123,24 @@ function HomePage() {
         alignItems: 'center',
         zIndex: 1000
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick={() => { setCurrentPage('subjects'); setCurrentSubject(null); }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            transition: darkTheme.transitions.default
+          }}
+          onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
+          onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+        >
           <h1 style={{ fontSize: '24px', fontFamily: 'Playfair Display, serif', fontWeight: 'bold', margin: 0 }}>
             Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
           </h1>
-        </div>
+        </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {/* Search bar */}

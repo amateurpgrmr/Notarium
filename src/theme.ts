@@ -1,27 +1,27 @@
-// Dark theme configuration
+// SpaceX-inspired dark theme configuration
 export const darkTheme = {
   colors: {
-    bgPrimary: '#000',
-    bgSecondary: 'rgba(255, 255, 255, 0.05)',
-    bgTertiary: 'rgba(255, 255, 255, 0.08)',
-    textPrimary: '#fff',
-    textSecondary: 'rgba(255, 255, 255, 0.6)',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    accent: '#6366f1',
-    accentHover: '#4f46e5',
+    bgPrimary: '#000000',
+    bgSecondary: '#0a0a0a',
+    bgTertiary: '#151515',
+    textPrimary: '#ffffff',
+    textSecondary: '#a0a0a0',
+    borderColor: '#1a1a1a',
+    accent: '#005288',
+    accentHover: '#0066aa',
     success: '#4ade80',
     danger: '#ef4444',
     dangerHover: '#dc2626',
     warning: '#f59e0b',
   },
   transitions: {
-    default: 'all 0.3s ease',
+    default: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     fast: 'all 0.15s ease',
     slow: 'all 0.5s ease',
   },
   shadows: {
-    default: '0 4px 16px rgba(99, 102, 241, 0.2)',
-    lg: '0 20px 25px -5px rgba(99, 102, 241, 0.3)',
+    default: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+    lg: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
     md: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
   },
   borderRadius: {
@@ -61,7 +61,7 @@ export const buttonBaseStyle = {
 
 export const buttonPrimaryStyle = {
   ...buttonBaseStyle,
-  background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+  background: `linear-gradient(135deg, ${darkTheme.colors.accent}, ${darkTheme.colors.accentHover})`,
   boxShadow: darkTheme.shadows.default,
 };
 

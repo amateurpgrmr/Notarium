@@ -8,6 +8,11 @@ interface ChatMessage {
   content: string;
 }
 
+interface UploadedDocument {
+  fileName: string;
+  uploadedAt: string;
+}
+
 export default function ChatPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
@@ -18,6 +23,11 @@ export default function ChatPage() {
   const [showNewSession, setShowNewSession] = useState(false);
   const [newSessionSubject, setNewSessionSubject] = useState('');
   const [newSessionTopic, setNewSessionTopic] = useState('');
+  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+  const [noteAnalysis, setNoteAnalysis] = useState<string>('');
+  const [keyConcepts, setKeyConcepts] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     loadSessions();
@@ -60,13 +70,76 @@ export default function ChatPage() {
       setSessions([...sessions, newSession]);
       setSelectedSession(newSession);
       setMessages([]);
+      setUploadedDocuments([]);
       setShowNewSession(false);
       setNewSessionSubject('');
       setNewSessionTopic('');
+
+      // Analyze available notes for this subject and topic
+      await analyzeNotesForSession(newSessionSubject, newSessionTopic);
     } catch (error) {
       console.error('Failed to create session:', error);
     } finally {
       setSending(false);
+    }
+  };
+
+  const analyzeNotesForSession = async (subject: string, topic: string) => {
+    try {
+      setAnalyzing(true);
+      const result = await api.chat.analyzeNotes(subject, topic);
+      setNoteAnalysis(result.analysis || '');
+      setKeyConcepts(result.keyConcepts || []);
+    } catch (error) {
+      console.error('Failed to analyze notes:', error);
+      setNoteAnalysis('Unable to analyze notes for this topic.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.currentTarget.files?.[0];
+    if (!file || !selectedSession) return;
+
+    try {
+      setUploading(true);
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = (event.target?.result as string)?.split(',')[1] || '';
+        await api.chat.uploadDocument(base64, file.name, selectedSession.id);
+
+        // Add document to list
+        setUploadedDocuments([
+          ...uploadedDocuments,
+          {
+            fileName: file.name,
+            uploadedAt: new Date().toLocaleTimeString()
+          }
+        ]);
+
+        // Add system message about document upload
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `📄 Document "${file.name}" has been uploaded and analyzed. I can now reference this document in our conversation.`
+          }
+        ]);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Failed to upload document:', error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `Failed to upload document. Please try again.`
+        }
+      ]);
+    } finally {
+      setUploading(false);
+      e.currentTarget.value = '';
     }
   };
 
@@ -79,21 +152,33 @@ export default function ChatPage() {
 
     try {
       // Add user message locally
-      setMessages([...messages, { role: 'user', content: userMessage }]);
+      setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
 
-      // Get AI response
-      const response = await api.chat.getAIResponse(userMessage, selectedSession.subject);
-      const aiResponse = response.response || 'I apologize, but I could not generate a response.';
+      // Get AI response from Gemini
+      const response = await api.request(`/api/chat/sessions/${selectedSession.id}/ai-response`, {
+        method: 'POST',
+        body: { message: userMessage, subject: selectedSession.subject }
+      });
+
+      const aiResponseContent = response.response || 'I apologize, but I could not generate a response.';
 
       // Add AI message locally
-      setMessages((prev) => [...prev, { role: 'assistant', content: aiResponse }]);
-
-      // Save to database
-      await api.chat.addMessage(selectedSession.id, 'user', userMessage);
-      await api.chat.addMessage(selectedSession.id, 'assistant', aiResponse);
-    } catch (error) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: aiResponseContent }]);
+    } catch (error: any) {
       console.error('Failed to send message:', error);
-      setMessages((prev) => prev.slice(0, -1)); // Remove user message if request failed
+      // Remove user message if request failed
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'user') {
+          newMessages.pop();
+        }
+        return newMessages;
+      });
+      // Show error message
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: `Error: ${error.message || 'Failed to get response from AI tutor. Please try again.'}`
+      }]);
     } finally {
       setSending(false);
     }
@@ -229,9 +314,103 @@ export default function ChatPage() {
               borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
               background: darkTheme.colors.bgSecondary
             }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
-                {selectedSession.subject} - {selectedSession.topic}
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
+                    📚 {selectedSession.subject} - {selectedSession.topic}
+                  </h3>
+                  <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: darkTheme.colors.textSecondary }}>
+                    🤖 AI Study Tutor Active
+                  </p>
+                </div>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  background: darkTheme.colors.accent,
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: uploading ? 'not-allowed' : 'pointer',
+                  opacity: uploading ? 0.6 : 1,
+                  transition: darkTheme.transitions.default,
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  color: 'white'
+                }}>
+                  <i className="fas fa-upload"></i>
+                  {uploading ? 'Uploading...' : 'Upload Document'}
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
+                    onChange={handleDocumentUpload}
+                    disabled={uploading}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
+
+              {/* Uploaded Documents Section */}
+              {uploadedDocuments.length > 0 && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '8px 12px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: darkTheme.borderRadius.sm,
+                  fontSize: '12px'
+                }}>
+                  <p style={{ margin: '0 0 6px 0', fontWeight: '500', color: darkTheme.colors.accent }}>
+                    📎 Uploaded Documents ({uploadedDocuments.length})
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {uploadedDocuments.map((doc, idx) => (
+                      <div key={idx} style={{ fontSize: '11px', color: darkTheme.colors.textSecondary }}>
+                        • {doc.fileName} <span style={{ fontSize: '10px' }}>({doc.uploadedAt})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Note Analysis Section */}
+              {(noteAnalysis || keyConcepts.length > 0) && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '8px 12px',
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  borderRadius: darkTheme.borderRadius.sm,
+                  fontSize: '12px',
+                  borderLeft: `3px solid ${darkTheme.colors.accent}`
+                }}>
+                  <p style={{ margin: '0 0 6px 0', fontWeight: '500', color: darkTheme.colors.accent }}>
+                    💡 Key Concepts from Available Notes
+                  </p>
+                  {keyConcepts.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
+                      {keyConcepts.slice(0, 5).map((concept, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            padding: '4px 8px',
+                            background: darkTheme.colors.accent,
+                            borderRadius: darkTheme.borderRadius.sm,
+                            color: 'white',
+                            fontSize: '11px',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {concept}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {analyzing && (
+                    <p style={{ margin: '4px 0 0 0', color: darkTheme.colors.textSecondary, fontStyle: 'italic' }}>
+                      <i className="fas fa-spinner" style={{ animation: 'spin 1s linear infinite', marginRight: '6px' }}></i>
+                      Analyzing available notes...
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Messages */}
@@ -341,6 +520,9 @@ export default function ChatPage() {
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* Hidden file input for document upload */}
+      <input type="file" id="docUpload" style={{ display: 'none' }} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 const baseURL = import.meta.env.MODE === 'development'
   ? 'http://localhost:8787'
-  : 'https://notarium-backend.notarium-backend.workers.dev';
+  : (import.meta.env.VITE_API_URL || 'https://notarium-backend.notarium-backend.workers.dev');
 
 export interface User {
   id: number;
@@ -279,6 +279,30 @@ export const api = {
         return { response: response.response || '' };
       } catch (error: any) {
         console.error('Failed to get AI response:', error);
+        throw error;
+      }
+    },
+    uploadDocument: async (documentBase64: string, fileName: string, sessionId: number) => {
+      try {
+        const response = await api.request('/api/chat/upload-document', {
+          method: 'POST',
+          body: { documentBase64, fileName, sessionId }
+        });
+        return { success: true, document: response.document || { fileName }, message: response.message || '' };
+      } catch (error: any) {
+        console.error('Failed to upload document:', error);
+        throw error;
+      }
+    },
+    analyzeNotes: async (subject: string, topic?: string) => {
+      try {
+        const response = await api.request('/api/chat/analyze-notes', {
+          method: 'POST',
+          body: { subject, topic }
+        });
+        return { analysis: response.analysis || '', keyConcepts: response.keyConcepts || [] };
+      } catch (error: any) {
+        console.error('Failed to analyze notes:', error);
         throw error;
       }
     }
