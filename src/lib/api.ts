@@ -445,6 +445,17 @@ export const api = {
         console.error('Failed to toggle admin like:', error);
         throw error;
       }
+    },
+    deleteNote: async (noteId: number) => {
+      try {
+        const response = await api.request(`/api/admin/notes/${noteId}`, {
+          method: 'DELETE'
+        });
+        return { success: response.success };
+      } catch (error: any) {
+        console.error('Failed to delete note:', error);
+        throw error;
+      }
     }
   }
 };

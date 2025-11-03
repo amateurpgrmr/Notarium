@@ -153,6 +153,20 @@ export default function SubjectNotesPage({
     }));
   };
 
+  const handleDeleteNote = async (noteId: number) => {
+    try {
+      setIsLoading(true);
+      await api.admin.deleteNote(noteId);
+      // Remove note from list
+      setNotes(notes.filter(note => note.id !== noteId));
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+      alert('Failed to delete note. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!subject) return null;
 
   return (
@@ -181,10 +195,17 @@ export default function SubjectNotesPage({
       </button>
 
       {/* Header with Upload Button */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '32px',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div style={{ flex: 1, minWidth: '200px' }}>
           <h2 style={{
-            fontSize: '32px',
+            fontSize: 'clamp(24px, 5vw, 32px)',
             fontWeight: 'bold',
             margin: '0 0 8px 0',
             color: darkTheme.colors.textPrimary
@@ -198,24 +219,27 @@ export default function SubjectNotesPage({
         <button
           onClick={() => setShowUploadModal(true)}
           style={{
-            padding: '12px 24px',
+            padding: '10px 20px',
             background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, #27ae60 100%)`,
             border: 'none',
             color: 'white',
             borderRadius: darkTheme.borderRadius.md,
             cursor: 'pointer',
             fontWeight: '600',
-            fontSize: '15px',
+            fontSize: 'clamp(13px, 2vw, 15px)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
             transition: 'all 0.3s',
-            boxShadow: darkTheme.shadows.default
+            boxShadow: darkTheme.shadows.default,
+            whiteSpace: 'nowrap'
           }}
           onMouseOver={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
           onMouseOut={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
         >
-          <i className="fas fa-plus"></i>Add Note
+          <i className="fas fa-plus"></i>
+          <span style={{ display: 'none' }}>Add Note</span>
+          <span style={{ display: 'inline' }}>Add</span>
         </button>
       </div>
 
@@ -315,8 +339,8 @@ export default function SubjectNotesPage({
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '24px'
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))',
+          gap: 'clamp(12px, 3vw, 24px)'
         }}>
           {filteredAndSortedNotes.map((note) => (
             <div
@@ -345,12 +369,12 @@ export default function SubjectNotesPage({
               {/* Image Section */}
               <div
                 style={{
-                  height: '200px',
+                  height: 'clamp(140px, 30vw, 200px)',
                   background: `linear-gradient(135deg, ${darkTheme.colors.accent}20, ${darkTheme.colors.accent}05)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '64px',
+                  fontSize: 'clamp(48px, 10vw, 64px)',
                   color: darkTheme.colors.accent,
                   position: 'relative',
                   overflow: 'hidden'
@@ -370,7 +394,7 @@ export default function SubjectNotesPage({
               </div>
 
               {/* Content Section */}
-              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div style={{ padding: 'clamp(12px, 3vw, 20px)', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 {/* Title */}
                 <h3 style={{
                   fontSize: '18px',
@@ -461,35 +485,77 @@ export default function SubjectNotesPage({
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginTop: 'auto'
+                  marginTop: 'auto',
+                  flexWrap: 'wrap',
+                  gap: '8px'
                 }}>
-                  {/* Like Button */}
-                  <button
-                    onClick={() => toggleLike(note.id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: note.liked_by_me ? darkTheme.colors.accent : darkTheme.colors.textSecondary,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: darkTheme.transitions.default,
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      fontSize: '13px',
-                      fontWeight: '500'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = note.liked_by_me ? `${darkTheme.colors.accent}10` : `rgba(255,255,255,0.1)`;
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'none';
-                    }}
-                  >
-                    <i className={`fas fa-heart${note.liked_by_me ? '' : '-o'}`}></i>
-                    {note.likes}
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* Like Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleLike(note.id);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: note.liked_by_me ? darkTheme.colors.accent : darkTheme.colors.textSecondary,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: darkTheme.transitions.default,
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '13px',
+                        fontWeight: '500'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = note.liked_by_me ? `${darkTheme.colors.accent}10` : `rgba(255,255,255,0.1)`;
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'none';
+                      }}
+                    >
+                      <i className={`fas fa-heart${note.liked_by_me ? '' : '-o'}`}></i>
+                      {note.likes}
+                    </button>
+
+                    {/* Admin Delete Button */}
+                    {(currentUser?.role === 'admin' || currentUser?.email?.endsWith('@notarium.site')) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Are you sure you want to delete this note? This cannot be undone.')) {
+                            handleDeleteNote(note.id);
+                          }
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: darkTheme.colors.danger,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: darkTheme.transitions.default,
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '13px',
+                          fontWeight: '500'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = `${darkTheme.colors.danger}15`;
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'none';
+                        }}
+                        title="Delete this note"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    )}
+                  </div>
 
                   {/* Date */}
                   <span style={{
