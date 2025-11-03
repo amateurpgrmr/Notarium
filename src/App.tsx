@@ -411,11 +411,11 @@ function HomePage() {
             </div>
 
             {/* User Name and Class */}
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '700' }}>
-              {user?.name}
+            <h3 style={{ margin: '0 0 2px 0', fontSize: '18px', fontWeight: '800', color: '#fff', letterSpacing: '0.5px' }}>
+              {user?.name || 'User'}
             </h3>
-            <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: darkTheme.colors.textSecondary }}>
-              {user?.class}
+            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: darkTheme.colors.textSecondary, fontWeight: '500' }}>
+              {user?.class ? `📚 ${user.class}` : ''}
             </p>
 
             {/* Description */}
