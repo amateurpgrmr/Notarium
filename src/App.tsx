@@ -81,6 +81,8 @@ function HomePage() {
   const [showProfileEditor, setShowProfileEditor] = useState(false)
   const [subjects, setSubjects] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
 
   const handleSelectSubject = (subject: any) => {
     setCurrentSubject(subject)
@@ -101,6 +103,30 @@ function HomePage() {
     }
   }
 
+  // Handle responsive design
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640)
+      if (window.innerWidth >= 640) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+  }
+
+  const navigateTo = (page: typeof currentPage, subject?: any) => {
+    if (subject) {
+      setCurrentSubject(subject)
+    }
+    setCurrentPage(page)
+    closeMobileMenu()
+  }
+
   useEffect(() => {
     loadSubjects()
   }, [])
@@ -118,119 +144,102 @@ function HomePage() {
         background: 'rgba(0, 0, 0, 0.95)',
         backdropFilter: 'blur(10px)',
         borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
-        padding: '20px 40px',
+        padding: isMobile ? '12px 16px' : '20px 40px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        zIndex: 1000
+        zIndex: 1000,
+        gap: '12px'
       }}>
+        {/* Mobile: Hamburger Button */}
+        {isMobile && (
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: darkTheme.colors.textPrimary,
+              cursor: 'pointer',
+              fontSize: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '4px',
+              transition: darkTheme.transitions.default
+            }}
+            onMouseOver={(e) => e.currentTarget.style.opacity = '0.7'}
+            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            <i className="fas fa-bars"></i>
+          </button>
+        )}
+
+        {/* Logo - Desktop with text, Mobile with image only */}
         <button
-          onClick={() => { setCurrentPage('subjects'); setCurrentSubject(null); }}
+          onClick={() => { navigateTo('subjects'); setCurrentSubject(null); }}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: '8px',
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            transition: darkTheme.transitions.default
+            transition: darkTheme.transitions.default,
+            padding: 0
           }}
           onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
           onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
         >
-          <h1 style={{ fontSize: '24px', fontFamily: 'Playfair Display, serif', fontWeight: 'bold', margin: 0 }}>
-            Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
-          </h1>
+          {isMobile ? (
+            <img
+              src="/notarium-logo.jpg"
+              alt="Notarium"
+              style={{ height: '32px', width: 'auto' }}
+            />
+          ) : (
+            <>
+              <img
+                src="/notarium-logo.jpg"
+                alt="Notarium"
+                style={{ height: '32px', width: 'auto' }}
+              />
+              <h1 style={{ fontSize: '18px', fontFamily: 'Playfair Display, serif', fontWeight: 'bold', margin: 0 }}>
+                Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
+              </h1>
+            </>
+          )}
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Search bar */}
-          <input
-            type="text"
-            placeholder="Search notes..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              padding: '10px 16px 10px 40px',
-              background: darkTheme.colors.bgSecondary,
-              border: `1px solid ${darkTheme.colors.borderColor}`,
-              borderRadius: darkTheme.borderRadius.sm,
-              width: '250px',
-              fontSize: '14px',
-              color: darkTheme.colors.textPrimary,
-              outline: 'none',
-              transition: darkTheme.transitions.default,
-              position: 'relative',
-              boxSizing: 'border-box'
-            } as React.CSSProperties}
-            onFocus={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'}
-            onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
-          />
+        {/* Search bar - Always visible */}
+        <input
+          type="text"
+          placeholder="Search notes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            padding: '8px 12px 8px 32px',
+            background: darkTheme.colors.bgSecondary,
+            border: `1px solid ${darkTheme.colors.borderColor}`,
+            borderRadius: darkTheme.borderRadius.sm,
+            width: isMobile ? '1fr' : '250px',
+            fontSize: '13px',
+            color: darkTheme.colors.textPrimary,
+            outline: 'none',
+            transition: darkTheme.transitions.default,
+            boxSizing: 'border-box',
+            flex: isMobile ? 1 : undefined
+          } as React.CSSProperties}
+          onFocus={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'}
+          onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
+        />
 
-          {/* Nav buttons */}
-          <button
-            onClick={() => { setCurrentPage('subjects'); setCurrentSubject(null); }}
-            style={{
-              padding: '8px 16px',
-              background: currentPage === 'subjects' ? darkTheme.colors.accent : 'transparent',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: darkTheme.transitions.default,
-              borderRadius: darkTheme.borderRadius.md
-            }}
-            onMouseOver={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-            onMouseOut={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'transparent')}
-          >
-            <i style={{ marginRight: '6px' }} className="fas fa-book"></i>Subjects
-          </button>
-
-          <button
-            onClick={() => setCurrentPage('chat')}
-            style={{
-              padding: '8px 16px',
-              background: currentPage === 'chat' ? darkTheme.colors.accent : 'transparent',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: darkTheme.transitions.default,
-              borderRadius: darkTheme.borderRadius.md
-            }}
-            onMouseOver={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-            onMouseOut={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'transparent')}
-          >
-            <i style={{ marginRight: '6px' }} className="fas fa-comments"></i>Chat
-          </button>
-
-          <button
-            onClick={() => setCurrentPage('leaderboard')}
-            style={{
-              padding: '8px 16px',
-              background: currentPage === 'leaderboard' ? darkTheme.colors.accent : 'transparent',
-              border: 'none',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: darkTheme.transitions.default,
-              borderRadius: darkTheme.borderRadius.md
-            }}
-            onMouseOver={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-            onMouseOut={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'transparent')}
-          >
-            <i style={{ marginRight: '6px' }} className="fas fa-trophy"></i>Leaderboard
-          </button>
-
-          {user?.role === 'admin' && (
+        {/* Desktop Navigation Buttons - Hidden on mobile */}
+        {!isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
-              onClick={() => setCurrentPage('admin')}
+              onClick={() => navigateTo('subjects')}
               style={{
                 padding: '8px 16px',
-                background: currentPage === 'admin' ? darkTheme.colors.accent : 'transparent',
+                background: currentPage === 'subjects' ? darkTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
@@ -239,80 +248,276 @@ function HomePage() {
                 transition: darkTheme.transitions.default,
                 borderRadius: darkTheme.borderRadius.md
               }}
-              onMouseOver={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-              onMouseOut={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'transparent')}
+              onMouseOver={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+              onMouseOut={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'transparent')}
             >
-              <i style={{ marginRight: '6px' }} className="fas fa-cog"></i>Admin
-            </button>
-          )}
-
-          {/* User menu */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginLeft: '16px',
-            paddingLeft: '16px',
-            borderLeft: `1px solid ${darkTheme.colors.borderColor}`
-          }}>
-            <button
-              onClick={() => setShowProfileEditor(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'transparent',
-                border: 'none',
-                color: darkTheme.colors.textPrimary,
-                cursor: 'pointer',
-                transition: darkTheme.transitions.default,
-                padding: '4px 8px',
-                borderRadius: darkTheme.borderRadius.md
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              <div style={{
-                width: '32px',
-                height: '32px',
-                background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '14px'
-              }}>
-                {user?.name?.charAt(0).toUpperCase()}
-              </div>
-              <span style={{ fontSize: '14px' }}>{user?.name}</span>
+              <i style={{ marginRight: '6px' }} className="fas fa-book"></i>Subjects
             </button>
 
             <button
-              onClick={logout}
+              onClick={() => navigateTo('chat')}
               style={{
                 padding: '8px 16px',
+                background: currentPage === 'chat' ? darkTheme.colors.accent : 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md
+              }}
+              onMouseOver={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+              onMouseOut={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'transparent')}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-comments"></i>Chat
+            </button>
+
+            <button
+              onClick={() => navigateTo('leaderboard')}
+              style={{
+                padding: '8px 16px',
+                background: currentPage === 'leaderboard' ? darkTheme.colors.accent : 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md
+              }}
+              onMouseOver={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+              onMouseOut={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'transparent')}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-trophy"></i>Leaderboard
+            </button>
+
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => navigateTo('admin')}
+                style={{
+                  padding: '8px 16px',
+                  background: currentPage === 'admin' ? darkTheme.colors.accent : 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  transition: darkTheme.transitions.default,
+                  borderRadius: darkTheme.borderRadius.md
+                }}
+                onMouseOver={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+                onMouseOut={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'transparent')}
+              >
+                <i style={{ marginRight: '6px' }} className="fas fa-cog"></i>Admin
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Account Avatar - Always visible */}
+        <button
+          onClick={() => setShowProfileEditor(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? 0 : '8px',
+            background: 'transparent',
+            border: 'none',
+            color: darkTheme.colors.textPrimary,
+            cursor: 'pointer',
+            transition: darkTheme.transitions.default,
+            padding: '4px 8px',
+            borderRadius: darkTheme.borderRadius.md
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+        >
+          <div style={{
+            width: '32px',
+            height: '32px',
+            background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            flexShrink: 0
+          }}>
+            {user?.name?.charAt(0).toUpperCase()}
+          </div>
+          {!isMobile && <span style={{ fontSize: '14px' }}>{user?.name}</span>}
+        </button>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      {isMobile && isMobileMenuOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.6)',
+          zIndex: 999,
+          top: '60px'
+        }} onClick={closeMobileMenu} />
+      )}
+
+      {/* Mobile Menu */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          left: 0,
+          top: '60px',
+          width: '280px',
+          height: 'calc(100vh - 60px)',
+          background: 'rgba(10, 10, 10, 0.95)',
+          backdropFilter: 'blur(10px)',
+          borderRight: `1px solid ${darkTheme.colors.borderColor}`,
+          zIndex: 1001,
+          transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+          overflowY: 'auto'
+        }}>
+          {/* Menu Items */}
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              onClick={() => navigateTo('subjects')}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: currentPage === 'subjects' ? darkTheme.colors.accent : 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '15px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md,
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+              onMouseOver={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+              onMouseOut={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'transparent')}
+            >
+              <i className="fas fa-book" style={{ width: '20px' }}></i>Subjects
+            </button>
+
+            <button
+              onClick={() => navigateTo('chat')}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: currentPage === 'chat' ? darkTheme.colors.accent : 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '15px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md,
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+              onMouseOver={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+              onMouseOut={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'transparent')}
+            >
+              <i className="fas fa-comments" style={{ width: '20px' }}></i>Chat
+            </button>
+
+            <button
+              onClick={() => navigateTo('leaderboard')}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: currentPage === 'leaderboard' ? darkTheme.colors.accent : 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '15px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md,
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+              onMouseOver={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+              onMouseOut={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'transparent')}
+            >
+              <i className="fas fa-trophy" style={{ width: '20px' }}></i>Leaderboard
+            </button>
+
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => navigateTo('admin')}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: currentPage === 'admin' ? darkTheme.colors.accent : 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  transition: darkTheme.transitions.default,
+                  borderRadius: darkTheme.borderRadius.md,
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+                onMouseOver={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+                onMouseOut={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'transparent')}
+              >
+                <i className="fas fa-cog" style={{ width: '20px' }}></i>Admin
+              </button>
+            )}
+
+            {/* Divider */}
+            <div style={{
+              height: '1px',
+              background: darkTheme.colors.borderColor,
+              margin: '8px 0'
+            }}></div>
+
+            {/* Logout Button */}
+            <button
+              onClick={() => {
+                closeMobileMenu()
+                logout()
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
                 background: darkTheme.colors.danger,
                 border: 'none',
                 color: 'white',
                 borderRadius: darkTheme.borderRadius.md,
                 cursor: 'pointer',
                 transition: darkTheme.transitions.default,
-                fontSize: '14px',
-                fontWeight: '500'
+                fontSize: '15px',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = darkTheme.colors.dangerHover}
               onMouseOut={(e) => e.currentTarget.style.background = darkTheme.colors.danger}
             >
-              Logout
+              <i className="fas fa-sign-out-alt" style={{ width: '20px' }}></i>Logout
             </button>
           </div>
         </div>
-      </nav>
+      )}
 
       {/* Main Content */}
-      <main style={{ marginTop: '70px', padding: '40px' }}>
+      <main style={{ marginTop: isMobile ? '60px' : '70px', padding: isMobile ? '16px' : '40px' }}>
         {currentPage === 'subjects' && (
           <SubjectsPage
             onSelectSubject={handleSelectSubject}
