@@ -379,10 +379,39 @@ function HomePage() {
           zIndex: 1001,
           transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
-          overflowY: 'auto'
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
+          {/* Logo Header - Always Visible in Menu */}
+          <div style={{
+            padding: '20px 16px',
+            borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            transition: darkTheme.transitions.default
+          }}
+          onClick={() => { navigateTo('subjects'); setCurrentSubject(null); }}
+          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <img
+              src="/notarium-logo.jpg"
+              alt="Notarium"
+              style={{ height: '48px', width: 'auto' }}
+            />
+            <div>
+              <h3 style={{ margin: '0', fontSize: '16px', fontWeight: 'bold' }}>
+                Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
+              </h3>
+              <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: darkTheme.colors.textSecondary }}>Share Your Notes</p>
+            </div>
+          </div>
+
           {/* Menu Items */}
-          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
             <button
               onClick={() => navigateTo('subjects')}
               style={{
