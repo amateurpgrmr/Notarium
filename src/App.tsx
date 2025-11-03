@@ -360,9 +360,9 @@ function HomePage() {
         <div style={{
           position: 'fixed',
           left: 0,
-          top: '60px',
+          top: '64px',
           width: '280px',
-          height: 'calc(100vh - 60px)',
+          height: 'calc(100vh - 64px)',
           background: 'rgba(10, 10, 10, 0.95)',
           backdropFilter: 'blur(10px)',
           borderRight: `1px solid ${darkTheme.colors.borderColor}`,
@@ -373,73 +373,155 @@ function HomePage() {
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Logo Header - Always Visible in Menu */}
+          {/* Profile Section - Top (Full Width) */}
           <div style={{
-            padding: '16px',
-            borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            transition: darkTheme.transitions.default,
-            justifyContent: 'space-between'
-          }}>
-            {/* Logo - clickable to go home */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                flex: 1,
-                cursor: 'pointer',
-                transition: darkTheme.transitions.default
-              }}
-              onClick={() => { navigateTo('subjects'); setCurrentSubject(null); }}
-              onMouseOver={(e) => {
-                const parent = e.currentTarget;
-                (parent.parentElement as HTMLElement).style.background = 'rgba(255, 255, 255, 0.05)';
-              }}
-              onMouseOut={(e) => {
-                const parent = e.currentTarget;
-                (parent.parentElement as HTMLElement).style.background = 'transparent';
-              }}
-            >
-              <img
-                src="/notarium-logo.jpg"
-                alt="Notarium"
-                style={{ height: '48px', width: 'auto' }}
-              />
-              <div>
-                <h3 style={{ margin: '0', fontSize: '16px', fontWeight: 'bold' }}>
-                  Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
-                </h3>
-                <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: darkTheme.colors.textSecondary }}>Share Your Notes</p>
-              </div>
+            padding: '24px 16px',
+            borderBottom: `2px solid ${darkTheme.colors.borderColor}`,
+            background: `linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1))`,
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: darkTheme.transitions.default
+          }}
+          onClick={() => {
+            setShowProfileStats(true);
+            closeMobileMenu();
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = `linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2))`}
+          onMouseOut={(e) => e.currentTarget.style.background = `linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1))`}
+          >
+            {/* Profile Picture */}
+            <div style={{
+              width: '80px',
+              height: '80px',
+              background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: '36px',
+              margin: '0 auto 12px',
+              flexShrink: 0
+            }}>
+              {user?.name?.charAt(0).toUpperCase()}
             </div>
 
-            {/* Profile Button - Mobile only */}
-            <button
-              onClick={() => setShowProfileStats(true)}
-              style={{
-                width: '48px',
-                height: '48px',
-                background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
-                border: 'none',
-                borderRadius: '50%',
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '18px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: darkTheme.transitions.default,
-                flexShrink: 0
-              }}
-              onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              {user?.name?.charAt(0).toUpperCase()}
-            </button>
+            {/* User Name */}
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700' }}>
+              {user?.name}
+            </h3>
+
+            {/* Diamonds Display */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              margin: '8px 0',
+              fontSize: '14px',
+              fontWeight: '600'
+            }}>
+              <span style={{ color: '#4ecdc4' }}>💎</span>
+              <span>{user?.diamonds || 0} Diamonds</span>
+            </div>
+
+            {/* Badges - Dynamic based on diamonds */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '8px',
+              marginTop: '12px',
+              flexWrap: 'wrap'
+            }}>
+              {/* Bronze Badge (100+ diamonds) */}
+              {(user?.diamonds || 0) >= 100 && (
+                <div
+                  title="Bronze Badge - 100+ Diamonds"
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    background: 'linear-gradient(135deg, #CD7F32, #8B4513)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '16px',
+                    animation: 'badgeBounce 0.6s ease-out',
+                    boxShadow: '0 4px 12px rgba(205, 127, 50, 0.4)'
+                  }}
+                >
+                  🥉
+                </div>
+              )}
+
+              {/* Silver Badge (250+ diamonds) */}
+              {(user?.diamonds || 0) >= 250 && (
+                <div
+                  title="Silver Badge - 250+ Diamonds"
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    background: 'linear-gradient(135deg, #C0C0C0, #808080)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '16px',
+                    animation: 'badgeBounce 0.6s ease-out 0.1s both',
+                    boxShadow: '0 4px 12px rgba(192, 192, 192, 0.4)'
+                  }}
+                >
+                  🥈
+                </div>
+              )}
+
+              {/* Gold Badge (500+ diamonds) */}
+              {(user?.diamonds || 0) >= 500 && (
+                <div
+                  title="Gold Badge - 500+ Diamonds"
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '16px',
+                    animation: 'badgeBounce 0.6s ease-out 0.2s both',
+                    boxShadow: '0 4px 12px rgba(255, 215, 0, 0.6)'
+                  }}
+                >
+                  🥇
+                </div>
+              )}
+
+              {/* Platinum Badge (1000+ diamonds) */}
+              {(user?.diamonds || 0) >= 1000 && (
+                <div
+                  title="Platinum Badge - 1000+ Diamonds"
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    background: 'linear-gradient(135deg, #E5E4E2, #36454F)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '16px',
+                    animation: 'badgeBounce 0.6s ease-out 0.3s both',
+                    boxShadow: '0 4px 12px rgba(229, 228, 226, 0.6)'
+                  }}
+                >
+                  👑
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Menu Items */}
@@ -576,6 +658,55 @@ function HomePage() {
               <i className="fas fa-sign-out-alt" style={{ width: '20px' }}></i>Logout
             </button>
           </div>
+
+          {/* Notarium.Site Footer - Bottom */}
+          <div style={{
+            padding: '16px',
+            borderTop: `2px solid ${darkTheme.colors.borderColor}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            transition: darkTheme.transitions.default,
+            marginTop: 'auto'
+          }}
+          onClick={() => { navigateTo('subjects'); setCurrentSubject(null); closeMobileMenu(); }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+          >
+            <img
+              src="/notarium-logo.jpg"
+              alt="Notarium"
+              style={{ height: '40px', width: 'auto' }}
+            />
+            <div>
+              <h4 style={{ margin: '0', fontSize: '14px', fontWeight: 'bold' }}>
+                Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
+              </h4>
+              <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: darkTheme.colors.textSecondary }}>Share Your Notes</p>
+            </div>
+          </div>
+
+          {/* Badge Unlock Animation Keyframes */}
+          <style>{`
+            @keyframes badgeBounce {
+              0% {
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+              }
+              50% {
+                transform: scale(1.2) rotate(0deg);
+              }
+              100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+              }
+            }
+          `}</style>
         </div>
       )}
 

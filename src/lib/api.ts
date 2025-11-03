@@ -10,6 +10,9 @@ export interface User {
   role: 'student' | 'admin';
   points: number;
   notes_count: number;
+  diamonds?: number;
+  total_likes?: number;
+  total_admin_upvotes?: number;
 }
 
 export interface LoginResponse {
