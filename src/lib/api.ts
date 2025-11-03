@@ -415,7 +415,7 @@ export const api = {
     },
     deleteUser: async (userId: number) => {
       try {
-        const response = await api.request(`/api/users/${userId}`, {
+        const response = await api.request(`/api/admin/user/${userId}`, {
           method: 'DELETE'
         });
         return { success: true };
@@ -426,8 +426,8 @@ export const api = {
     },
     suspendUser: async (userId: number) => {
       try {
-        const response = await api.request(`/api/users/${userId}/suspend`, {
-          method: 'PUT'
+        const response = await api.request(`/api/admin/suspend/${userId}`, {
+          method: 'POST'
         });
         return { success: true };
       } catch (error: any) {
