@@ -144,13 +144,13 @@ function HomePage() {
         background: 'rgba(0, 0, 0, 0.95)',
         backdropFilter: 'blur(10px)',
         borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
-        padding: isMobile ? '16px 20px' : '28px 50px',
+        padding: isMobile ? '20px 24px' : '32px 60px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         zIndex: 1000,
-        gap: '16px',
-        minHeight: isMobile ? '70px' : '90px'
+        gap: '20px',
+        minHeight: isMobile ? '90px' : '130px'
       }}>
         {/* Mobile: Hamburger Button */}
         {isMobile && (
@@ -161,10 +161,10 @@ function HomePage() {
               border: 'none',
               color: darkTheme.colors.textPrimary,
               cursor: 'pointer',
-              fontSize: '26px',
+              fontSize: '32px',
               display: 'flex',
               alignItems: 'center',
-              padding: '8px',
+              padding: '12px',
               transition: darkTheme.transitions.default
             }}
             onMouseOver={(e) => e.currentTarget.style.opacity = '0.7'}
@@ -180,7 +180,7 @@ function HomePage() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: '16px',
             background: 'none',
             border: 'none',
             cursor: 'pointer',
@@ -194,16 +194,16 @@ function HomePage() {
             <img
               src="/notarium-logo.jpg"
               alt="Notarium"
-              style={{ height: '42px', width: 'auto' }}
+              style={{ height: '56px', width: 'auto' }}
             />
           ) : (
             <>
               <img
                 src="/notarium-logo.jpg"
                 alt="Notarium"
-                style={{ height: '50px', width: 'auto' }}
+                style={{ height: '70px', width: 'auto' }}
               />
-              <h1 style={{ fontSize: '22px', fontFamily: 'Playfair Display, serif', fontWeight: 'bold', margin: 0 }}>
+              <h1 style={{ fontSize: '28px', fontFamily: 'Playfair Display, serif', fontWeight: 'bold', margin: 0 }}>
                 Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
               </h1>
             </>
@@ -217,12 +217,13 @@ function HomePage() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
-            padding: '12px 16px 12px 40px',
+            padding: '14px 18px 14px 48px',
             background: darkTheme.colors.bgSecondary,
             border: `1px solid ${darkTheme.colors.borderColor}`,
             borderRadius: darkTheme.borderRadius.md,
-            width: isMobile ? '1fr' : '300px',
-            fontSize: '15px',
+            width: isMobile ? '1fr' : '360px',
+            fontSize: '16px',
+            fontWeight: '500',
             color: darkTheme.colors.textPrimary,
             outline: 'none',
             transition: darkTheme.transitions.default,
@@ -235,82 +236,82 @@ function HomePage() {
 
         {/* Desktop Navigation Buttons - Hidden on mobile */}
         {!isMobile && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <button
               onClick={() => navigateTo('subjects')}
               style={{
-                padding: '12px 22px',
+                padding: '16px 28px',
                 background: currentPage === 'subjects' ? darkTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
-                fontSize: '15px',
-                fontWeight: '500',
+                fontSize: '16px',
+                fontWeight: '600',
                 transition: darkTheme.transitions.default,
                 borderRadius: darkTheme.borderRadius.md
               }}
               onMouseOver={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
               onMouseOut={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'transparent')}
             >
-              <i style={{ marginRight: '8px' }} className="fas fa-book"></i>Subjects
+              <i style={{ marginRight: '10px' }} className="fas fa-book"></i>Subjects
             </button>
 
             <button
               onClick={() => navigateTo('chat')}
               style={{
-                padding: '12px 22px',
+                padding: '16px 28px',
                 background: currentPage === 'chat' ? darkTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
-                fontSize: '15px',
-                fontWeight: '500',
+                fontSize: '16px',
+                fontWeight: '600',
                 transition: darkTheme.transitions.default,
                 borderRadius: darkTheme.borderRadius.md
               }}
               onMouseOver={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
               onMouseOut={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'transparent')}
             >
-              <i style={{ marginRight: '8px' }} className="fas fa-comments"></i>Chat
+              <i style={{ marginRight: '10px' }} className="fas fa-comments"></i>Chat
             </button>
 
             <button
               onClick={() => navigateTo('leaderboard')}
               style={{
-                padding: '12px 22px',
+                padding: '16px 28px',
                 background: currentPage === 'leaderboard' ? darkTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
-                fontSize: '15px',
-                fontWeight: '500',
+                fontSize: '16px',
+                fontWeight: '600',
                 transition: darkTheme.transitions.default,
                 borderRadius: darkTheme.borderRadius.md
               }}
               onMouseOver={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
               onMouseOut={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'transparent')}
             >
-              <i style={{ marginRight: '8px' }} className="fas fa-trophy"></i>Leaderboard
+              <i style={{ marginRight: '10px' }} className="fas fa-trophy"></i>Leaderboard
             </button>
 
             {user?.role === 'admin' && (
               <button
                 onClick={() => navigateTo('admin')}
                 style={{
-                  padding: '12px 22px',
+                  padding: '16px 28px',
                   background: currentPage === 'admin' ? darkTheme.colors.accent : 'transparent',
                   border: 'none',
                   color: '#fff',
                   cursor: 'pointer',
-                  fontSize: '15px',
-                  fontWeight: '500',
+                  fontSize: '16px',
+                  fontWeight: '600',
                   transition: darkTheme.transitions.default,
                   borderRadius: darkTheme.borderRadius.md
                 }}
                 onMouseOver={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
                 onMouseOut={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'transparent')}
               >
-                <i style={{ marginRight: '8px' }} className="fas fa-cog"></i>Admin
+                <i style={{ marginRight: '10px' }} className="fas fa-cog"></i>Admin
               </button>
             )}
           </div>
@@ -322,21 +323,21 @@ function HomePage() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: isMobile ? 0 : '12px',
+            gap: isMobile ? 0 : '16px',
             background: 'transparent',
             border: 'none',
             color: darkTheme.colors.textPrimary,
             cursor: 'pointer',
             transition: darkTheme.transitions.default,
-            padding: '8px 12px',
+            padding: '12px 16px',
             borderRadius: darkTheme.borderRadius.md
           }}
           onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
           onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
         >
           <div style={{
-            width: '42px',
-            height: '42px',
+            width: '56px',
+            height: '56px',
             background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
             borderRadius: '50%',
             display: 'flex',
@@ -344,12 +345,12 @@ function HomePage() {
             justifyContent: 'center',
             color: 'white',
             fontWeight: 'bold',
-            fontSize: '16px',
+            fontSize: '20px',
             flexShrink: 0
           }}>
             {user?.name?.charAt(0).toUpperCase()}
           </div>
-          {!isMobile && <span style={{ fontSize: '15px', fontWeight: '500' }}>{user?.name}</span>}
+          {!isMobile && <span style={{ fontSize: '16px', fontWeight: '600' }}>{user?.name}</span>}
         </button>
       </nav>
 
@@ -518,7 +519,7 @@ function HomePage() {
       )}
 
       {/* Main Content */}
-      <main style={{ marginTop: isMobile ? '86px' : '118px', padding: isMobile ? '20px' : '50px' }}>
+      <main style={{ marginTop: isMobile ? '110px' : '162px', padding: isMobile ? '24px' : '60px' }}>
         {currentPage === 'subjects' && (
           <SubjectsPage
             onSelectSubject={handleSelectSubject}
