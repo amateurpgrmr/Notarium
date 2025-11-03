@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme, cardStyle, inputStyle, buttonPrimaryStyle } from '../theme';
@@ -28,10 +28,16 @@ export default function ChatPage() {
   const [keyConcepts, setKeyConcepts] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadSessions();
   }, []);
+
+  useEffect(() => {
+    // Auto scroll to bottom when new messages arrive
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const loadSessions = async () => {
     try {
@@ -67,7 +73,7 @@ export default function ChatPage() {
       setSending(true);
       const data = await api.chat.createSession(newSessionSubject, newSessionTopic);
       const newSession = data.session;
-      setSessions([...sessions, newSession]);
+      setSessions([newSession, ...sessions]);
       setSelectedSession(newSession);
       setMessages([]);
       setUploadedDocuments([]);
@@ -185,88 +191,71 @@ export default function ChatPage() {
   };
 
   return (
-    <div style={{ display: 'flex', gap: '16px', height: 'calc(100vh - 150px)' }}>
-      {/* Sidebar */}
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: 'calc(100vh - 168px)',
+      gap: '16px'
+    }}>
+      {/* Session Tabs - Top */}
       <div style={{
-        ...cardStyle,
-        width: '300px',
-        padding: '16px',
         display: 'flex',
-        flexDirection: 'column',
-        overflow: 'auto',
-        maxHeight: '100%'
-      } as React.CSSProperties}>
+        gap: '12px',
+        alignItems: 'center',
+        paddingBottom: '12px',
+        borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        minHeight: '56px'
+      }}>
+        {/* New Chat Button */}
         <button
           onClick={() => setShowNewSession(!showNewSession)}
           style={{
-            ...buttonPrimaryStyle,
-            width: '100%',
-            marginBottom: '16px'
+            padding: '10px 18px',
+            background: darkTheme.colors.accent,
+            border: 'none',
+            borderRadius: darkTheme.borderRadius.md,
+            color: 'white',
+            cursor: 'pointer',
+            fontWeight: '600',
+            fontSize: '14px',
+            transition: darkTheme.transitions.default,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           } as React.CSSProperties}
+          onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+          onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
         >
-          <i className="fas fa-plus" style={{ marginRight: '8px' }}></i>New Chat
+          <i className="fas fa-plus"></i>New Chat
         </button>
 
-        {showNewSession && (
-          <div style={{
-            padding: '12px',
-            background: darkTheme.colors.bgTertiary,
-            borderRadius: darkTheme.borderRadius.md,
-            marginBottom: '16px'
-          }}>
-            <input
-              type="text"
-              placeholder="Subject"
-              value={newSessionSubject}
-              onChange={(e) => setNewSessionSubject(e.target.value)}
-              style={{
-                ...inputStyle,
-                marginBottom: '8px',
-                width: '100%'
-              } as React.CSSProperties}
-            />
-            <input
-              type="text"
-              placeholder="Topic"
-              value={newSessionTopic}
-              onChange={(e) => setNewSessionTopic(e.target.value)}
-              style={{
-                ...inputStyle,
-                marginBottom: '8px',
-                width: '100%'
-              } as React.CSSProperties}
-            />
-            <button
-              onClick={handleCreateSession}
-              disabled={sending}
-              style={{
-                ...buttonPrimaryStyle,
-                width: '100%',
-                opacity: sending ? 0.6 : 1
-              } as React.CSSProperties}
-            >
-              Create
-            </button>
-          </div>
-        )}
-
-        {loading ? (
-          <LoadingSpinner size="sm" message="Loading..." />
-        ) : (
-          <div style={{ flex: 1 }}>
+        {/* Session Tabs */}
+        {!loading && sessions.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', flex: 1, minWidth: 0 }}>
             {sessions.map((session) => (
-              <div
+              <button
                 key={session.id}
                 onClick={() => handleSelectSession(session)}
                 style={{
-                  padding: '12px',
+                  padding: '10px 16px',
                   background: selectedSession?.id === session.id
-                    ? darkTheme.colors.accent
+                    ? 'rgba(139, 92, 246, 0.2)'
                     : darkTheme.colors.bgSecondary,
+                  border: selectedSession?.id === session.id
+                    ? `2px solid ${darkTheme.colors.accent}`
+                    : `1px solid ${darkTheme.colors.borderColor}`,
                   borderRadius: darkTheme.borderRadius.md,
-                  marginBottom: '8px',
+                  color: darkTheme.colors.textPrimary,
                   cursor: 'pointer',
-                  transition: darkTheme.transitions.default
+                  fontSize: '14px',
+                  fontWeight: selectedSession?.id === session.id ? '600' : '500',
+                  transition: darkTheme.transitions.default,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
                 }}
                 onMouseOver={(e) => {
                   if (selectedSession?.id !== session.id) {
@@ -279,25 +268,90 @@ export default function ChatPage() {
                   }
                 }}
               >
-                <p style={{ margin: 0, fontSize: '13px', fontWeight: '500' }}>
-                  {session.subject}
-                </p>
-                <p style={{
-                  margin: '4px 0 0 0',
-                  fontSize: '11px',
-                  color: selectedSession?.id === session.id
-                    ? 'rgba(255, 255, 255, 0.7)'
-                    : darkTheme.colors.textSecondary
-                }}>
-                  {session.topic}
-                </p>
-              </div>
+                <span style={{ fontWeight: '600' }}>{session.subject}</span>
+                <span style={{ fontSize: '12px', opacity: '0.7' }}>• {session.topic}</span>
+              </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Chat Area */}
+      {/* New Session Form - Collapsible */}
+      {showNewSession && (
+        <div style={{
+          padding: '16px',
+          background: darkTheme.colors.bgSecondary,
+          borderRadius: darkTheme.borderRadius.md,
+          border: `1px solid ${darkTheme.colors.borderColor}`,
+          display: 'flex',
+          gap: '12px',
+          flexWrap: 'wrap',
+          alignItems: 'flex-end'
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <label style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, display: 'block', marginBottom: '6px' }}>Subject</label>
+            <input
+              type="text"
+              placeholder="e.g., Biology"
+              value={newSessionSubject}
+              onChange={(e) => setNewSessionSubject(e.target.value)}
+              style={{
+                ...inputStyle,
+                width: '100%'
+              } as React.CSSProperties}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <label style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, display: 'block', marginBottom: '6px' }}>Topic</label>
+            <input
+              type="text"
+              placeholder="e.g., Cell Division"
+              value={newSessionTopic}
+              onChange={(e) => setNewSessionTopic(e.target.value)}
+              style={{
+                ...inputStyle,
+                width: '100%'
+              } as React.CSSProperties}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={handleCreateSession}
+              disabled={sending}
+              style={{
+                ...buttonPrimaryStyle,
+                padding: '10px 24px',
+                opacity: sending ? 0.6 : 1
+              } as React.CSSProperties}
+            >
+              <i className="fas fa-check" style={{ marginRight: '6px' }}></i>Create
+            </button>
+            <button
+              onClick={() => {
+                setShowNewSession(false);
+                setNewSessionSubject('');
+                setNewSessionTopic('');
+              }}
+              style={{
+                padding: '10px 24px',
+                background: darkTheme.colors.bgTertiary,
+                border: `1px solid ${darkTheme.colors.borderColor}`,
+                borderRadius: darkTheme.borderRadius.md,
+                color: darkTheme.colors.textPrimary,
+                cursor: 'pointer',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default
+              } as React.CSSProperties}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = darkTheme.colors.bgTertiary}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Chat Area - Large and Full Width */}
       <div style={{
         ...cardStyle,
         flex: 1,
@@ -310,136 +364,184 @@ export default function ChatPage() {
           <>
             {/* Chat Header */}
             <div style={{
-              padding: '16px 20px',
+              padding: '20px',
               borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
-              background: darkTheme.colors.bgSecondary
+              background: darkTheme.colors.bgSecondary,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: '16px'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
-                    📚 {selectedSession.subject} - {selectedSession.topic}
-                  </h3>
-                  <p style={{ margin: '6px 0 0 0', fontSize: '12px', color: darkTheme.colors.textSecondary }}>
-                    🤖 AI Study Tutor Active
-                  </p>
-                </div>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
-                  background: darkTheme.colors.accent,
-                  borderRadius: darkTheme.borderRadius.md,
-                  cursor: uploading ? 'not-allowed' : 'pointer',
-                  opacity: uploading ? 0.6 : 1,
-                  transition: darkTheme.transitions.default,
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  color: 'white'
-                }}>
-                  <i className="fas fa-upload"></i>
-                  {uploading ? 'Uploading...' : 'Upload Document'}
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
-                    onChange={handleDocumentUpload}
-                    disabled={uploading}
-                    style={{ display: 'none' }}
-                  />
-                </label>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>
+                  📚 {selectedSession.subject}
+                </h2>
+                <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: darkTheme.colors.textSecondary }}>
+                  Topic: <strong>{selectedSession.topic}</strong>
+                </p>
+                <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: darkTheme.colors.accent }}>
+                  🤖 AI Study Tutor
+                </p>
               </div>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                background: darkTheme.colors.accent,
+                borderRadius: darkTheme.borderRadius.md,
+                cursor: uploading ? 'not-allowed' : 'pointer',
+                opacity: uploading ? 0.6 : 1,
+                transition: darkTheme.transitions.default,
+                fontSize: '14px',
+                fontWeight: '600',
+                color: 'white',
+                whiteSpace: 'nowrap'
+              } as React.CSSProperties}
+              onMouseOver={(e) => !uploading && (e.currentTarget.style.opacity = '0.9')}
+              onMouseOut={(e) => !uploading && (e.currentTarget.style.opacity = '1')}
+              >
+                <i className="fas fa-upload"></i>
+                {uploading ? 'Uploading...' : 'Upload Document'}
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
+                  onChange={handleDocumentUpload}
+                  disabled={uploading}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
 
-              {/* Uploaded Documents Section */}
-              {uploadedDocuments.length > 0 && (
-                <div style={{
-                  marginTop: '12px',
-                  padding: '8px 12px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: darkTheme.borderRadius.sm,
-                  fontSize: '12px'
-                }}>
-                  <p style={{ margin: '0 0 6px 0', fontWeight: '500', color: darkTheme.colors.accent }}>
-                    📎 Uploaded Documents ({uploadedDocuments.length})
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {uploadedDocuments.map((doc, idx) => (
-                      <div key={idx} style={{ fontSize: '11px', color: darkTheme.colors.textSecondary }}>
-                        • {doc.fileName} <span style={{ fontSize: '10px' }}>({doc.uploadedAt})</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Note Analysis Section */}
-              {(noteAnalysis || keyConcepts.length > 0) && (
-                <div style={{
-                  marginTop: '12px',
-                  padding: '8px 12px',
-                  background: 'rgba(139, 92, 246, 0.1)',
-                  borderRadius: darkTheme.borderRadius.sm,
-                  fontSize: '12px',
-                  borderLeft: `3px solid ${darkTheme.colors.accent}`
-                }}>
-                  <p style={{ margin: '0 0 6px 0', fontWeight: '500', color: darkTheme.colors.accent }}>
-                    💡 Key Concepts from Available Notes
-                  </p>
-                  {keyConcepts.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '6px' }}>
-                      {keyConcepts.slice(0, 5).map((concept, idx) => (
+            {/* Info Section - Uploaded Documents and Key Concepts */}
+            {(uploadedDocuments.length > 0 || (noteAnalysis || keyConcepts.length > 0)) && (
+              <div style={{
+                padding: '16px 20px',
+                background: 'rgba(139, 92, 246, 0.05)',
+                borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
+                display: 'flex',
+                gap: '20px',
+                flexWrap: 'wrap'
+              }}>
+                {/* Uploaded Documents */}
+                {uploadedDocuments.length > 0 && (
+                  <div>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '600', color: darkTheme.colors.accent }}>
+                      📎 Documents ({uploadedDocuments.length})
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {uploadedDocuments.map((doc, idx) => (
                         <span
                           key={idx}
                           style={{
-                            padding: '4px 8px',
+                            padding: '4px 10px',
+                            background: darkTheme.colors.bgSecondary,
+                            borderRadius: darkTheme.borderRadius.sm,
+                            fontSize: '12px',
+                            color: darkTheme.colors.textSecondary
+                          }}
+                        >
+                          {doc.fileName}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Key Concepts */}
+                {keyConcepts.length > 0 && (
+                  <div>
+                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '600', color: darkTheme.colors.accent }}>
+                      💡 Key Concepts
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {keyConcepts.slice(0, 6).map((concept, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            padding: '6px 12px',
                             background: darkTheme.colors.accent,
                             borderRadius: darkTheme.borderRadius.sm,
                             color: 'white',
-                            fontSize: '11px',
-                            whiteSpace: 'nowrap'
+                            fontSize: '12px',
+                            fontWeight: '500'
                           }}
                         >
                           {concept}
                         </span>
                       ))}
                     </div>
-                  )}
-                  {analyzing && (
-                    <p style={{ margin: '4px 0 0 0', color: darkTheme.colors.textSecondary, fontStyle: 'italic' }}>
-                      <i className="fas fa-spinner" style={{ animation: 'spin 1s linear infinite', marginRight: '6px' }}></i>
-                      Analyzing available notes...
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
 
-            {/* Messages */}
+                {analyzing && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: darkTheme.colors.textSecondary }}>
+                    <i className="fas fa-spinner" style={{ animation: 'spin 1s linear infinite' }}></i>
+                    Analyzing available notes...
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Messages - Large and Easy to Use */}
             <div style={{
               flex: 1,
               overflowY: 'auto',
-              padding: '16px',
+              padding: '20px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '12px'
+              gap: '14px'
             }}>
+              {messages.length === 0 && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  color: darkTheme.colors.textSecondary,
+                  flexDirection: 'column',
+                  gap: '16px'
+                }}>
+                  <i className="fas fa-comments" style={{ fontSize: '56px', opacity: '0.5' }}></i>
+                  <p style={{ fontSize: '16px', textAlign: 'center' }}>Start your study session by asking the AI tutor a question</p>
+                </div>
+              )}
               {messages.map((msg, idx) => (
                 <div
                   key={idx}
                   style={{
                     display: 'flex',
                     justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    gap: '8px'
+                    gap: '12px'
                   }}
                 >
+                  {msg.role === 'assistant' && (
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: darkTheme.colors.accent,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      flexShrink: 0,
+                      fontSize: '18px'
+                    }}>
+                      🤖
+                    </div>
+                  )}
                   <div style={{
-                    maxWidth: '70%',
-                    padding: '12px 16px',
+                    maxWidth: '75%',
+                    padding: '14px 18px',
                     borderRadius: darkTheme.borderRadius.md,
                     background: msg.role === 'user'
                       ? darkTheme.colors.accent
                       : darkTheme.colors.bgSecondary,
                     color: msg.role === 'user' ? '#fff' : darkTheme.colors.textPrimary,
-                    wordWrap: 'break-word'
+                    wordWrap: 'break-word',
+                    lineHeight: '1.5',
+                    fontSize: '15px'
                   }}>
                     {msg.content}
                   </div>
@@ -449,25 +551,43 @@ export default function ChatPage() {
                 <div style={{
                   display: 'flex',
                   justifyContent: 'flex-start',
-                  gap: '8px'
+                  gap: '12px'
                 }}>
                   <div style={{
-                    padding: '12px 16px',
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: darkTheme.colors.accent,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    flexShrink: 0,
+                    fontSize: '18px'
+                  }}>
+                    🤖
+                  </div>
+                  <div style={{
+                    padding: '14px 18px',
                     borderRadius: darkTheme.borderRadius.md,
                     background: darkTheme.colors.bgSecondary,
                     color: darkTheme.colors.textSecondary,
-                    fontSize: '12px'
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
                   }}>
-                    <i className="fas fa-circle-notch" style={{ animation: 'spin 1s linear infinite', marginRight: '8px' }}></i>
+                    <i className="fas fa-circle-notch" style={{ animation: 'spin 1s linear infinite' }}></i>
                     Generating response...
                   </div>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
+            {/* Input Area - Large and Easy */}
             <div style={{
-              padding: '16px',
+              padding: '20px',
               borderTop: `1px solid ${darkTheme.colors.borderColor}`,
               background: darkTheme.colors.bgSecondary,
               display: 'flex',
@@ -478,11 +598,13 @@ export default function ChatPage() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Type your message..."
+                placeholder="Ask your AI tutor a question..."
                 disabled={sending}
                 style={{
                   ...inputStyle,
                   flex: 1,
+                  padding: '14px 16px',
+                  fontSize: '15px',
                   opacity: sending ? 0.6 : 1
                 } as React.CSSProperties}
               />
@@ -491,7 +613,9 @@ export default function ChatPage() {
                 disabled={sending || !inputValue.trim()}
                 style={{
                   ...buttonPrimaryStyle,
-                  padding: '12px 20px',
+                  padding: '14px 28px',
+                  fontSize: '15px',
+                  fontWeight: '600',
                   opacity: sending || !inputValue.trim() ? 0.6 : 1
                 } as React.CSSProperties}
               >
@@ -507,10 +631,15 @@ export default function ChatPage() {
             height: '100%',
             color: darkTheme.colors.textSecondary,
             flexDirection: 'column',
-            gap: '12px'
+            gap: '16px'
           }}>
-            <i className="fas fa-comments" style={{ fontSize: '48px' }}></i>
-            <p>Select or create a chat session to get started</p>
+            <i className="fas fa-comments" style={{ fontSize: '64px', opacity: '0.5' }}></i>
+            <p style={{ fontSize: '18px', textAlign: 'center' }}>
+              Select or create a chat session to get started
+            </p>
+            <p style={{ fontSize: '14px', color: darkTheme.colors.textSecondary, textAlign: 'center', maxWidth: '400px' }}>
+              Click the "New Chat" button above to start a study session with your AI tutor
+            </p>
           </div>
         )}
       </div>
