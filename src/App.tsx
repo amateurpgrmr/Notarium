@@ -393,7 +393,9 @@ function HomePage() {
             <div style={{
               width: '80px',
               height: '80px',
-              background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+              background: user?.photo_url
+                ? `url('${user.photo_url}') center/cover`
+                : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -402,15 +404,35 @@ function HomePage() {
               fontWeight: 'bold',
               fontSize: '36px',
               margin: '0 auto 12px',
-              flexShrink: 0
+              flexShrink: 0,
+              border: `2px solid ${darkTheme.colors.borderColor}`
             }}>
-              {user?.name?.charAt(0).toUpperCase()}
+              {!user?.photo_url && user?.name?.charAt(0).toUpperCase()}
             </div>
 
-            {/* User Name */}
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '700' }}>
+            {/* User Name and Class */}
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '700' }}>
               {user?.name}
             </h3>
+            <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: darkTheme.colors.textSecondary }}>
+              {user?.class}
+            </p>
+
+            {/* Description */}
+            {user?.description && (
+              <p style={{
+                margin: '8px 0',
+                fontSize: '12px',
+                color: darkTheme.colors.textSecondary,
+                fontStyle: 'italic',
+                maxWidth: '200px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                "{user.description}"
+              </p>
+            )}
 
             {/* Diamonds Display */}
             <div style={{

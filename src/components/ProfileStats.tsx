@@ -107,7 +107,9 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
             <div style={{
               width: '80px',
               height: '80px',
-              background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+              background: user?.photo_url
+                ? `url('${user.photo_url}') center/cover`
+                : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -115,9 +117,10 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
               color: 'white',
               fontWeight: 'bold',
               fontSize: '32px',
-              flexShrink: 0
+              flexShrink: 0,
+              border: `2px solid ${darkTheme.colors.borderColor}`
             }}>
-              {user?.name?.charAt(0).toUpperCase()}
+              {!user?.photo_url && user?.name?.charAt(0).toUpperCase()}
             </div>
             <div style={{ flex: 1 }}>
               <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 8px 0' }}>
@@ -175,10 +178,10 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
               textAlign: 'center',
               color: 'white'
             }}>
-              <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '8px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {userRank ? `#${userRank}` : 'N/A'}
               </div>
-              <div style={{ fontSize: '12px', opacity: 0.9 }}>Leaderboard Rank</div>
+              <div style={{ fontSize: '12px', opacity: 0.9 }}>Rank</div>
             </div>
 
             {/* Points */}

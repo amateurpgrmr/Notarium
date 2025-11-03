@@ -15,6 +15,22 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
 
   const [name, setName] = useState(user?.name || '');
   const [selectedClass, setSelectedClass] = useState(user?.class || '10.1');
+  const [description, setDescription] = useState(user?.description || '');
+  const [photoPreview, setPhotoPreview] = useState<string | null>(user?.photo_url || null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPhotoBase64(base64String);
+        setPhotoPreview(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -22,7 +38,11 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
     setSuccess(false);
 
     try {
-      await api.updateProfile({ name, class: selectedClass });
+      const updateData: any = { name, class: selectedClass, description };
+      if (photoBase64) {
+        updateData.photo_url = photoBase64;
+      }
+      await api.updateProfile(updateData);
       await refreshUser();
       setSuccess(true);
       setTimeout(() => onClose(), 1500);
@@ -61,6 +81,58 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Profile Picture */}
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#fff',
+              marginBottom: '8px'
+            }}>
+              Profile Picture
+            </label>
+            <div style={{
+              display: 'flex',
+              gap: '16px',
+              alignItems: 'flex-start'
+            }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                background: photoPreview
+                  ? `url('${photoPreview}') center/cover`
+                  : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '32px',
+                flexShrink: 0,
+                border: `2px solid ${darkTheme.colors.borderColor}`
+              }}>
+                {!photoPreview && user?.name?.charAt(0).toUpperCase()}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  background: darkTheme.colors.bgSecondary,
+                  border: `1px solid ${darkTheme.colors.borderColor}`,
+                  borderRadius: darkTheme.borderRadius.md,
+                  color: darkTheme.colors.textSecondary,
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+          </div>
+
           {/* Username */}
           <div>
             <label style={{
@@ -81,6 +153,41 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
               onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
             />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#fff',
+              marginBottom: '8px'
+            }}>
+              Profile Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              style={{
+                ...inputStyle,
+                minHeight: '80px',
+                resize: 'vertical',
+                fontFamily: 'inherit'
+              } as React.CSSProperties}
+              placeholder="Write a short description about yourself..."
+              maxLength={200}
+              onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
+              onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
+            />
+            <div style={{
+              fontSize: '12px',
+              color: darkTheme.colors.textSecondary,
+              marginTop: '4px',
+              textAlign: 'right'
+            }}>
+              {description.length}/200
+            </div>
           </div>
 
           {/* Class Selection (Students only) */}

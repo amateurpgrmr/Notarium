@@ -13,6 +13,8 @@ export interface User {
   diamonds?: number;
   total_likes?: number;
   total_admin_upvotes?: number;
+  description?: string;
+  photo_url?: string;
 }
 
 export interface LoginResponse {
