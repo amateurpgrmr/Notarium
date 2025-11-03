@@ -96,6 +96,11 @@ export const api = {
         method: 'POST',
         body: credentials
       }),
+    adminLogin: (credentials: LoginCredentials): Promise<LoginResponse> =>
+      api.request('/api/auth/admin-login', {
+        method: 'POST',
+        body: credentials
+      }),
   },
 
   // Legacy auth methods for compatibility
@@ -427,6 +432,17 @@ export const api = {
         return { success: true };
       } catch (error: any) {
         console.error('Failed to suspend user:', error);
+        throw error;
+      }
+    },
+    likeNote: async (noteId: number) => {
+      try {
+        const response = await api.request(`/api/admin/notes/${noteId}/like`, {
+          method: 'POST'
+        });
+        return { liked: response.liked };
+      } catch (error: any) {
+        console.error('Failed to toggle admin like:', error);
         throw error;
       }
     }

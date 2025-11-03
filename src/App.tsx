@@ -2,6 +2,7 @@ import { useEffect, useState, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import api, { User } from './lib/api'
 import Login from './pages/Login'
+import AdminLogin from './pages/AdminLogin'
 import Signup from './pages/Signup'
 import SubjectsPage from './pages/SubjectsPage'
 import SubjectNotesPage from './pages/SubjectNotesPage'
@@ -405,6 +406,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/signup" element={<Signup />} />
           <Route
             path="/"
