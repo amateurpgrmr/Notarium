@@ -10,6 +10,7 @@ import LeaderboardPage from './pages/LeaderboardPage'
 import ChatPage from './pages/ChatPage'
 import AdminPage from './pages/AdminPage'
 import ProfileEditor from './components/ProfileEditor'
+import ProfileStats from './components/ProfileStats'
 import LoadingSpinner from './components/LoadingSpinner'
 import { darkTheme, darkThemeStyles } from './theme'
 import './index.css'
@@ -79,6 +80,7 @@ function HomePage() {
   const [currentSubject, setCurrentSubject] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [showProfileEditor, setShowProfileEditor] = useState(false)
+  const [showProfileStats, setShowProfileStats] = useState(false)
   const [subjects, setSubjects] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -303,41 +305,43 @@ function HomePage() {
           </div>
         )}
 
-        {/* Account Avatar - Always visible */}
-        <button
-          onClick={() => setShowProfileEditor(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: isMobile ? 0 : '10px',
-            background: 'transparent',
-            border: 'none',
-            color: darkTheme.colors.textPrimary,
-            cursor: 'pointer',
-            transition: darkTheme.transitions.default,
-            padding: '8px 10px',
-            borderRadius: darkTheme.borderRadius.md
-          }}
-          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-        >
-          <div style={{
-            width: '40px',
-            height: '40px',
-            background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: '16px',
-            flexShrink: 0
-          }}>
-            {user?.name?.charAt(0).toUpperCase()}
-          </div>
-          {!isMobile && <span style={{ fontSize: '13px', fontWeight: '500' }}>{user?.name}</span>}
-        </button>
+        {/* Account Avatar - Desktop only */}
+        {!isMobile && (
+          <button
+            onClick={() => setShowProfileEditor(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              background: 'transparent',
+              border: 'none',
+              color: darkTheme.colors.textPrimary,
+              cursor: 'pointer',
+              transition: darkTheme.transitions.default,
+              padding: '8px 10px',
+              borderRadius: darkTheme.borderRadius.md
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <div style={{
+              width: '40px',
+              height: '40px',
+              background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              flexShrink: 0
+            }}>
+              {user?.name?.charAt(0).toUpperCase()}
+            </div>
+            <span style={{ fontSize: '13px', fontWeight: '500' }}>{user?.name}</span>
+          </button>
+        )}
       </nav>
 
       {/* Mobile Menu Overlay */}
@@ -371,29 +375,71 @@ function HomePage() {
         }}>
           {/* Logo Header - Always Visible in Menu */}
           <div style={{
-            padding: '20px 16px',
+            padding: '16px',
             borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            cursor: 'pointer',
-            transition: darkTheme.transitions.default
-          }}
-          onClick={() => { navigateTo('subjects'); setCurrentSubject(null); }}
-          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
-          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-          >
-            <img
-              src="/notarium-logo.jpg"
-              alt="Notarium"
-              style={{ height: '48px', width: 'auto' }}
-            />
-            <div>
-              <h3 style={{ margin: '0', fontSize: '16px', fontWeight: 'bold' }}>
-                Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
-              </h3>
-              <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: darkTheme.colors.textSecondary }}>Share Your Notes</p>
+            transition: darkTheme.transitions.default,
+            justifyContent: 'space-between'
+          }}>
+            {/* Logo - clickable to go home */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                flex: 1,
+                cursor: 'pointer',
+                transition: darkTheme.transitions.default
+              }}
+              onClick={() => { navigateTo('subjects'); setCurrentSubject(null); }}
+              onMouseOver={(e) => {
+                const parent = e.currentTarget;
+                (parent.parentElement as HTMLElement).style.background = 'rgba(255, 255, 255, 0.05)';
+              }}
+              onMouseOut={(e) => {
+                const parent = e.currentTarget;
+                (parent.parentElement as HTMLElement).style.background = 'transparent';
+              }}
+            >
+              <img
+                src="/notarium-logo.jpg"
+                alt="Notarium"
+                style={{ height: '48px', width: 'auto' }}
+              />
+              <div>
+                <h3 style={{ margin: '0', fontSize: '16px', fontWeight: 'bold' }}>
+                  Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: darkTheme.colors.textSecondary }}>Share Your Notes</p>
+              </div>
             </div>
+
+            {/* Profile Button - Mobile only */}
+            <button
+              onClick={() => setShowProfileStats(true)}
+              style={{
+                width: '48px',
+                height: '48px',
+                background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                border: 'none',
+                borderRadius: '50%',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '18px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: darkTheme.transitions.default,
+                flexShrink: 0
+              }}
+              onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              {user?.name?.charAt(0).toUpperCase()}
+            </button>
           </div>
 
           {/* Menu Items */}
@@ -568,10 +614,31 @@ function HomePage() {
         )}
       </main>
 
-      {/* Profile Editor Modal */}
-      {showProfileEditor && (
+      {/* Profile Stats Modal - Mobile only */}
+      {showProfileStats && (
+        <ProfileStats
+          onClose={() => setShowProfileStats(false)}
+          onEditProfile={() => setShowProfileEditor(true)}
+        />
+      )}
+
+      {/* Profile Editor Modal - Desktop only */}
+      {showProfileEditor && !showProfileStats && (
         <ProfileEditor onClose={() => setShowProfileEditor(false)} />
       )}
+
+      {/* Copyright Footer */}
+      <footer style={{
+        textAlign: 'center',
+        padding: '32px 20px',
+        borderTop: `1px solid ${darkTheme.colors.borderColor}`,
+        color: darkTheme.colors.textSecondary,
+        fontSize: '13px',
+        marginTop: '48px',
+        background: darkTheme.colors.bgSecondary
+      }}>
+        <p style={{ margin: 0 }}>© 2025 Notarium. All rights reserved.</p>
+      </footer>
     </div>
   )
 }
