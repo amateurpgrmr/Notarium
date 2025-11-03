@@ -47,3 +47,4 @@ temp/
 # Node version
 .node-version
 
+.vercel
