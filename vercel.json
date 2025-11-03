@@ -5,5 +5,8 @@
   "env": {
     "VITE_API_URL": "https://notarium-backend.notarium-backend.workers.dev"
   },
-  "devCommand": "npm run dev:frontend"
+  "devCommand": "npm run dev:frontend",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
