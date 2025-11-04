@@ -204,140 +204,168 @@ export default function CameraCapture({
           </button>
         </div>
 
-        {loading && (
-          <div style={{ minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <LoadingSpinner message="Initializing camera..." size="lg" />
-          </div>
-        )}
-
-        {error && !loading && (
-          <div
+        {/* Video element - always rendered so ref is available immediately */}
+        <div style={{ position: 'relative' }}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
             style={{
-              background: darkTheme.colors.danger,
-              color: 'white',
-              padding: '12px 16px',
+              display: 'block',
+              width: '100%',
+              height: '400px',
+              background: 'black',
               borderRadius: darkTheme.borderRadius.md,
-              fontSize: '14px'
+              objectFit: 'cover'
             }}
-          >
-            {error}
-            <button
-              onClick={startCamera}
+          />
+
+          {/* Loading overlay */}
+          {loading && (
+            <div
               style={{
-                display: 'block',
-                width: '100%',
-                marginTop: '12px',
-                padding: '8px 16px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: 'none',
-                color: 'white',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(0, 0, 0, 0.7)',
                 borderRadius: darkTheme.borderRadius.md,
-                cursor: 'pointer',
-                fontWeight: '500'
+                zIndex: 10
               }}
             >
-              Retry
-            </button>
-          </div>
+              <LoadingSpinner message="Initializing camera..." size="lg" />
+            </div>
+          )}
+
+          {/* Error overlay */}
+          {error && !loading && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(0, 0, 0, 0.9)',
+                borderRadius: darkTheme.borderRadius.md,
+                zIndex: 10,
+                flexDirection: 'column',
+                padding: '20px'
+              }}
+            >
+              <div style={{ color: '#fca5a5', fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>
+                {error}
+              </div>
+              <button
+                onClick={startCamera}
+                style={{
+                  padding: '8px 16px',
+                  background: darkTheme.colors.accent,
+                  border: 'none',
+                  color: 'white',
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                Retry Camera
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Controls - shown only when not in error/loading and not in preview */}
+        {!loading && !error && !preview && (
+          <button
+            onClick={handleCapture}
+            style={{
+              marginTop: '16px',
+              padding: '12px 24px',
+              background: darkTheme.colors.accent,
+              border: 'none',
+              color: 'white',
+              borderRadius: darkTheme.borderRadius.md,
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '16px',
+              transition: darkTheme.transitions.default,
+              width: '100%'
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.opacity = '0.9')}
+            onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
+          >
+            📸 Capture Photo
+          </button>
         )}
 
-        {!loading && !error && (
+        {/* Preview mode */}
+        {preview && (
           <>
-            {!preview ? (
-              <>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    height: '400px',
-                    background: 'black',
-                    borderRadius: darkTheme.borderRadius.md,
-                    objectFit: 'cover'
-                  }}
-                />
-                <button
-                  onClick={handleCapture}
-                  style={{
-                    padding: '12px 24px',
-                    background: darkTheme.colors.accent,
-                    border: 'none',
-                    color: 'white',
-                    borderRadius: darkTheme.borderRadius.md,
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    fontSize: '16px',
-                    transition: darkTheme.transitions.default
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.opacity = '0.9')}
-                  onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
-                >
-                  📸 Capture Photo
-                </button>
-              </>
-            ) : (
-              <>
-                <img
-                  src={preview}
-                  alt="Captured"
-                  style={{
-                    width: '100%',
-                    height: '400px',
-                    borderRadius: darkTheme.borderRadius.md,
-                    objectFit: 'cover'
-                  }}
-                />
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={handleRetake}
-                    style={{
-                      flex: 1,
-                      padding: '12px 24px',
-                      background: darkTheme.colors.bgTertiary,
-                      border: `1px solid ${darkTheme.colors.borderColor}`,
-                      color: darkTheme.colors.textPrimary,
-                      borderRadius: darkTheme.borderRadius.md,
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      fontSize: '16px',
-                      transition: darkTheme.transitions.default
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = darkTheme.colors.bgSecondary;
-                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = darkTheme.colors.bgTertiary;
-                      e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
-                    }}
-                  >
-                    🔄 Retake
-                  </button>
-                  <button
-                    onClick={handleConfirm}
-                    style={{
-                      flex: 1,
-                      padding: '12px 24px',
-                      background: darkTheme.colors.accent,
-                      border: 'none',
-                      color: 'white',
-                      borderRadius: darkTheme.borderRadius.md,
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      fontSize: '16px',
-                      transition: darkTheme.transitions.default
-                    }}
-                    onMouseOver={(e) => (e.currentTarget.style.opacity = '0.9')}
-                    onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
-                  >
-                    ✓ Use Photo
-                  </button>
-                </div>
-              </>
-            )}
+            <img
+              src={preview}
+              alt="Captured"
+              style={{
+                width: '100%',
+                height: '400px',
+                borderRadius: darkTheme.borderRadius.md,
+                objectFit: 'cover',
+                marginTop: '16px'
+              }}
+            />
+            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+              <button
+                onClick={handleRetake}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  background: darkTheme.colors.bgTertiary,
+                  border: `1px solid ${darkTheme.colors.borderColor}`,
+                  color: darkTheme.colors.textPrimary,
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  transition: darkTheme.transitions.default
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = darkTheme.colors.bgSecondary;
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = darkTheme.colors.bgTertiary;
+                  e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
+                }}
+              >
+                🔄 Retake
+              </button>
+              <button
+                onClick={handleConfirm}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  background: darkTheme.colors.accent,
+                  border: 'none',
+                  color: 'white',
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  transition: darkTheme.transitions.default
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.opacity = '0.9')}
+                onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
+              >
+                ✓ Use Photo
+              </button>
+            </div>
           </>
         )}
       </div>
