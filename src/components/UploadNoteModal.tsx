@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import CameraCapture from './CameraCapture';
 import api from '../lib/api';
 import { darkTheme } from '../theme';
@@ -32,7 +32,17 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [noteSubject, setNoteSubject] = useState<number | null>(preselectedSubject || null);
   const [noteTags, setNoteTags] = useState('');
   const [noteClass, setNoteClass] = useState('');
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Track window resize for responsive design
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -183,11 +193,13 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           borderRadius: '16px',
           width: '100%',
           maxWidth: '600px',
-          padding: window.innerWidth < 640 ? '16px' : '32px',
+          padding: isMobile ? '12px' : '32px',
           boxShadow: darkTheme.shadows.lg,
-          maxHeight: '95vh',
+          maxHeight: '98vh',
           overflowY: 'auto',
-          color: darkTheme.colors.textPrimary
+          color: darkTheme.colors.textPrimary,
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         {/* Header */}
@@ -196,12 +208,12 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '24px',
-            paddingBottom: '16px',
+            marginBottom: isMobile ? '12px' : '24px',
+            paddingBottom: isMobile ? '8px' : '16px',
             borderBottom: `1px solid ${darkTheme.colors.borderColor}`
           }}
         >
-          <h3 style={{ fontSize: '24px', fontFamily: 'Playfair Display, serif', margin: 0 }}>
+          <h3 style={{ fontSize: isMobile ? '18px' : '24px', fontFamily: 'Playfair Display, serif', margin: 0 }}>
             Upload Note
           </h3>
           <button
@@ -219,7 +231,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         </div>
 
         {/* Mode Selection */}
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: isMobile ? '8px' : '16px', marginBottom: isMobile ? '12px' : '24px' }}>
           <div
             onClick={() => {
               setUploadMode('scan');
@@ -267,8 +279,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             style={{
               border: `2px dashed ${darkTheme.colors.accent}`,
               borderRadius: '12px',
-              padding: window.innerWidth < 640 ? '16px' : '32px',
-              marginBottom: '24px',
+              padding: isMobile ? '12px' : '32px',
+              marginBottom: isMobile ? '12px' : '24px',
               textAlign: 'center',
               background: `${darkTheme.colors.accent}10`
             }}
@@ -278,10 +290,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               alt="Preview"
               style={{
                 maxWidth: '100%',
-                maxHeight: window.innerWidth < 640 ? '150px' : '200px',
+                maxHeight: isMobile ? '120px' : '200px',
                 margin: '0 auto',
                 borderRadius: '12px',
-                marginBottom: '16px'
+                marginBottom: isMobile ? '8px' : '16px'
               }}
             />
             <p style={{ color: darkTheme.colors.accent, marginBottom: '12px' }}>
@@ -387,8 +399,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
         {/* Extracted Text */}
         {uploadMode === 'scan' && extractedText && (
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+          <div style={{ marginBottom: '16px', flex: isMobile ? 1 : 'auto', display: 'flex', flexDirection: 'column' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
               <i className="fas fa-check-circle" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
               Extracted Text (OCR Result)
             </label>
@@ -397,9 +409,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 background: `${darkTheme.colors.accent}10`,
                 border: `1px solid ${darkTheme.colors.accent}30`,
                 borderRadius: '12px',
-                padding: '16px',
-                maxHeight: window.innerWidth < 640 ? '200px' : '250px',
-                overflowY: 'auto'
+                padding: isMobile ? '12px' : '16px',
+                maxHeight: isMobile ? '400px' : '250px',
+                overflowY: 'auto',
+                flex: isMobile ? 1 : 'auto'
               }}
             >
               <pre
@@ -418,8 +431,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         )}
 
         {/* Form Fields */}
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+        <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
             Note Title
           </label>
           <input
@@ -429,42 +442,44 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             placeholder="Enter a title for your note"
             style={{
               width: '100%',
-              padding: '12px 16px',
+              padding: isMobile ? '8px 12px' : '12px 16px',
               background: darkTheme.colors.bgSecondary,
               border: `1px solid ${darkTheme.colors.borderColor}`,
               borderRadius: '12px',
               outline: 'none',
               color: darkTheme.colors.textPrimary,
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              fontSize: isMobile ? '13px' : '14px'
             }}
           />
         </div>
 
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+        <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
             Description
           </label>
           <textarea
             value={noteDescription}
             onChange={(e) => setNoteDescription(e.target.value)}
             placeholder="Enter a description (optional)"
-            rows={3}
+            rows={isMobile ? 2 : 3}
             style={{
               width: '100%',
-              padding: '12px 16px',
+              padding: isMobile ? '8px 12px' : '12px 16px',
               background: darkTheme.colors.bgSecondary,
               border: `1px solid ${darkTheme.colors.borderColor}`,
               borderRadius: '12px',
               outline: 'none',
               color: darkTheme.colors.textPrimary,
               resize: 'vertical',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              fontSize: isMobile ? '13px' : '14px'
             }}
           />
         </div>
 
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+        <div style={{ marginBottom: isMobile ? '8px' : '24px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
             Subject {preselectedSubject && '(Auto-selected)'}
           </label>
           <select
@@ -473,7 +488,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             disabled={!!preselectedSubject}
             style={{
               width: '100%',
-              padding: '12px 16px',
+              padding: isMobile ? '8px 12px' : '12px 16px',
               background: darkTheme.colors.bgSecondary,
               border: `1px solid ${darkTheme.colors.borderColor}`,
               borderRadius: '12px',
@@ -481,7 +496,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               color: darkTheme.colors.textPrimary,
               boxSizing: 'border-box',
               opacity: preselectedSubject ? 0.6 : 1,
-              cursor: preselectedSubject ? 'not-allowed' : 'pointer'
+              cursor: preselectedSubject ? 'not-allowed' : 'pointer',
+              fontSize: isMobile ? '13px' : '14px'
             }}
           >
             <option value="">Select a subject...</option>
@@ -493,8 +509,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </select>
         </div>
 
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+        <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
             Your Class <span style={{ color: darkTheme.colors.danger }}>*</span>
           </label>
           <select
@@ -502,13 +518,14 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             onChange={(e) => setNoteClass(e.target.value)}
             style={{
               width: '100%',
-              padding: '12px 16px',
+              padding: isMobile ? '8px 12px' : '12px 16px',
               background: darkTheme.colors.bgSecondary,
               border: `1px solid ${darkTheme.colors.borderColor}`,
               borderRadius: '12px',
               outline: 'none',
               color: darkTheme.colors.textPrimary,
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              fontSize: isMobile ? '13px' : '14px'
             }}
           >
             <option value="">Select your class...</option>
@@ -520,24 +537,25 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </select>
         </div>
 
-        <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
-            Topic Tags <span style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>(comma-separated, e.g. "basics, exam-prep, summary")</span>
+        <div style={{ marginBottom: isMobile ? '8px' : '24px' }}>
+          <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '11px' : '14px', fontWeight: '500' }}>
+            Topic Tags <span style={{ fontSize: isMobile ? '10px' : '12px', color: darkTheme.colors.textSecondary }}>(comma-separated)</span>
           </label>
           <input
             type="text"
             value={noteTags}
             onChange={(e) => setNoteTags(e.target.value)}
-            placeholder="Enter tags separated by commas (optional)"
+            placeholder="Enter tags (optional)"
             style={{
               width: '100%',
-              padding: '12px 16px',
+              padding: isMobile ? '8px 12px' : '12px 16px',
               background: darkTheme.colors.bgSecondary,
               border: `1px solid ${darkTheme.colors.borderColor}`,
               borderRadius: '12px',
               outline: 'none',
               color: darkTheme.colors.textPrimary,
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              fontSize: isMobile ? '13px' : '14px'
             }}
           />
           {noteTags && (
@@ -572,16 +590,17 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           disabled={!canSubmit}
           style={{
             width: '100%',
-            padding: '12px 24px',
+            padding: isMobile ? '10px 16px' : '12px 24px',
             background: canSubmit ? darkTheme.colors.accent : `${darkTheme.colors.accent}80`,
             color: 'white',
             border: 'none',
             borderRadius: '12px',
             cursor: canSubmit ? 'pointer' : 'not-allowed',
-            fontSize: '16px',
+            fontSize: isMobile ? '14px' : '16px',
             fontWeight: '500',
             transition: 'all 0.3s',
-            opacity: canSubmit ? 1 : 0.5
+            opacity: canSubmit ? 1 : 0.5,
+            marginTop: isMobile ? '8px' : '0'
           }}
         >
           {isProcessingOCR ? 'Processing OCR...' : isSubmitting ? 'Uploading...' : 'Upload Note'}
