@@ -38,16 +38,42 @@ export default function CameraCapture({
       setCameraStream(stream);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Ensure video element plays the stream
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().catch(err => {
+
+        // Handle stream playback
+        const playVideo = async () => {
+          try {
+            console.log('Video attempting to play...');
+            console.log('Video ready state:', videoRef.current?.readyState);
+            console.log('Video network state:', videoRef.current?.networkState);
+
+            const playPromise = videoRef.current?.play();
+            if (playPromise) {
+              await playPromise;
+              console.log('Video playing successfully');
+            }
+          } catch (err: any) {
             console.error('Video play error:', err);
-          });
+            // Some browsers may reject autoplay, but stream should still work
+          }
         };
+
+        // Try to play when metadata is loaded
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded');
+          playVideo();
+        };
+
+        // Also try to play after a short delay to ensure stream is ready
+        setTimeout(() => {
+          if (videoRef.current && videoRef.current.srcObject) {
+            playVideo();
+          }
+        }, 500);
       }
       setLoading(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to access camera';
+      console.error('Camera error:', message);
       setError(message);
       setLoading(false);
     }

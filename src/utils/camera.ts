@@ -18,23 +18,51 @@ export async function getCameraStream(options: CameraStreamOptions = {}): Promis
   const { facingMode = 'environment' } = options;
 
   try {
-    // Try with exact constraint first, fall back to ideal if that fails
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+    // Try multiple constraint variations to maximize compatibility
+    const constraints = [
+      // Most restrictive: exact facingMode with ideal resolution
+      {
         video: {
-          facingMode: { ideal: facingMode }
+          facingMode: { ideal: facingMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         },
         audio: false
-      });
-      return stream;
-    } catch (e) {
-      // Fallback: simpler constraint
-      const stream = await navigator.mediaDevices.getUserMedia({
+      },
+      // Less restrictive: facingMode only
+      {
         video: { facingMode },
         audio: false
-      });
-      return stream;
+      },
+      // Fallback: any camera with minimum quality
+      {
+        video: {
+          width: { min: 320 },
+          height: { min: 240 }
+        },
+        audio: false
+      },
+      // Last resort: any video device
+      {
+        video: true,
+        audio: false
+      }
+    ];
+
+    let lastError: Error | null = null;
+    for (const constraint of constraints) {
+      try {
+        console.log('Attempting camera with constraint:', constraint);
+        const stream = await navigator.mediaDevices.getUserMedia(constraint);
+        console.log('Camera stream acquired successfully');
+        return stream;
+      } catch (e) {
+        lastError = e instanceof Error ? e : new Error(String(e));
+        console.log('Constraint failed, trying next...', lastError.message);
+      }
     }
+
+    throw lastError || new Error('Failed to access camera with all constraint variations');
   } catch (error) {
     throw new Error(`Failed to access camera: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -48,6 +76,11 @@ export function capturePhotoFromVideo(
   options: CapturePhotoOptions = {}
 ): string {
   const { quality = 0.8, format = 'image/jpeg' } = options;
+
+  // Ensure video has actual dimensions
+  if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+    throw new Error('Video stream not ready - no video dimensions');
+  }
 
   const canvas = document.createElement('canvas');
   canvas.width = videoElement.videoWidth;
