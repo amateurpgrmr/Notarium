@@ -14,8 +14,8 @@ export default function AuthCallback() {
     }
 
     const baseURL = import.meta.env.MODE === 'development'
-      ? 'http://localhost:56533'
-      : 'https://notarium-backend.notarium-backend.workers.dev';
+      ? 'http://localhost:8787'
+      : (import.meta.env.VITE_API_URL || 'https://backend-b8hd2wspi-richard-amadeus-projects.vercel.app');
 
     fetch(`${baseURL}/api/auth/callback?code=${code}`)
       .then((res) => {
