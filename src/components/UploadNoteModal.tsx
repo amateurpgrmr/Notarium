@@ -234,8 +234,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         <div style={{ display: 'flex', gap: isMobile ? '8px' : '16px', marginBottom: isMobile ? '12px' : '24px' }}>
           <div
             onClick={() => {
-              setUploadMode('scan');
-              setExtractedText('');
+              if (!isProcessingOCR) {
+                setUploadMode('scan');
+                setExtractedText('');
+              }
             }}
             style={{
               flex: 1,
@@ -243,9 +245,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               borderRadius: '12px',
               border: `2px dashed ${uploadMode === 'scan' ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
               background: uploadMode === 'scan' ? `${darkTheme.colors.accent}15` : 'transparent',
-              cursor: 'pointer',
+              cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
               textAlign: 'center',
-              transition: 'all 0.3s'
+              transition: 'all 0.3s',
+              opacity: isProcessingOCR && uploadMode !== 'scan' ? 0.5 : 1
             }}
           >
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>
@@ -254,16 +257,21 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             <div style={{ color: darkTheme.colors.textSecondary }}>Scan with AI OCR</div>
           </div>
           <div
-            onClick={() => setUploadMode('photo')}
+            onClick={() => {
+              if (!isProcessingOCR) {
+                setUploadMode('photo');
+              }
+            }}
             style={{
               flex: 1,
               padding: '16px',
               borderRadius: '12px',
               border: `2px dashed ${uploadMode === 'photo' ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
               background: uploadMode === 'photo' ? `${darkTheme.colors.accent}15` : 'transparent',
-              cursor: 'pointer',
+              cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
               textAlign: 'center',
-              transition: 'all 0.3s'
+              transition: 'all 0.3s',
+              opacity: isProcessingOCR ? 0.5 : 1
             }}
           >
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>
@@ -332,38 +340,39 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         )}
 
-        {/* Image Thumbnail - Small indicator when image is selected */}
+        {/* Image Thumbnail - Tiny indicator when image is selected */}
         {uploadImage && (
           <div
             style={{
               display: 'flex',
-              gap: '12px',
-              marginBottom: isMobile ? '12px' : '16px',
-              padding: isMobile ? '8px' : '12px',
+              gap: isMobile ? '8px' : '12px',
+              marginBottom: isMobile ? '8px' : '12px',
+              padding: isMobile ? '4px 6px' : '6px 8px',
               background: `${darkTheme.colors.accent}10`,
               border: `1px solid ${darkTheme.colors.accent}30`,
-              borderRadius: '8px',
-              alignItems: 'center'
+              borderRadius: '6px',
+              alignItems: 'center',
+              height: isMobile ? '40px' : '50px'
             }}
           >
             <img
               src={uploadImage}
               alt="Selected"
               style={{
-                width: isMobile ? '60px' : '80px',
-                height: isMobile ? '60px' : '80px',
-                borderRadius: '6px',
+                width: isMobile ? '36px' : '45px',
+                height: isMobile ? '36px' : '45px',
+                borderRadius: '4px',
                 objectFit: 'cover',
                 flexShrink: 0
               }}
             />
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: '0 0 4px 0', color: darkTheme.colors.accent, fontWeight: '500', fontSize: isMobile ? '12px' : '14px' }}>
-                <i className="fas fa-check-circle"></i> Photo selected
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: '2px 0', color: darkTheme.colors.accent, fontWeight: '500', fontSize: isMobile ? '11px' : '12px' }}>
+                <i className="fas fa-check-circle"></i> Photo ready
               </p>
               {isProcessingOCR && (
-                <p style={{ margin: '4px 0 0 0', color: darkTheme.colors.textSecondary, fontSize: isMobile ? '11px' : '12px' }}>
-                  <i className="fas fa-spinner fa-spin"></i> Scanning with AI...
+                <p style={{ margin: '2px 0 0 0', color: darkTheme.colors.textSecondary, fontSize: isMobile ? '10px' : '11px' }}>
+                  <i className="fas fa-spinner fa-spin"></i> Scanning...
                 </p>
               )}
             </div>
@@ -373,18 +382,43 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 setExtractedText('');
               }}
               style={{
-                padding: '6px 12px',
+                padding: isMobile ? '4px 8px' : '4px 10px',
                 background: 'transparent',
                 color: darkTheme.colors.textSecondary,
                 border: `1px solid ${darkTheme.colors.borderColor}`,
-                borderRadius: '6px',
+                borderRadius: '4px',
                 cursor: 'pointer',
-                fontSize: isMobile ? '12px' : '13px',
-                flexShrink: 0
+                fontSize: isMobile ? '10px' : '11px',
+                flexShrink: 0,
+                whiteSpace: 'nowrap'
               }}
             >
               Change
             </button>
+          </div>
+        )}
+
+        {/* Scanning Indicator - Show while OCR is processing */}
+        {uploadMode === 'scan' && uploadImage && isProcessingOCR && !extractedText && (
+          <div
+            style={{
+              marginBottom: isMobile ? '8px' : '12px',
+              padding: isMobile ? '8px 12px' : '12px 16px',
+              background: `${darkTheme.colors.accent}10`,
+              border: `1px solid ${darkTheme.colors.accent}30`,
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <i
+              className="fas fa-spinner fa-spin"
+              style={{ fontSize: isMobile ? '16px' : '18px', color: darkTheme.colors.accent, flexShrink: 0 }}
+            ></i>
+            <p style={{ margin: 0, color: darkTheme.colors.accent, fontWeight: '500', fontSize: isMobile ? '12px' : '13px' }}>
+              Scanning with AI OCR...
+            </p>
           </div>
         )}
 
