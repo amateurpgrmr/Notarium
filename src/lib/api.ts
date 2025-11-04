@@ -68,7 +68,16 @@ export const api = {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `API request failed: ${response.status}`);
+        const errorMsg = data.error || `API request failed: ${response.status}`;
+        console.error(`API Error (${response.status}):`, {
+          url,
+          status: response.status,
+          error: errorMsg,
+          fullResponse: data,
+          hasToken: !!currentToken,
+          tokenLength: currentToken?.length || 0
+        });
+        throw new Error(errorMsg);
       }
 
       return data;
@@ -128,6 +137,12 @@ export const api = {
   },
 
   getCurrentUser: async () => {
+    const token = getToken();
+    console.log('getCurrentUser called:', {
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'NO_TOKEN'
+    });
     const response = await api.request('/api/auth/me', {
       method: 'GET'
     });
@@ -135,6 +150,13 @@ export const api = {
   },
 
   updateProfile: async (data: any) => {
+    const token = getToken();
+    console.log('updateProfile called:', {
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'NO_TOKEN',
+      data
+    });
     const response = await api.request('/api/auth/profile', {
       method: 'PUT',
       body: data
