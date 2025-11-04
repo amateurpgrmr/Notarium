@@ -52,9 +52,27 @@ export async function getCameraStream(options: CameraStreamOptions = {}): Promis
     let lastError: Error | null = null;
     for (const constraint of constraints) {
       try {
-        console.log('Attempting camera with constraint:', constraint);
+        console.log('Attempting camera with constraint:', JSON.stringify(constraint));
         const stream = await navigator.mediaDevices.getUserMedia(constraint);
-        console.log('Camera stream acquired successfully');
+
+        // Log detailed stream info
+        const videoTracks = stream.getVideoTracks();
+        console.log('✓ Camera stream acquired:', {
+          videoTracks: videoTracks.length,
+          audioTracks: stream.getAudioTracks().length,
+          active: stream.active
+        });
+
+        if (videoTracks.length > 0) {
+          const settings = videoTracks[0].getSettings();
+          console.log('Video track settings:', {
+            width: settings.width,
+            height: settings.height,
+            frameRate: settings.frameRate,
+            facingMode: settings.facingMode
+          });
+        }
+
         return stream;
       } catch (e) {
         lastError = e instanceof Error ? e : new Error(String(e));
@@ -77,9 +95,31 @@ export function capturePhotoFromVideo(
 ): string {
   const { quality = 0.8, format = 'image/jpeg' } = options;
 
+  console.log('Capture details:', {
+    videoWidth: videoElement.videoWidth,
+    videoHeight: videoElement.videoHeight,
+    paused: videoElement.paused,
+    currentTime: videoElement.currentTime,
+    networkState: videoElement.networkState,
+    readyState: videoElement.readyState,
+    srcObject: !!videoElement.srcObject
+  });
+
   // Ensure video has actual dimensions
   if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-    throw new Error('Video stream not ready - no video dimensions');
+    // Try to get dimensions from the stream directly
+    const stream = videoElement.srcObject as MediaStream;
+    if (stream) {
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack && videoTrack.getSettings) {
+        const settings = videoTrack.getSettings();
+        console.log('Track settings:', settings);
+        if (settings.width && settings.height) {
+          console.log('Using track settings dimensions:', settings.width, 'x', settings.height);
+        }
+      }
+    }
+    throw new Error(`Video stream not ready - no video dimensions (${videoElement.videoWidth}x${videoElement.videoHeight})`);
   }
 
   const canvas = document.createElement('canvas');
@@ -91,8 +131,13 @@ export function capturePhotoFromVideo(
     throw new Error('Failed to get canvas context');
   }
 
+  console.log('Drawing to canvas:', canvas.width, 'x', canvas.height);
   ctx.drawImage(videoElement, 0, 0);
-  return canvas.toDataURL(format, quality);
+
+  const result = canvas.toDataURL(format, quality);
+  console.log('Canvas conversion result length:', result.length);
+
+  return result;
 }
 
 /**

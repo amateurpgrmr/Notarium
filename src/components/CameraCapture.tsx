@@ -34,41 +34,75 @@ export default function CameraCapture({
   const startCamera = async () => {
     try {
       setError(null);
+      console.log('Starting camera...');
+
       const stream = await getCameraStream({ facingMode });
+      console.log('Stream acquired:', {
+        active: stream.active,
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length
+      });
+
       setCameraStream(stream);
+
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        console.log('Setting video element srcObject...');
+
+        // Ensure video element is ready
+        const video = videoRef.current;
+
+        // Set the stream
+        video.srcObject = stream;
+
+        // Ensure all tracks are enabled
+        stream.getTracks().forEach(track => {
+          console.log('Track:', track.kind, track.enabled);
+          if (!track.enabled) track.enabled = true;
+        });
 
         // Handle stream playback
         const playVideo = async () => {
           try {
-            console.log('Video attempting to play...');
-            console.log('Video ready state:', videoRef.current?.readyState);
-            console.log('Video network state:', videoRef.current?.networkState);
+            console.log('Attempting to play video...');
+            console.log('Video readyState:', video.readyState);
+            console.log('Video networkState:', video.networkState);
+            console.log('srcObject:', video.srcObject);
+            console.log('srcObject active:', (video.srcObject as MediaStream)?.active);
 
-            const playPromise = videoRef.current?.play();
+            const playPromise = video.play();
             if (playPromise) {
               await playPromise;
-              console.log('Video playing successfully');
+              console.log('✓ Video playing successfully');
             }
           } catch (err: any) {
-            console.error('Video play error:', err);
-            // Some browsers may reject autoplay, but stream should still work
+            console.error('Video play error:', err.name, err.message);
           }
         };
 
-        // Try to play when metadata is loaded
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded');
+        // Set up multiple ways to trigger playback
+        video.onloadedmetadata = () => {
+          console.log('✓ Video metadata loaded, dimensions:', video.videoWidth, 'x', video.videoHeight);
           playVideo();
         };
 
-        // Also try to play after a short delay to ensure stream is ready
-        setTimeout(() => {
-          if (videoRef.current && videoRef.current.srcObject) {
-            playVideo();
-          }
-        }, 500);
+        video.oncanplay = () => {
+          console.log('✓ Video can play');
+        };
+
+        video.onplay = () => {
+          console.log('✓ Video started playing');
+        };
+
+        // Try to play immediately
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await playVideo();
+
+        // Also try again after stream is ready
+        await new Promise(resolve => setTimeout(resolve, 400));
+        if (video.paused) {
+          console.log('Video still paused, trying again...');
+          await playVideo();
+        }
       }
       setLoading(false);
     } catch (err) {
@@ -82,10 +116,18 @@ export default function CameraCapture({
   const handleCapture = () => {
     if (videoRef.current && cameraStream) {
       try {
+        const video = videoRef.current;
+        console.log('Capturing photo...');
+        console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+        console.log('Video paused:', video.paused);
+        console.log('Video currentTime:', video.currentTime);
+
         const photoBase64 = capturePhotoFromVideo(videoRef.current);
+        console.log('✓ Photo captured, size:', photoBase64.length);
         setPreview(photoBase64);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to capture photo';
+        console.error('Capture error:', message);
         setError(message);
       }
     }
