@@ -273,64 +273,21 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         </div>
 
-        {/* Image Preview or Upload Buttons */}
-        {uploadImage ? (
-          <div
-            style={{
-              border: `2px dashed ${darkTheme.colors.accent}`,
-              borderRadius: '12px',
-              padding: isMobile ? '12px' : '32px',
-              marginBottom: isMobile ? '12px' : '24px',
-              textAlign: 'center',
-              background: `${darkTheme.colors.accent}10`
-            }}
-          >
-            <img
-              src={uploadImage}
-              alt="Preview"
-              style={{
-                maxWidth: '100%',
-                maxHeight: isMobile ? '120px' : '200px',
-                margin: '0 auto',
-                borderRadius: '12px',
-                marginBottom: isMobile ? '8px' : '16px'
-              }}
-            />
-            <p style={{ color: darkTheme.colors.accent, marginBottom: '12px' }}>
-              <i className="fas fa-check-circle"></i> Image ready for upload
-            </p>
-            <button
-              onClick={() => {
-                setUploadImage(null);
-                setExtractedText('');
-              }}
-              style={{
-                padding: '8px 16px',
-                background: darkTheme.colors.bgSecondary,
-                color: darkTheme.colors.textPrimary,
-                border: `1px solid ${darkTheme.colors.borderColor}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Change Image
-            </button>
-          </div>
-        ) : (
-          <div style={{ marginBottom: '24px' }}>
+        {/* Upload Buttons - Only show if no image selected */}
+        {!uploadImage && (
+          <div style={{ marginBottom: isMobile ? '12px' : '24px' }}>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button
                 onClick={() => setShowCamera(true)}
                 style={{
                   flex: 1,
-                  padding: '20px',
+                  padding: isMobile ? '16px' : '20px',
                   background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, ${darkTheme.colors.accentHover} 100%)`,
                   color: 'white',
                   border: 'none',
                   borderRadius: '12px',
                   cursor: 'pointer',
-                  fontSize: '16px',
+                  fontSize: isMobile ? '14px' : '16px',
                   fontWeight: '600',
                   transition: 'all 0.3s',
                   display: 'flex',
@@ -339,20 +296,20 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                   gap: '8px'
                 }}
               >
-                <i className="fas fa-camera" style={{ fontSize: '32px' }}></i>
+                <i className="fas fa-camera" style={{ fontSize: isMobile ? '24px' : '32px' }}></i>
                 <span>Take Photo</span>
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 style={{
                   flex: 1,
-                  padding: '20px',
+                  padding: isMobile ? '16px' : '20px',
                   background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, ${darkTheme.colors.accentHover} 100%)`,
                   color: 'white',
                   border: 'none',
                   borderRadius: '12px',
                   cursor: 'pointer',
-                  fontSize: '16px',
+                  fontSize: isMobile ? '14px' : '16px',
                   fontWeight: '600',
                   transition: 'all 0.3s',
                   display: 'flex',
@@ -361,7 +318,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                   gap: '8px'
                 }}
               >
-                <i className="fas fa-upload" style={{ fontSize: '32px' }}></i>
+                <i className="fas fa-upload" style={{ fontSize: isMobile ? '24px' : '32px' }}></i>
                 <span>Upload File</span>
               </button>
             </div>
@@ -375,25 +332,59 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         )}
 
-        {/* Processing OCR */}
-        {isProcessingOCR && (
+        {/* Image Thumbnail - Small indicator when image is selected */}
+        {uploadImage && (
           <div
             style={{
-              marginBottom: '16px',
-              padding: '16px',
+              display: 'flex',
+              gap: '12px',
+              marginBottom: isMobile ? '12px' : '16px',
+              padding: isMobile ? '8px' : '12px',
               background: `${darkTheme.colors.accent}10`,
               border: `1px solid ${darkTheme.colors.accent}30`,
-              borderRadius: '12px',
-              textAlign: 'center'
+              borderRadius: '8px',
+              alignItems: 'center'
             }}
           >
-            <i
-              className="fas fa-spinner fa-spin"
-              style={{ fontSize: '24px', color: darkTheme.colors.accent, marginBottom: '8px', display: 'block' }}
-            ></i>
-            <p style={{ color: darkTheme.colors.accent, fontWeight: '500', margin: 0 }}>
-              Processing image with AI OCR...
-            </p>
+            <img
+              src={uploadImage}
+              alt="Selected"
+              style={{
+                width: isMobile ? '60px' : '80px',
+                height: isMobile ? '60px' : '80px',
+                borderRadius: '6px',
+                objectFit: 'cover',
+                flexShrink: 0
+              }}
+            />
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: '0 0 4px 0', color: darkTheme.colors.accent, fontWeight: '500', fontSize: isMobile ? '12px' : '14px' }}>
+                <i className="fas fa-check-circle"></i> Photo selected
+              </p>
+              {isProcessingOCR && (
+                <p style={{ margin: '4px 0 0 0', color: darkTheme.colors.textSecondary, fontSize: isMobile ? '11px' : '12px' }}>
+                  <i className="fas fa-spinner fa-spin"></i> Scanning with AI...
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setUploadImage(null);
+                setExtractedText('');
+              }}
+              style={{
+                padding: '6px 12px',
+                background: 'transparent',
+                color: darkTheme.colors.textSecondary,
+                border: `1px solid ${darkTheme.colors.borderColor}`,
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: isMobile ? '12px' : '13px',
+                flexShrink: 0
+              }}
+            >
+              Change
+            </button>
           </div>
         )}
 
