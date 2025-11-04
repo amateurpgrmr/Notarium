@@ -15,7 +15,7 @@ export default function AuthCallback() {
 
     const baseURL = import.meta.env.MODE === 'development'
       ? 'http://localhost:8787'
-      : (import.meta.env.VITE_API_URL || 'https://backend-3uqchriy9-richard-amadeus-projects.vercel.app');
+      : (import.meta.env.VITE_API_URL || 'https://backend-nine-navy-23.vercel.app');
 
     fetch(`${baseURL}/api/auth/callback?code=${code}`)
       .then((res) => {
