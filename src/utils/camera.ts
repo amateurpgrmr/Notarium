@@ -95,47 +95,34 @@ export function capturePhotoFromVideo(
 ): string {
   const { quality = 0.8, format = 'image/jpeg' } = options;
 
-  console.log('Capture details:', {
+  console.log('[CAPTURE] Video element state:', {
     videoWidth: videoElement.videoWidth,
     videoHeight: videoElement.videoHeight,
     paused: videoElement.paused,
-    currentTime: videoElement.currentTime,
-    networkState: videoElement.networkState,
     readyState: videoElement.readyState,
-    srcObject: !!videoElement.srcObject
+    networkState: videoElement.networkState
   });
 
   // Ensure video has actual dimensions
   if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-    // Try to get dimensions from the stream directly
-    const stream = videoElement.srcObject as MediaStream;
-    if (stream) {
-      const videoTrack = stream.getVideoTracks()[0];
-      if (videoTrack && videoTrack.getSettings) {
-        const settings = videoTrack.getSettings();
-        console.log('Track settings:', settings);
-        if (settings.width && settings.height) {
-          console.log('Using track settings dimensions:', settings.width, 'x', settings.height);
-        }
-      }
-    }
-    throw new Error(`Video stream not ready - no video dimensions (${videoElement.videoWidth}x${videoElement.videoHeight})`);
+    throw new Error(`Video dimensions not available: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
   }
 
+  // Create canvas and draw video frame
   const canvas = document.createElement('canvas');
   canvas.width = videoElement.videoWidth;
   canvas.height = videoElement.videoHeight;
 
   const ctx = canvas.getContext('2d');
   if (!ctx) {
-    throw new Error('Failed to get canvas context');
+    throw new Error('Failed to get canvas 2D context');
   }
 
-  console.log('Drawing to canvas:', canvas.width, 'x', canvas.height);
+  console.log('[CAPTURE] Drawing video to canvas:', canvas.width, 'x', canvas.height);
   ctx.drawImage(videoElement, 0, 0);
 
   const result = canvas.toDataURL(format, quality);
-  console.log('Canvas conversion result length:', result.length);
+  console.log('[CAPTURE] Image data created, size:', result.length, 'bytes');
 
   return result;
 }

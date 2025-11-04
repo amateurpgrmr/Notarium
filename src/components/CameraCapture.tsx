@@ -23,8 +23,13 @@ export default function CameraCapture({
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
-    startCamera();
+    // Ensure video element is mounted before starting camera
+    const timer = setTimeout(() => {
+      startCamera();
+    }, 100);
+
     return () => {
+      clearTimeout(timer);
       if (cameraStream) {
         stopMediaStream(cameraStream);
       }
@@ -34,102 +39,86 @@ export default function CameraCapture({
   const startCamera = async () => {
     try {
       setError(null);
-      console.log('Starting camera...');
+      console.log('[CAMERA] Starting camera initialization...');
 
+      if (!videoRef.current) {
+        throw new Error('Video element ref not available');
+      }
+
+      const video = videoRef.current;
+      console.log('[CAMERA] Video element found, display:', window.getComputedStyle(video).display);
+
+      // Get camera stream
       const stream = await getCameraStream({ facingMode });
-      console.log('Stream acquired:', {
-        active: stream.active,
-        videoTracks: stream.getVideoTracks().length,
-        audioTracks: stream.getAudioTracks().length
+      console.log('[CAMERA] ✓ Stream acquired - tracks:', {
+        video: stream.getVideoTracks().length,
+        audio: stream.getAudioTracks().length,
+        active: stream.active
       });
+
+      // Enable all tracks
+      stream.getTracks().forEach(track => {
+        if (!track.enabled) track.enabled = true;
+      });
+
+      // Assign stream to video element
+      video.srcObject = stream;
+      console.log('[CAMERA] ✓ srcObject assigned to video element');
 
       setCameraStream(stream);
 
-      if (videoRef.current) {
-        console.log('Setting video element srcObject...');
+      // Simple event handlers
+      video.onloadedmetadata = () => {
+        console.log('[CAMERA] ✓ Metadata loaded:', video.videoWidth, 'x', video.videoHeight);
+      };
 
-        // Ensure video element is ready
-        const video = videoRef.current;
+      video.onplay = () => {
+        console.log('[CAMERA] ✓ Video is playing');
+      };
 
-        // Set the stream
-        video.srcObject = stream;
+      video.onerror = (e) => {
+        console.error('[CAMERA] ✗ Video error:', e);
+      };
 
-        // Ensure all tracks are enabled
-        stream.getTracks().forEach(track => {
-          console.log('Track:', track.kind, track.enabled);
-          if (!track.enabled) track.enabled = true;
-        });
+      // Wait a bit for the video element to be ready, then force play
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-        // Handle stream playback
-        const playVideo = async () => {
-          try {
-            console.log('Attempting to play video...');
-            console.log('Video readyState:', video.readyState);
-            console.log('Video networkState:', video.networkState);
-            console.log('srcObject:', video.srcObject);
-            console.log('srcObject active:', (video.srcObject as MediaStream)?.active);
-
-            const playPromise = video.play();
-            if (playPromise) {
-              await playPromise;
-              console.log('✓ Video playing successfully');
-            }
-          } catch (err: any) {
-            console.error('Video play error:', err.name, err.message);
-          }
-        };
-
-        // Set up multiple ways to trigger playback
-        video.onloadedmetadata = () => {
-          console.log('✓ Video metadata loaded, dimensions:', video.videoWidth, 'x', video.videoHeight);
-          playVideo();
-        };
-
-        video.oncanplay = () => {
-          console.log('✓ Video can play');
-        };
-
-        video.onplay = () => {
-          console.log('✓ Video started playing');
-        };
-
-        // Try to play immediately
-        await new Promise(resolve => setTimeout(resolve, 100));
-        await playVideo();
-
-        // Also try again after stream is ready
-        await new Promise(resolve => setTimeout(resolve, 400));
-        if (video.paused) {
-          console.log('Video still paused, trying again...');
-          await playVideo();
-        }
+      try {
+        console.log('[CAMERA] Calling video.play()...');
+        await video.play();
+        console.log('[CAMERA] ✓ play() succeeded');
+      } catch (playErr: any) {
+        console.error('[CAMERA] play() error:', playErr.name, '-', playErr.message);
+        // This might fail in some scenarios but the autoPlay attribute should handle it
       }
+
       setLoading(false);
+      console.log('[CAMERA] ✓ Camera initialized successfully');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to access camera';
-      console.error('Camera error:', message);
+      console.error('[CAMERA] ✗ Error:', message);
       setError(message);
       setLoading(false);
     }
   };
 
   const handleCapture = () => {
-    if (videoRef.current && cameraStream) {
-      try {
-        const video = videoRef.current;
-        console.log('Capturing photo...');
-        console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
-        console.log('Video paused:', video.paused);
-        console.log('Video currentTime:', video.currentTime);
+    if (!videoRef.current || !cameraStream) {
+      setError('Camera not ready');
+      return;
+    }
 
-        const photoBase64 = capturePhotoFromVideo(videoRef.current);
-        console.log('✓ Photo captured, size:', photoBase64.length);
-        setPreview(photoBase64);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to capture photo';
-        console.error('Capture error:', message);
-        setError(message);
-      }
+    try {
+      const video = videoRef.current;
+      console.log('[CAPTURE] Taking photo from video dimensions:', video.videoWidth, 'x', video.videoHeight);
+
+      const photoBase64 = capturePhotoFromVideo(video);
+      console.log('[CAPTURE] ✓ Photo captured, size:', photoBase64.length, 'bytes');
+      setPreview(photoBase64);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to capture photo';
+      console.error('[CAPTURE] ✗ Error:', message);
+      setError(message);
     }
   };
 
@@ -246,6 +235,7 @@ export default function CameraCapture({
                   playsInline
                   muted
                   style={{
+                    display: 'block',
                     width: '100%',
                     height: '400px',
                     background: 'black',
