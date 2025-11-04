@@ -46,28 +46,31 @@ export default function CameraCapture({
       }
 
       const video = videoRef.current;
-      console.log('[CAMERA] Video element found, display:', window.getComputedStyle(video).display);
+      console.log('[CAMERA] Video element found');
 
       // Get camera stream
       const stream = await getCameraStream({ facingMode });
-      console.log('[CAMERA] ✓ Stream acquired - tracks:', {
-        video: stream.getVideoTracks().length,
-        audio: stream.getAudioTracks().length,
-        active: stream.active
-      });
+      console.log('[CAMERA] ✓ Stream acquired');
 
       // Enable all tracks
       stream.getTracks().forEach(track => {
         if (!track.enabled) track.enabled = true;
       });
 
-      // Assign stream to video element
+      // IMPORTANT: Set srcObject BEFORE defining event handlers
       video.srcObject = stream;
-      console.log('[CAMERA] ✓ srcObject assigned to video element');
+      console.log('[CAMERA] ✓ srcObject assigned');
 
-      setCameraStream(stream);
+      // Wait for stream to start rendering
+      let canPlayFired = false;
+      video.oncanplay = () => {
+        if (!canPlayFired) {
+          canPlayFired = true;
+          console.log('[CAMERA] ✓ canplay fired - stream rendering started');
+          console.log('[CAMERA] Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+        }
+      };
 
-      // Simple event handlers
       video.onloadedmetadata = () => {
         console.log('[CAMERA] ✓ Metadata loaded:', video.videoWidth, 'x', video.videoHeight);
       };
@@ -76,24 +79,22 @@ export default function CameraCapture({
         console.log('[CAMERA] ✓ Video is playing');
       };
 
-      video.onerror = (e) => {
-        console.error('[CAMERA] ✗ Video error:', e);
+      video.onplaying = () => {
+        console.log('[CAMERA] ✓ Video is actively playing');
       };
 
-      // Wait a bit for the video element to be ready, then force play
-      await new Promise(resolve => setTimeout(resolve, 300));
-
+      // Try to play immediately
+      console.log('[CAMERA] Attempting to start playback...');
       try {
-        console.log('[CAMERA] Calling video.play()...');
         await video.play();
-        console.log('[CAMERA] ✓ play() succeeded');
-      } catch (playErr: any) {
-        console.error('[CAMERA] play() error:', playErr.name, '-', playErr.message);
-        // This might fail in some scenarios but the autoPlay attribute should handle it
+        console.log('[CAMERA] ✓ play() succeeded immediately');
+      } catch (e) {
+        console.log('[CAMERA] play() not ready yet, waiting for autoPlay...');
       }
 
+      setCameraStream(stream);
       setLoading(false);
-      console.log('[CAMERA] ✓ Camera initialized successfully');
+      console.log('[CAMERA] ✓ Camera initialized - waiting for canplay event');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to access camera';
       console.error('[CAMERA] ✗ Error:', message);
@@ -104,13 +105,28 @@ export default function CameraCapture({
 
   const handleCapture = () => {
     if (!videoRef.current || !cameraStream) {
-      setError('Camera not ready');
+      setError('Camera not ready - please wait for stream to load');
       return;
     }
 
     try {
       const video = videoRef.current;
-      console.log('[CAPTURE] Taking photo from video dimensions:', video.videoWidth, 'x', video.videoHeight);
+
+      // Check if video is actually playing before capture
+      if (video.paused) {
+        console.warn('[CAPTURE] ⚠️ Video is paused, waiting for it to play before capture...');
+        setError('Waiting for camera stream to play...');
+        return;
+      }
+
+      // Check if video has valid dimensions (stream is rendering)
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        console.warn('[CAPTURE] ⚠️ Video dimensions not ready:', video.videoWidth, 'x', video.videoHeight);
+        setError('Camera stream not ready - no video dimensions');
+        return;
+      }
+
+      console.log('[CAPTURE] ✓ Taking photo from:', video.videoWidth, 'x', video.videoHeight);
 
       const photoBase64 = capturePhotoFromVideo(video);
       console.log('[CAPTURE] ✓ Photo captured, size:', photoBase64.length, 'bytes');
