@@ -138,9 +138,9 @@ export default function CameraCapture({
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (preview) {
-      onCapture(preview);
+      await onCapture(preview);
       handleClose();
     }
   };
