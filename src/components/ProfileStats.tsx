@@ -9,10 +9,14 @@ interface ProfileStatsProps {
 }
 
 export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsProps) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState(user?.name || '');
+  const [savingName, setSavingName] = useState(false);
+  const [photoError, setPhotoError] = useState('');
 
   useEffect(() => {
     loadLeaderboard();
@@ -41,6 +45,52 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
       'linear-gradient(135deg, #3498db, #2980b9)',
     ];
     return colors[index % colors.length];
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setPhotoError('Image too large. Please choose an image smaller than 2MB.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          setSavingName(true);
+          const base64String = reader.result as string;
+          await api.updateProfile({ photo_url: base64String });
+          await refreshUser();
+          setPhotoError('');
+        } catch (error: any) {
+          setPhotoError(error.message || 'Failed to update profile picture');
+        } finally {
+          setSavingName(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!newName.trim()) {
+      setPhotoError('Name cannot be empty');
+      return;
+    }
+
+    try {
+      setSavingName(true);
+      await api.updateProfile({ name: newName });
+      await refreshUser();
+      setEditingName(false);
+      setPhotoError('');
+    } catch (error: any) {
+      setPhotoError(error.message || 'Failed to update name');
+    } finally {
+      setSavingName(false);
+    }
   };
 
   return (
@@ -95,7 +145,7 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
             </button>
           </div>
 
-          {/* User Header */}
+          {/* User Header with Edit Capabilities */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -104,34 +154,174 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
             paddingBottom: '24px',
             borderBottom: `1px solid ${darkTheme.colors.borderColor}`
           }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              background: user?.photo_url
-                ? `url('${user.photo_url}') center/cover`
-                : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontWeight: 'bold',
-              fontSize: '32px',
-              flexShrink: 0,
-              border: `2px solid ${darkTheme.colors.borderColor}`
-            }}>
-              {!user?.photo_url && user?.name?.charAt(0).toUpperCase()}
-            </div>
+            {/* Editable Profile Picture */}
+            <label style={{ cursor: 'pointer', position: 'relative', display: 'block' }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                background: user?.photo_url
+                  ? `url('${user.photo_url}') center/cover`
+                  : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '32px',
+                flexShrink: 0,
+                border: `2px solid ${darkTheme.colors.borderColor}`,
+                transition: 'all 0.3s ease',
+                position: 'relative'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.opacity = '0.7';
+                e.currentTarget.style.boxShadow = `0 0 20px ${darkTheme.colors.accent}`;
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.opacity = '1';
+                e.currentTarget.style.boxShadow = 'none';
+              }}>
+                {!user?.photo_url && user?.name?.charAt(0).toUpperCase()}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  background: darkTheme.colors.accent,
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '14px',
+                  border: `2px solid ${darkTheme.colors.bgPrimary}`
+                }}>
+                  📷
+                </div>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                disabled={savingName}
+                style={{ display: 'none' }}
+              />
+            </label>
+
+            {/* Editable Name and Info */}
             <div style={{ flex: 1 }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 8px 0' }}>
-                {user?.name}
-              </h3>
+              {editingName ? (
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    disabled={savingName}
+                    style={{
+                      ...inputStyle,
+                      flex: 1,
+                      padding: '6px 12px',
+                      fontSize: '16px'
+                    } as React.CSSProperties}
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleSaveName}
+                    disabled={savingName}
+                    style={{
+                      padding: '6px 12px',
+                      background: darkTheme.colors.accent,
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: savingName ? 'not-allowed' : 'pointer',
+                      fontSize: '12px',
+                      fontWeight: '600'
+                    }}
+                  >
+                    {savingName ? '...' : '✓'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingName(false);
+                      setNewName(user?.name || '');
+                    }}
+                    disabled={savingName}
+                    style={{
+                      padding: '6px 12px',
+                      background: 'transparent',
+                      color: darkTheme.colors.textSecondary,
+                      border: `1px solid ${darkTheme.colors.borderColor}`,
+                      borderRadius: '6px',
+                      cursor: savingName ? 'not-allowed' : 'pointer',
+                      fontSize: '12px'
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  margin: '0 0 8px 0',
+                  cursor: 'pointer',
+                  transition: 'color 0.2s',
+                  color: '#fff'
+                }}
+                onClick={() => setEditingName(true)}
+                onMouseOver={(e) => e.currentTarget.style.color = darkTheme.colors.accent}
+                onMouseOut={(e) => e.currentTarget.style.color = '#fff'}>
+                  {user?.name}
+                  <span style={{ fontSize: '14px', marginLeft: '8px', opacity: 0.6 }}>✏️</span>
+                </h3>
+              )}
               <p style={{ fontSize: '14px', color: darkTheme.colors.textSecondary, margin: 0 }}>
                 {user?.class}
               </p>
               <p style={{ fontSize: '12px', color: darkTheme.colors.accent, margin: '4px 0 0 0' }}>
                 {user?.role === 'admin' ? '👑 Admin' : '📚 Student'}
               </p>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {photoError && (
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
+              color: '#fca5a5',
+              padding: '10px 12px',
+              borderRadius: darkTheme.borderRadius.md,
+              fontSize: '12px',
+              marginBottom: '16px'
+            }}>
+              {photoError}
+            </div>
+          )}
+
+          {/* Diamonds Highlight - Full Width */}
+          <div style={{
+            background: 'linear-gradient(135deg, #f39c12, #e74c3c, #9b59b6)',
+            borderRadius: '12px',
+            padding: '24px',
+            textAlign: 'center',
+            color: 'white',
+            marginBottom: '16px',
+            boxShadow: '0 8px 32px rgba(243, 156, 18, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px'
+          }}>
+            <div style={{ fontSize: '48px' }}>💎</div>
+            <div>
+              <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '4px' }}>
+                {user?.diamonds || 0}
+              </div>
+              <div style={{ fontSize: '13px', opacity: 0.95, fontWeight: '500' }}>Diamonds</div>
             </div>
           </div>
 

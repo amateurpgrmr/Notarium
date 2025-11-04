@@ -22,11 +22,32 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Image too large. Please choose an image smaller than 2MB.');
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
+        console.log('Photo upload:', {
+          originalSize: file.size,
+          base64Length: base64String.length,
+          fileType: file.type
+        });
         setPhotoBase64(base64String);
         setPhotoPreview(base64String);
+        setError(''); // Clear any previous errors
+      };
+      reader.onerror = () => {
+        setError('Failed to read image file.');
       };
       reader.readAsDataURL(file);
     }
