@@ -196,9 +196,16 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
                   justifyContent: 'center',
                   color: 'white',
                   fontSize: '14px',
-                  border: `2px solid ${darkTheme.colors.bgPrimary}`
+                  border: `2px solid ${darkTheme.colors.bgPrimary}`,
+                  transition: 'transform 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.15)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
                 }}>
-                  📷
+                  ✏️
                 </div>
               </div>
               <input

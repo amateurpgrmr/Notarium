@@ -77,6 +77,7 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   return (
     <div style={modalOverlayStyle}>
       <div style={modalContentStyle}>
+        {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -101,118 +102,108 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Profile Picture */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#fff',
-              marginBottom: '8px'
-            }}>
-              Profile Picture
-            </label>
-            <div style={{
-              display: 'flex',
-              gap: '16px',
-              alignItems: 'flex-start'
-            }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-                background: photoPreview
-                  ? `url('${photoPreview}') center/cover`
-                  : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '32px',
-                flexShrink: 0,
-                border: `2px solid ${darkTheme.colors.borderColor}`
-              }}>
+        {/* Main Content - Two Column Layout */}
+        <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
+          {/* Left Column - Profile Picture and Diamonds */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '20px',
+            minWidth: '140px'
+          }}>
+            {/* Profile Picture with Pen Icon Overlay */}
+            <label style={{ cursor: 'pointer', position: 'relative', display: 'block' }}>
+              <div
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  background: photoPreview
+                    ? `url('${photoPreview}') center/cover`
+                    : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '48px',
+                  border: `3px solid ${darkTheme.colors.borderColor}`,
+                  transition: 'all 0.3s ease',
+                  position: 'relative'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.opacity = '0.7';
+                  e.currentTarget.style.boxShadow = `0 0 24px ${darkTheme.colors.accent}`;
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
                 {!photoPreview && user?.name?.charAt(0).toUpperCase()}
+
+                {/* Pen Icon Overlay on Hover */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    background: darkTheme.colors.accent,
+                    borderRadius: '50%',
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '18px',
+                    border: `2px solid ${darkTheme.colors.bgPrimary}`,
+                    transition: 'transform 0.3s ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  ✏️
+                </div>
               </div>
+              {/* Hidden File Input */}
               <input
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoChange}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  background: darkTheme.colors.bgSecondary,
-                  border: `1px solid ${darkTheme.colors.borderColor}`,
-                  borderRadius: darkTheme.borderRadius.md,
-                  color: darkTheme.colors.textSecondary,
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
+                style={{ display: 'none' }}
               />
-            </div>
-          </div>
-
-          {/* Username */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#fff',
-              marginBottom: '8px'
-            }}>
-              Username
             </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={inputStyle as React.CSSProperties}
-              placeholder="Your display name"
-              onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
-              onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
-            />
-          </div>
 
-          {/* Description */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#fff',
-              marginBottom: '8px'
-            }}>
-              Profile Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              style={{
-                ...inputStyle,
-                minHeight: '80px',
-                resize: 'vertical',
-                fontFamily: 'inherit'
-              } as React.CSSProperties}
-              placeholder="Write a short description about yourself..."
-              maxLength={200}
-              onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
-              onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
-            />
+            {/* Diamonds Display */}
             <div style={{
-              fontSize: '12px',
-              color: darkTheme.colors.textSecondary,
-              marginTop: '4px',
-              textAlign: 'right'
+              background: 'linear-gradient(135deg, #f39c12, #e74c3c, #9b59b6)',
+              borderRadius: '12px',
+              padding: '16px',
+              textAlign: 'center',
+              color: 'white',
+              width: '100%',
+              boxShadow: '0 8px 24px rgba(243, 156, 18, 0.3)'
             }}>
-              {description.length}/200
+              <div style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '4px' }}>
+                💎
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px' }}>
+                {user?.diamonds || 0}
+              </div>
+              <div style={{ fontSize: '11px', opacity: 0.9, fontWeight: '500' }}>Diamonds</div>
             </div>
           </div>
 
-          {/* Class Selection (Students only) */}
-          {user?.role === 'student' && (
+          {/* Right Column - Form Fields */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+            {/* Username */}
             <div>
               <label style={{
                 display: 'block',
@@ -221,132 +212,165 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                 color: '#fff',
                 marginBottom: '8px'
               }}>
-                Class
+                Username
               </label>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '8px'
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={inputStyle as React.CSSProperties}
+                placeholder="Your display name"
+                onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
+                onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#fff',
+                marginBottom: '8px'
               }}>
-                {['10.1', '10.2', '10.3'].map((classOption) => (
-                  <button
-                    key={classOption}
-                    type="button"
-                    onClick={() => setSelectedClass(classOption)}
-                    style={{
-                      padding: '12px',
-                      borderRadius: darkTheme.borderRadius.md,
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      border: 'none',
-                      transition: darkTheme.transitions.default,
-                      background: selectedClass === classOption
-                        ? `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`
-                        : darkTheme.colors.bgSecondary,
-                      color: selectedClass === classOption ? '#fff' : darkTheme.colors.textSecondary,
-                      boxShadow: selectedClass === classOption ? darkTheme.shadows.default : 'none'
-                    }}
-                    onMouseOver={(e) => {
-                      if (selectedClass !== classOption) {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (selectedClass !== classOption) {
-                        e.currentTarget.style.background = darkTheme.colors.bgSecondary;
-                      }
-                    }}
-                  >
-                    {classOption}
-                  </button>
-                ))}
+                Profile Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  minHeight: '80px',
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                } as React.CSSProperties}
+                placeholder="Write a short description about yourself..."
+                maxLength={200}
+                onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
+                onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
+              />
+              <div style={{
+                fontSize: '12px',
+                color: darkTheme.colors.textSecondary,
+                marginTop: '4px',
+                textAlign: 'right'
+              }}>
+                {description.length}/200
               </div>
             </div>
-          )}
 
-          {/* Error/Success Messages */}
-          {error && (
+            {/* Class Selection (Students only) */}
+            {user?.role === 'student' && (
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#fff',
+                  marginBottom: '8px'
+                }}>
+                  Class
+                </label>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '8px'
+                }}>
+                  {['10.1', '10.2', '10.3'].map((classOption) => (
+                    <button
+                      key={classOption}
+                      type="button"
+                      onClick={() => setSelectedClass(classOption)}
+                      style={{
+                        padding: '12px',
+                        borderRadius: darkTheme.borderRadius.md,
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        border: 'none',
+                        transition: darkTheme.transitions.default,
+                        background: selectedClass === classOption
+                          ? `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`
+                          : darkTheme.colors.bgSecondary,
+                        color: selectedClass === classOption ? '#fff' : darkTheme.colors.textSecondary,
+                        boxShadow: selectedClass === classOption ? darkTheme.shadows.default : 'none'
+                      }}
+                      onMouseOver={(e) => {
+                        if (selectedClass !== classOption) {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (selectedClass !== classOption) {
+                          e.currentTarget.style.background = darkTheme.colors.bgSecondary;
+                        }
+                      }}
+                    >
+                      {classOption}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Error/Success Messages */}
+            {error && (
+              <div style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.5)',
+                color: '#fca5a5',
+                padding: '12px 16px',
+                borderRadius: darkTheme.borderRadius.md,
+                fontSize: '14px'
+              }}>
+                {error}
+              </div>
+            )}
+            {success && (
+              <div style={{
+                background: 'rgba(34, 197, 94, 0.1)',
+                border: '1px solid rgba(34, 197, 94, 0.5)',
+                color: '#86efac',
+                padding: '12px 16px',
+                borderRadius: darkTheme.borderRadius.md,
+                fontSize: '14px'
+              }}>
+                Profile updated successfully!
+              </div>
+            )}
+
+            {/* Action Buttons */}
             <div style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.5)',
-              color: '#fca5a5',
-              padding: '12px 16px',
-              borderRadius: darkTheme.borderRadius.md,
-              fontSize: '14px'
+              display: 'flex',
+              gap: '12px',
+              marginTop: '8px'
             }}>
-              {error}
+              <button
+                onClick={onClose}
+                style={{
+                  ...buttonSecondaryStyle,
+                  flex: 1
+                } as React.CSSProperties}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                style={{
+                  ...buttonPrimaryStyle,
+                  flex: 1,
+                  opacity: loading ? 0.6 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer'
+                } as React.CSSProperties}
+                onMouseOver={(e) => !loading && (e.currentTarget.style.boxShadow = darkTheme.shadows.lg)}
+                onMouseOut={(e) => e.currentTarget.style.boxShadow = darkTheme.shadows.default}
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
-          )}
-          {success && (
-            <div style={{
-              background: 'rgba(34, 197, 94, 0.1)',
-              border: '1px solid rgba(34, 197, 94, 0.5)',
-              color: '#86efac',
-              padding: '12px 16px',
-              borderRadius: darkTheme.borderRadius.md,
-              fontSize: '14px'
-            }}>
-              Profile updated successfully!
-            </div>
-          )}
-
-          {/* Debug Test Button */}
-          <button
-            onClick={async () => {
-              try {
-                const result = await api.debug.testUpdate(user?.id || 0, 'TestName' + Date.now());
-                console.log('Debug test result:', result);
-                setSuccess(true);
-                setError('');
-              } catch (err: any) {
-                setError('Debug test failed: ' + err.message);
-              }
-            }}
-            style={{
-              padding: '8px 12px',
-              background: 'rgba(100, 100, 200, 0.2)',
-              border: '1px solid rgba(100, 100, 200, 0.5)',
-              color: '#7c9ad8',
-              borderRadius: '6px',
-              fontSize: '12px',
-              cursor: 'pointer',
-              marginBottom: '16px'
-            }}
-          >
-            🐛 Test DB Update
-          </button>
-
-          {/* Action Buttons */}
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            marginTop: '8px'
-          }}>
-            <button
-              onClick={onClose}
-              style={{
-                ...buttonSecondaryStyle,
-                flex: 1
-              } as React.CSSProperties}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              style={{
-                ...buttonPrimaryStyle,
-                flex: 1,
-                opacity: loading ? 0.6 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer'
-              } as React.CSSProperties}
-              onMouseOver={(e) => !loading && (e.currentTarget.style.boxShadow = darkTheme.shadows.lg)}
-              onMouseOut={(e) => e.currentTarget.style.boxShadow = darkTheme.shadows.default}
-            >
-              {loading ? 'Saving...' : 'Save Changes'}
-            </button>
           </div>
         </div>
       </div>
