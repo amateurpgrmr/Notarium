@@ -1,6 +1,6 @@
 const baseURL = import.meta.env.MODE === 'development'
   ? 'http://localhost:8787'
-  : (import.meta.env.VITE_API_URL || 'https://backend-nine-navy-23.vercel.app');
+  : (import.meta.env.VITE_API_URL || 'https://backend-pdgjbe89t-richard-amadeus-projects.vercel.app');
 
 export interface User {
   id: number;
