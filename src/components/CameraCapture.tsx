@@ -38,6 +38,12 @@ export default function CameraCapture({
       setCameraStream(stream);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Ensure video element plays the stream
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(err => {
+            console.error('Video play error:', err);
+          });
+        };
       }
       setLoading(false);
     } catch (err) {
@@ -170,6 +176,7 @@ export default function CameraCapture({
                   ref={videoRef}
                   autoPlay
                   playsInline
+                  muted
                   style={{
                     width: '100%',
                     height: '400px',

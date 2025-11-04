@@ -18,11 +18,23 @@ export async function getCameraStream(options: CameraStreamOptions = {}): Promis
   const { facingMode = 'environment' } = options;
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode },
-      audio: false
-    });
-    return stream;
+    // Try with exact constraint first, fall back to ideal if that fails
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facingMode }
+        },
+        audio: false
+      });
+      return stream;
+    } catch (e) {
+      // Fallback: simpler constraint
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode },
+        audio: false
+      });
+      return stream;
+    }
   } catch (error) {
     throw new Error(`Failed to access camera: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
