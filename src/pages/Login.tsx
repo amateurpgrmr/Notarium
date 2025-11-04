@@ -11,9 +11,17 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Auto-redirect if already authenticated
+  // Auto-redirect if already authenticated or auto-login if token exists
   useEffect(() => {
     if (api.isAuthenticated()) {
+      navigate('/', { replace: true });
+      return;
+    }
+
+    // Try to auto-login if token exists in localStorage
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Token exists, redirect to home - the app will validate the token
       navigate('/', { replace: true });
     }
   }, [navigate]);

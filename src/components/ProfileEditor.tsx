@@ -23,6 +23,21 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // Load saved profile data from localStorage
+  React.useEffect(() => {
+    const savedProfile = localStorage.getItem('profileData');
+    if (savedProfile) {
+      try {
+        const profile = JSON.parse(savedProfile);
+        if (profile.name) setName(profile.name);
+        if (profile.description) setDescription(profile.description);
+        if (profile.class) setSelectedClass(profile.class);
+      } catch (e) {
+        console.log('Failed to load saved profile data');
+      }
+    }
+  }, []);
+
   const processImageFile = (file: File) => {
     // Check file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
@@ -79,6 +94,14 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
       if (photoBase64) {
         updateData.photo_url = photoBase64;
       }
+
+      // Save profile data for auto-fill next time
+      localStorage.setItem('profileData', JSON.stringify({
+        name,
+        description,
+        class: selectedClass
+      }));
+
       await api.updateProfile(updateData);
       await refreshUser();
       setSuccess(true);
@@ -306,23 +329,48 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               style={{ display: 'none' }}
             />
 
-            {/* Diamonds Display */}
+            {/* Diamonds Display - Landscape */}
             <div style={{
               background: 'linear-gradient(135deg, #f39c12, #e74c3c, #9b59b6)',
               borderRadius: '12px',
-              padding: '16px',
-              textAlign: 'center',
+              padding: '12px 16px',
               color: 'white',
               width: '100%',
-              boxShadow: '0 8px 24px rgba(243, 156, 18, 0.3)'
+              boxShadow: '0 8px 24px rgba(243, 156, 18, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: '12px'
             }}>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '4px' }}>
+              <div style={{
+                fontSize: isMobile ? '28px' : '36px',
+                flexShrink: 0,
+                lineHeight: 1
+              }}>
                 💎
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px' }}>
-                {user?.diamonds || 0}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                flex: 1
+              }}>
+                <div style={{
+                  fontSize: isMobile ? '18px' : '28px',
+                  fontWeight: 'bold',
+                  lineHeight: 1.1
+                }}>
+                  {user?.diamonds || 0}
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '10px' : '12px',
+                  opacity: 0.9,
+                  fontWeight: '500',
+                  lineHeight: 1
+                }}>
+                  Diamonds
+                </div>
               </div>
-              <div style={{ fontSize: '11px', opacity: 0.9, fontWeight: '500' }}>Diamonds</div>
             </div>
           </div>
 
@@ -381,10 +429,11 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                   minHeight: window.innerWidth < 768 ? '100px' : '80px',
                   resize: 'vertical',
                   fontFamily: 'inherit',
-                  padding: window.innerWidth < 768 ? '12px 14px' : undefined,
-                  fontSize: window.innerWidth < 768 ? '16px' : undefined,
+                  padding: window.innerWidth < 768 ? '12px 14px' : '10px 12px',
+                  fontSize: window.innerWidth < 768 ? '14px' : '13px',
                   width: '100%',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  lineHeight: '1.4'
                 }}
                 placeholder="Write a short description about yourself..."
                 maxLength={200}
