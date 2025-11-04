@@ -404,6 +404,22 @@ export const api = {
     }
   },
 
+  // Debug endpoints
+  debug: {
+    testUpdate: async (userId: number, name: string) => {
+      try {
+        const response = await api.request('/api/debug/verify-update', {
+          method: 'POST',
+          body: { userId, name }
+        });
+        return response;
+      } catch (error: any) {
+        console.error('Debug test failed:', error);
+        throw error;
+      }
+    }
+  },
+
   // Admin endpoints
   admin: {
     verify: async (email: string, password: string) => {

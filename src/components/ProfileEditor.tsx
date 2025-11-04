@@ -290,6 +290,32 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
             </div>
           )}
 
+          {/* Debug Test Button */}
+          <button
+            onClick={async () => {
+              try {
+                const result = await api.debug.testUpdate(user?.id || 0, 'TestName' + Date.now());
+                console.log('Debug test result:', result);
+                setSuccess(true);
+                setError('');
+              } catch (err: any) {
+                setError('Debug test failed: ' + err.message);
+              }
+            }}
+            style={{
+              padding: '8px 12px',
+              background: 'rgba(100, 100, 200, 0.2)',
+              border: '1px solid rgba(100, 100, 200, 0.5)',
+              color: '#7c9ad8',
+              borderRadius: '6px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              marginBottom: '16px'
+            }}
+          >
+            🐛 Test DB Update
+          </button>
+
           {/* Action Buttons */}
           <div style={{
             display: 'flex',
