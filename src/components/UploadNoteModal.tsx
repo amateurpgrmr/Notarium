@@ -183,9 +183,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           borderRadius: '16px',
           width: '100%',
           maxWidth: '600px',
-          padding: '32px',
+          padding: window.innerWidth < 640 ? '16px' : '32px',
           boxShadow: darkTheme.shadows.lg,
-          maxHeight: '90vh',
+          maxHeight: '95vh',
           overflowY: 'auto',
           color: darkTheme.colors.textPrimary
         }}
@@ -267,7 +267,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             style={{
               border: `2px dashed ${darkTheme.colors.accent}`,
               borderRadius: '12px',
-              padding: '32px',
+              padding: window.innerWidth < 640 ? '16px' : '32px',
               marginBottom: '24px',
               textAlign: 'center',
               background: `${darkTheme.colors.accent}10`
@@ -278,7 +278,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               alt="Preview"
               style={{
                 maxWidth: '100%',
-                maxHeight: '200px',
+                maxHeight: window.innerWidth < 640 ? '150px' : '200px',
                 margin: '0 auto',
                 borderRadius: '12px',
                 marginBottom: '16px'
@@ -398,7 +398,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 border: `1px solid ${darkTheme.colors.accent}30`,
                 borderRadius: '12px',
                 padding: '16px',
-                maxHeight: '200px',
+                maxHeight: window.innerWidth < 640 ? '200px' : '250px',
                 overflowY: 'auto'
               }}
             >
