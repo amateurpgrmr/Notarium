@@ -90,13 +90,21 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
     }
   };
 
+  const isMobile = window.innerWidth < 768;
+
   return (
     <div
       style={modalOverlayStyle}
       onClick={() => showPhotoOptions && setShowPhotoOptions(false)}
     >
       <div
-        style={modalContentStyle}
+        style={{
+          ...modalContentStyle,
+          maxWidth: isMobile ? '95%' : '400px',
+          maxHeight: isMobile ? '85vh' : 'auto',
+          padding: isMobile ? '16px' : '24px',
+          overflowY: isMobile ? 'auto' : 'visible'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -104,9 +112,16 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '24px'
+          marginBottom: isMobile ? '16px' : '24px'
         }}>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', margin: 0 }}>Edit Profile</h2>
+          <h2 style={{
+            fontSize: isMobile ? '20px' : '24px',
+            fontWeight: 'bold',
+            color: '#fff',
+            margin: 0
+          }}>
+            Edit Profile
+          </h2>
           <button
             onClick={onClose}
             style={{
@@ -144,8 +159,8 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               <div
                 onClick={() => setShowPhotoOptions(!showPhotoOptions)}
                 style={{
-                  width: '120px',
-                  height: '120px',
+                  width: isMobile ? '80px' : '120px',
+                  height: isMobile ? '80px' : '120px',
                   borderRadius: '50%',
                   background: photoPreview
                     ? `url('${photoPreview}') center/cover`
@@ -155,7 +170,7 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                   justifyContent: 'center',
                   color: 'white',
                   fontWeight: 'bold',
-                  fontSize: '48px',
+                  fontSize: isMobile ? '32px' : '48px',
                   border: `3px solid ${darkTheme.colors.borderColor}`,
                   transition: 'all 0.3s ease',
                   position: 'relative',
