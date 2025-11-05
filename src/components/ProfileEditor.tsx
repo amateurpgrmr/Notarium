@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import api from '../lib/api';
 import { useAuth } from '../App';
 import { darkTheme, modalOverlayStyle, modalContentStyle, inputStyle, buttonPrimaryStyle, buttonSecondaryStyle } from '../theme';
@@ -24,7 +24,7 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Load saved profile data from localStorage
-  React.useEffect(() => {
+  useEffect(() => {
     const savedProfile = localStorage.getItem('profileData');
     if (savedProfile) {
       try {
