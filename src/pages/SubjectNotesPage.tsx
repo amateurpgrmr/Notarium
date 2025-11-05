@@ -416,7 +416,9 @@ export default function SubjectNotesPage({
                   <div style={{
                     width: '32px',
                     height: '32px',
-                    background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                    background: note.author_photo
+                      ? `url('${note.author_photo}') center/cover`
+                      : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
@@ -426,7 +428,7 @@ export default function SubjectNotesPage({
                     fontWeight: 'bold',
                     flexShrink: 0
                   }}>
-                    {note.author_name?.charAt(0).toUpperCase()}
+                    {!note.author_photo && note.author_name?.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <p style={{ margin: 0, fontSize: '14px', fontWeight: '500', color: darkTheme.colors.textPrimary }}>

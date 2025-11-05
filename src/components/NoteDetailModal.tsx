@@ -176,7 +176,9 @@ export default function NoteDetailModal({
               style={{
                 width: '44px',
                 height: '44px',
-                background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                background: note.author_photo
+                  ? `url('${note.author_photo}') center/cover`
+                  : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
@@ -186,7 +188,7 @@ export default function NoteDetailModal({
                 fontSize: '18px'
               }}
             >
-              {note.author_name?.charAt(0).toUpperCase()}
+              {!note.author_photo && note.author_name?.charAt(0).toUpperCase()}
             </div>
             <div>
               <div style={{ fontWeight: '600', fontSize: '16px' }}>{note.author_name}</div>

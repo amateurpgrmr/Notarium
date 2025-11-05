@@ -327,7 +327,9 @@ function HomePage() {
             <div style={{
               width: '40px',
               height: '40px',
-              background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+              background: user?.photo_url
+                ? `url('${user.photo_url}') center/cover`
+                : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -337,7 +339,7 @@ function HomePage() {
               fontSize: '16px',
               flexShrink: 0
             }}>
-              {user?.name?.charAt(0).toUpperCase()}
+              {!user?.photo_url && user?.name?.charAt(0).toUpperCase()}
             </div>
             <span style={{ fontSize: '13px', fontWeight: '500' }}>{user?.name}</span>
           </button>

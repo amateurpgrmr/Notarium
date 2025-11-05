@@ -4,11 +4,13 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme, cardStyle } from '../theme';
 
 interface LeaderboardEntry {
-  name: string;
-  class: string;
-  points: number;
+  name?: string;
+  display_name?: string;
+  class?: string;
+  points?: number;
   score?: number;
   total_likes?: number;
+  photo_url?: string;
 }
 
 interface LeaderboardPageProps {
@@ -98,7 +100,9 @@ export default function LeaderboardPage({
               <div style={{
                 width: '40px',
                 height: '40px',
-                background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                background: entry.photo_url
+                  ? `url('${entry.photo_url}') center/cover`
+                  : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
@@ -108,10 +112,10 @@ export default function LeaderboardPage({
                 color: '#fff',
                 fontSize: '14px'
               }}>
-                {entry.name?.charAt(0).toUpperCase() || 'U'}
+                {!entry.photo_url && (entry.display_name?.charAt(0).toUpperCase() || entry.name?.charAt(0).toUpperCase() || 'U')}
               </div>
               <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontWeight: '500' }}>{entry.name || 'Unknown'}</p>
+                <p style={{ margin: 0, fontWeight: '500' }}>{entry.display_name || entry.name || 'Unknown'}</p>
                 <p style={{
                   margin: '4px 0 0 0',
                   fontSize: '12px',

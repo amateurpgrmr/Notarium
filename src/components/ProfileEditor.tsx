@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import api from '../lib/api';
 import { useAuth } from '../App';
 import { darkTheme, modalOverlayStyle, modalContentStyle, inputStyle, buttonPrimaryStyle, buttonSecondaryStyle } from '../theme';
+import CameraCapture from './CameraCapture';
 
 interface ProfileEditorProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
 
   const [name, setName] = useState(user?.name || '');
   const [selectedClass, setSelectedClass] = useState(user?.class || '10.1');
@@ -258,7 +260,10 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                 }}>
                   {/* Camera Option */}
                   <button
-                    onClick={() => cameraInputRef.current?.click()}
+                    onClick={() => {
+                      setShowCamera(true);
+                      setShowPhotoOptions(false);
+                    }}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -564,6 +569,21 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
           </div>
         </div>
       </div>
+
+      {/* Camera Capture Modal */}
+      {showCamera && (
+        <CameraCapture
+          onCapture={(photoBase64) => {
+            setPhotoBase64(photoBase64);
+            setPhotoPreview(photoBase64);
+            setShowCamera(false);
+            setError('');
+          }}
+          onClose={() => setShowCamera(false)}
+          title="Take Profile Picture"
+          facingMode="user"
+        />
+      )}
     </div>
   );
 }
