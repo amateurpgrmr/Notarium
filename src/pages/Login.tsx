@@ -145,6 +145,31 @@ export default function Login() {
           <p className="login-footer">
             Don't have an account? <a href="/signup">Sign up</a>
           </p>
+
+          <div style={{
+            marginTop: '16px',
+            paddingTop: '16px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            textAlign: 'center'
+          }}>
+            <a
+              href="/admin-login"
+              style={{
+                color: '#888',
+                fontSize: '13px',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'color 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#888'}
+            >
+              <span>🔐</span>
+              <span>Admin Sign In</span>
+            </a>
+          </div>
         </div>
       </div>
     </div>
