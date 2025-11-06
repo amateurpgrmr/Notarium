@@ -140,6 +140,11 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       return;
     }
 
+    if (!preselectedSubject) {
+      alert('Subject not found. Please select a subject before uploading.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Use extracted text for summary if not already generated
@@ -166,7 +171,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       const noteData = {
         title: noteTitle,
         description: quickSummary || 'No description available',
-        subject_id: preselectedSubject || null, // Use preselected if available, otherwise null
+        subject_id: preselectedSubject, // REQUIRED - must be provided
         extracted_text: extractedText || 'No extracted text',
         image_path: uploadImage,
         quick_summary: quickSummary,

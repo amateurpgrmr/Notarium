@@ -199,11 +199,13 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
 export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [notes, setNotes] = useState<AdminNote[]>([]);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [editingNote, setEditingNote] = useState<AdminNote | null>(null);
   const [groupBySubject, setGroupBySubject] = useState(true);
+  const [showActivityLog, setShowActivityLog] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -212,16 +214,37 @@ export default function AdminPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersData, notesData] = await Promise.all([
+      const [usersData, notesData, logsData] = await Promise.all([
         api.admin.getUsers(),
-        api.admin.getNotes()
+        api.admin.getNotes(),
+        loadActivityLogs()
       ]);
       setUsers(usersData.users || []);
       setNotes(notesData.notes || []);
+      setActivityLogs(logsData);
     } catch (error) {
       console.error('Failed to load admin data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadActivityLogs = async () => {
+    try {
+      const response = await api.request('/api/admin/activity-log?limit=50', {
+        method: 'GET'
+      });
+      return response.logs || [];
+    } catch (error) {
+      console.error('Failed to load activity logs:', error);
+      return [];
+    }
+  };
+
+  const handleAuthorClick = (authorId: number) => {
+    const author = users.find(u => u.id === authorId);
+    if (author) {
+      setSelectedUser(author);
     }
   };
 
@@ -450,7 +473,7 @@ export default function AdminPage() {
           </div>
 
           {/* Notes Section */}
-          <div>
+          <div style={{ marginBottom: '48px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: darkTheme.colors.textPrimary }}>
                 <i className="fas fa-file" style={{ marginRight: '8px', color: darkTheme.colors.accent }}></i>
@@ -527,7 +550,22 @@ export default function AdminPage() {
                             {note.title}
                           </div>
                           <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginBottom: '8px' }}>
-                            by {note.author_name}
+                            by{' '}
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAuthorClick(note.author_id);
+                              }}
+                              style={{
+                                color: darkTheme.colors.accent,
+                                cursor: 'pointer',
+                                textDecoration: 'underline'
+                              }}
+                              onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
+                              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                            >
+                              {note.author_name}
+                            </span>
                           </div>
                           {note.description && (
                             <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginBottom: '12px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
@@ -609,8 +647,22 @@ export default function AdminPage() {
                         onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                       >
                         <td style={{ padding: '12px 16px', fontSize: '14px' }}>{note.title}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '14px', color: darkTheme.colors.textSecondary }}>
-                          {note.author_name}
+                        <td style={{ padding: '12px 16px', fontSize: '14px' }}>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAuthorClick(note.author_id);
+                            }}
+                            style={{
+                              color: darkTheme.colors.accent,
+                              cursor: 'pointer',
+                              textDecoration: 'underline'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                          >
+                            {note.author_name}
+                          </span>
                         </td>
                         <td style={{ padding: '12px 16px', fontSize: '14px' }}>{note.subject_name || note.subject}</td>
                         <td style={{ padding: '12px 16px', fontSize: '14px' }}>
@@ -649,6 +701,103 @@ export default function AdminPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+
+          {/* Activity Log Section */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: darkTheme.colors.textPrimary }}>
+                <i className="fas fa-history" style={{ marginRight: '8px', color: darkTheme.colors.accent }}></i>
+                Activity Log ({activityLogs.length})
+              </h3>
+              <button
+                onClick={() => setShowActivityLog(!showActivityLog)}
+                style={{
+                  padding: '8px 16px',
+                  background: showActivityLog ? darkTheme.colors.accent : darkTheme.colors.bgSecondary,
+                  border: 'none',
+                  color: '#fff',
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '500'
+                }}
+              >
+                {showActivityLog ? 'Hide Log' : 'Show Log'}
+              </button>
+            </div>
+
+            {showActivityLog && (
+              <div style={{
+                ...cardStyle,
+                padding: 0,
+                overflow: 'auto',
+                maxHeight: '500px'
+              } as React.CSSProperties}>
+                {activityLogs.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: darkTheme.colors.textSecondary }}>
+                    No activity logs yet
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead style={{
+                      background: darkTheme.colors.bgSecondary,
+                      position: 'sticky',
+                      top: 0
+                    }}>
+                      <tr>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: `1px solid ${darkTheme.colors.borderColor}`, fontWeight: '600', fontSize: '13px' }}>Time</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: `1px solid ${darkTheme.colors.borderColor}`, fontWeight: '600', fontSize: '13px' }}>Admin</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: `1px solid ${darkTheme.colors.borderColor}`, fontWeight: '600', fontSize: '13px' }}>Action</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: `1px solid ${darkTheme.colors.borderColor}`, fontWeight: '600', fontSize: '13px' }}>Details</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activityLogs.map((log) => (
+                        <tr
+                          key={log.id}
+                          style={{
+                            borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
+                            transition: darkTheme.transitions.default
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = darkTheme.colors.bgSecondary}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '12px 16px', fontSize: '13px', color: darkTheme.colors.textSecondary }}>
+                            {new Date(log.created_at).toLocaleString()}
+                          </td>
+                          <td style={{ padding: '12px 16px', fontSize: '13px' }}>
+                            {log.admin_email}
+                          </td>
+                          <td style={{ padding: '12px 16px', fontSize: '13px' }}>
+                            <span style={{
+                              padding: '4px 10px',
+                              borderRadius: darkTheme.borderRadius.sm,
+                              background: log.action_type === 'like' ? 'rgba(34, 197, 94, 0.2)' :
+                                         log.action_type === 'edit' ? 'rgba(59, 130, 246, 0.2)' :
+                                         log.action_type === 'delete' ? 'rgba(239, 68, 68, 0.2)' :
+                                         'rgba(156, 163, 175, 0.2)',
+                              color: log.action_type === 'like' ? '#86efac' :
+                                    log.action_type === 'edit' ? '#60a5fa' :
+                                    log.action_type === 'delete' ? '#fca5a5' :
+                                    '#d1d5db',
+                              fontSize: '11px',
+                              fontWeight: '500',
+                              textTransform: 'uppercase'
+                            }}>
+                              {log.action_type}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 16px', fontSize: '13px', color: darkTheme.colors.textSecondary }}>
+                            {log.details}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             )}
           </div>
