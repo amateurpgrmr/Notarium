@@ -370,17 +370,20 @@ export default function SubjectNotesPage({
               <div
                 style={{
                   height: 'clamp(140px, 30vw, 200px)',
-                  background: `linear-gradient(135deg, ${darkTheme.colors.accent}20, ${darkTheme.colors.accent}05)`,
+                  background: note.image && note.image.startsWith('data:')
+                    ? `url(${note.image}) center/cover no-repeat`
+                    : `linear-gradient(135deg, ${darkTheme.colors.accent}20, ${darkTheme.colors.accent}05)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 'clamp(48px, 10vw, 64px)',
+                  fontSize: note.image && note.image.startsWith('data:') ? '0' : 'clamp(48px, 10vw, 64px)',
                   color: darkTheme.colors.accent,
                   position: 'relative',
                   overflow: 'hidden'
                 }}
               >
-                {note.image}
+                {/* Show emoji only if no actual image */}
+                {note.image && !note.image.startsWith('data:') && note.image}
                 <div
                   style={{
                     position: 'absolute',

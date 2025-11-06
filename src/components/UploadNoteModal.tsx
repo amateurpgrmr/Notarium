@@ -28,7 +28,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [noteTitle, setNoteTitle] = useState('');
-  const [noteSubject, setNoteSubject] = useState<number | null>(preselectedSubject || null);
+  const [manualTags, setManualTags] = useState('');
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [generatedSummary, setGeneratedSummary] = useState('');
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -130,8 +130,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   };
 
   const handleSubmit = async () => {
-    if (!noteTitle || !uploadImage || !noteSubject) {
-      alert('Please fill in all required fields (Title, Image, and Subject)');
+    if (!noteTitle || !uploadImage) {
+      alert('Please fill in all required fields (Title and Image)');
       return;
     }
 
@@ -159,14 +159,18 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         setSuggestedTags(tags);
       }
 
+      // Combine manual tags with AI suggestions
+      const manualTagList = manualTags.split(',').map(t => t.trim()).filter(t => t);
+      const finalTags = manualTagList.length > 0 ? manualTagList : autoTags;
+
       const noteData = {
         title: noteTitle,
         description: quickSummary || 'No description available',
-        subject_id: noteSubject,
+        subject_id: preselectedSubject || null, // Use preselected if available, otherwise null
         extracted_text: extractedText || 'No extracted text',
         image_path: uploadImage,
         quick_summary: quickSummary,
-        tags: autoTags.length > 0 ? autoTags : []
+        tags: finalTags
       };
 
       const response = await api.request('/api/notes', {
@@ -175,7 +179,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       });
 
       if (response.note) {
-        alert('Note uploaded successfully with auto-generated tags!');
+        alert('Note uploaded successfully!');
         onSuccess?.();
         onClose();
       }
@@ -207,7 +211,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     generateAISuggestions();
   }, [noteTitle, extractedText]);
 
-  const canSubmit = noteTitle && uploadImage && noteSubject && user?.class && !isProcessingOCR && !isSubmitting;
+  const canSubmit = noteTitle && uploadImage && user?.class && !isProcessingOCR && !isSubmitting;
 
   return (
     <div
@@ -540,14 +544,16 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         )}
 
-        <div style={{ marginBottom: isMobile ? '8px' : '24px' }}>
+        {/* Manual Tags Input */}
+        <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
           <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
-            Subject {preselectedSubject && '(Auto-selected)'}
+            Topic Tags <span style={{ fontSize: isMobile ? '10px' : '12px', color: darkTheme.colors.textSecondary }}>(comma-separated, optional)</span>
           </label>
-          <select
-            value={noteSubject || ''}
-            onChange={(e) => setNoteSubject(Number(e.target.value))}
-            disabled={!!preselectedSubject}
+          <input
+            type="text"
+            value={manualTags}
+            onChange={(e) => setManualTags(e.target.value)}
+            placeholder="e.g. algebra, equations, mathematics"
             style={{
               width: '100%',
               padding: isMobile ? '8px 12px' : '12px 16px',
@@ -557,63 +563,56 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               outline: 'none',
               color: darkTheme.colors.textPrimary,
               boxSizing: 'border-box',
-              opacity: preselectedSubject ? 0.6 : 1,
-              cursor: preselectedSubject ? 'not-allowed' : 'pointer',
               fontSize: isMobile ? '13px' : '14px'
             }}
-          >
-            <option value="">Select a subject...</option>
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </select>
+          />
+          {/* Preview of manual tags */}
+          {manualTags && (
+            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {manualTags.split(',').map((tag, idx) => {
+                const trimmedTag = tag.trim();
+                if (!trimmedTag) return null;
+                return (
+                  <span
+                    key={idx}
+                    style={{
+                      background: `${darkTheme.colors.accent}20`,
+                      border: `1px solid ${darkTheme.colors.accent}`,
+                      color: darkTheme.colors.accent,
+                      padding: '4px 12px',
+                      borderRadius: '16px',
+                      fontSize: '12px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    {trimmedTag}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Display user's class (auto-fetched from profile) */}
-        {user?.class && (
+        {/* AI-Suggested Tags - shown only if no manual tags */}
+        {suggestedTags.length > 0 && !manualTags && (
           <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
-              Your Class <span style={{ fontSize: '11px', color: darkTheme.colors.textSecondary }}>(from profile)</span>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '11px' : '14px', fontWeight: '500', color: darkTheme.colors.textSecondary }}>
+              <i className="fas fa-lightbulb" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
+              AI Suggestions (leave tags empty to use these):
             </label>
-            <div
-              style={{
-                width: '100%',
-                padding: isMobile ? '8px 12px' : '12px 16px',
-                background: darkTheme.colors.bgSecondary,
-                border: `1px solid ${darkTheme.colors.borderColor}`,
-                borderRadius: '12px',
-                color: darkTheme.colors.textPrimary,
-                boxSizing: 'border-box',
-                fontSize: isMobile ? '13px' : '14px',
-                opacity: 0.8
-              }}
-            >
-              Class {user.class}
-            </div>
-          </div>
-        )}
-
-        {/* AI-Suggested Tags */}
-        {suggestedTags.length > 0 && (
-          <div style={{ marginBottom: isMobile ? '8px' : '24px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '11px' : '14px', fontWeight: '500' }}>
-              <i className="fas fa-tags" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
-              AI-Suggested Tags
-            </label>
-            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {suggestedTags.map((tag, idx) => (
                 <span
                   key={idx}
                   style={{
-                    background: `${darkTheme.colors.accent}20`,
-                    border: `1px solid ${darkTheme.colors.accent}`,
+                    background: `${darkTheme.colors.accent}15`,
+                    border: `1px dashed ${darkTheme.colors.accent}60`,
                     color: darkTheme.colors.accent,
                     padding: '4px 12px',
                     borderRadius: '16px',
-                    fontSize: '12px',
-                    fontWeight: '500'
+                    fontSize: '11px',
+                    fontWeight: '500',
+                    opacity: 0.8
                   }}
                 >
                   {tag}

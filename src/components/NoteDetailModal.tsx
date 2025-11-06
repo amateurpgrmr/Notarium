@@ -134,16 +134,19 @@ export default function NoteDetailModal({
         {note.image && (
           <div
             style={{
-              height: '240px',
-              background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, #8b5cf6 100%)`,
+              height: note.image.startsWith('data:') ? '400px' : '240px',
+              background: note.image.startsWith('data:')
+                ? `url(${note.image}) center/contain no-repeat ${darkTheme.colors.bgSecondary}`
+                : `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, #8b5cf6 100%)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '96px',
+              fontSize: note.image.startsWith('data:') ? '0' : '96px',
               borderBottom: `1px solid ${darkTheme.colors.borderColor}`
             }}
           >
-            {note.image}
+            {/* Show emoji only if no actual image */}
+            {!note.image.startsWith('data:') && note.image}
           </div>
         )}
 
