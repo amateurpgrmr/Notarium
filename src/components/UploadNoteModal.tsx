@@ -3,6 +3,7 @@ import CameraCapture from './CameraCapture';
 import api from '../lib/api';
 import { darkTheme } from '../theme';
 import LoadingSpinner from './LoadingSpinner';
+import { useAuth } from '../App';
 
 interface Subject {
   id: number;
@@ -18,9 +19,8 @@ interface UploadNoteModalProps {
   preselectedSubject?: number;
 }
 
-const AUTHOR_CLASSES = ['10-A', '10-B', '10-C', '11-A', '11-B', '11-C', '12-A', '12-B', '12-C'];
-
 export default function UploadNoteModal({ onClose, subjects, onSuccess, preselectedSubject }: UploadNoteModalProps) {
+  const { user } = useAuth();
   const [uploadMode, setUploadMode] = useState<'scan' | 'photo'>('scan');
   const [uploadImage, setUploadImage] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
@@ -28,10 +28,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [noteTitle, setNoteTitle] = useState('');
-  const [noteDescription, setNoteDescription] = useState('');
   const [noteSubject, setNoteSubject] = useState<number | null>(preselectedSubject || null);
-  const [noteTags, setNoteTags] = useState('');
-  const [noteClass, setNoteClass] = useState('');
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [generatedSummary, setGeneratedSummary] = useState('');
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,6 +76,16 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       const result = await api.ai.performOCR(base64Image, 'image/jpeg');
       if (result.success) {
         setExtractedText(result.text);
+
+        // Auto-generate summary and tags in parallel after OCR completes
+        if (result.text && noteTitle) {
+          const [summary, tags] = await Promise.all([
+            generateQuickSummary(result.text, noteTitle),
+            generateAutoTags(result.text, noteTitle)
+          ]);
+          setGeneratedSummary(summary);
+          setSuggestedTags(tags);
+        }
       } else {
         alert('Failed to process image');
       }
@@ -121,36 +130,43 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   };
 
   const handleSubmit = async () => {
-    if (!noteTitle || !uploadImage || !noteSubject || !noteClass) {
-      alert('Please fill in all required fields (Title, Image, Subject, and Class)');
+    if (!noteTitle || !uploadImage || !noteSubject) {
+      alert('Please fill in all required fields (Title, Image, and Subject)');
+      return;
+    }
+
+    if (!user?.class) {
+      alert('User class not found. Please update your profile.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Generate 1-sentence summary
-      const contentForSummary = extractedText || noteDescription;
-      let quickSummary = '';
-      let autoTags: string[] = [];
+      // Use extracted text for summary if not already generated
+      const contentForSummary = extractedText;
+      let quickSummary = generatedSummary;
+      let autoTags = suggestedTags;
 
-      if (contentForSummary) {
-        // Generate summary and tags in parallel for speed
+      // Generate if not already generated
+      if (contentForSummary && !quickSummary) {
         const [summary, tags] = await Promise.all([
           generateQuickSummary(contentForSummary, noteTitle),
           generateAutoTags(contentForSummary, noteTitle)
         ]);
         quickSummary = summary;
         autoTags = tags;
+        setGeneratedSummary(summary);
+        setSuggestedTags(tags);
       }
 
       const noteData = {
         title: noteTitle,
-        description: noteDescription || quickSummary, // Use auto-summary if no description
+        description: quickSummary || 'No description available',
         subject_id: noteSubject,
         extracted_text: extractedText || 'No extracted text',
-        image_path: uploadImage, // Store base64 image
-        quick_summary: quickSummary, // Store the 1-sentence summary separately
-        tags: autoTags.length > 0 ? autoTags : noteTags.split(',').map(t => t.trim()).filter(t => t) // Use auto-tags or manual tags
+        image_path: uploadImage,
+        quick_summary: quickSummary,
+        tags: autoTags.length > 0 ? autoTags : []
       };
 
       const response = await api.request('/api/notes', {
@@ -171,7 +187,27 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     }
   };
 
-  const canSubmit = noteTitle && uploadImage && noteSubject && noteClass && !isProcessingOCR && !isSubmitting;
+  // Add effect to auto-generate summary and tags when title and extracted text are both available
+  useEffect(() => {
+    const generateAISuggestions = async () => {
+      if (noteTitle && extractedText && !generatedSummary && !isProcessingOCR) {
+        try {
+          const [summary, tags] = await Promise.all([
+            generateQuickSummary(extractedText, noteTitle),
+            generateAutoTags(extractedText, noteTitle)
+          ]);
+          setGeneratedSummary(summary);
+          setSuggestedTags(tags);
+        } catch (error) {
+          console.error('Error generating AI suggestions:', error);
+        }
+      }
+    };
+
+    generateAISuggestions();
+  }, [noteTitle, extractedText]);
+
+  const canSubmit = noteTitle && uploadImage && noteSubject && user?.class && !isProcessingOCR && !isSubmitting;
 
   return (
     <div
@@ -443,7 +479,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               <pre
                 style={{
                   whiteSpace: 'pre-wrap',
-                  fontSize: '14px',
+                  fontSize: isMobile ? '12px' : '14px',
                   fontFamily: 'monospace',
                   margin: 0,
                   color: darkTheme.colors.textSecondary
@@ -479,29 +515,30 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           />
         </div>
 
-        <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
-            Description
-          </label>
-          <textarea
-            value={noteDescription}
-            onChange={(e) => setNoteDescription(e.target.value)}
-            placeholder="Enter a description (optional)"
-            rows={isMobile ? 2 : 3}
-            style={{
-              width: '100%',
-              padding: isMobile ? '8px 12px' : '12px 16px',
-              background: darkTheme.colors.bgSecondary,
-              border: `1px solid ${darkTheme.colors.borderColor}`,
-              borderRadius: '12px',
-              outline: 'none',
-              color: darkTheme.colors.textPrimary,
-              resize: 'vertical',
-              boxSizing: 'border-box',
-              fontSize: isMobile ? '13px' : '14px'
-            }}
-          />
-        </div>
+        {/* AI-Generated Summary Preview */}
+        {generatedSummary && (
+          <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
+              <i className="fas fa-magic" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
+              AI-Generated Summary
+            </label>
+            <div
+              style={{
+                width: '100%',
+                padding: isMobile ? '8px 12px' : '12px 16px',
+                background: `${darkTheme.colors.accent}10`,
+                border: `1px solid ${darkTheme.colors.accent}30`,
+                borderRadius: '12px',
+                color: darkTheme.colors.textSecondary,
+                boxSizing: 'border-box',
+                fontSize: isMobile ? '13px' : '14px',
+                fontStyle: 'italic'
+              }}
+            >
+              {generatedSummary}
+            </div>
+          </div>
+        )}
 
         <div style={{ marginBottom: isMobile ? '8px' : '24px' }}>
           <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
@@ -534,80 +571,57 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </select>
         </div>
 
-        <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
-            Your Class <span style={{ color: darkTheme.colors.danger }}>*</span>
-          </label>
-          <select
-            value={noteClass}
-            onChange={(e) => setNoteClass(e.target.value)}
-            style={{
-              width: '100%',
-              padding: isMobile ? '8px 12px' : '12px 16px',
-              background: darkTheme.colors.bgSecondary,
-              border: `1px solid ${darkTheme.colors.borderColor}`,
-              borderRadius: '12px',
-              outline: 'none',
-              color: darkTheme.colors.textPrimary,
-              boxSizing: 'border-box',
-              fontSize: isMobile ? '13px' : '14px'
-            }}
-          >
-            <option value="">Select your class...</option>
-            {AUTHOR_CLASSES.map((cls) => (
-              <option key={cls} value={cls}>
-                Class {cls}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ marginBottom: isMobile ? '8px' : '24px' }}>
-          <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '11px' : '14px', fontWeight: '500' }}>
-            Topic Tags <span style={{ fontSize: isMobile ? '10px' : '12px', color: darkTheme.colors.textSecondary }}>(comma-separated)</span>
-          </label>
-          <input
-            type="text"
-            value={noteTags}
-            onChange={(e) => setNoteTags(e.target.value)}
-            placeholder="Enter tags (optional)"
-            style={{
-              width: '100%',
-              padding: isMobile ? '8px 12px' : '12px 16px',
-              background: darkTheme.colors.bgSecondary,
-              border: `1px solid ${darkTheme.colors.borderColor}`,
-              borderRadius: '12px',
-              outline: 'none',
-              color: darkTheme.colors.textPrimary,
-              boxSizing: 'border-box',
-              fontSize: isMobile ? '13px' : '14px'
-            }}
-          />
-          {noteTags && (
-            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {noteTags.split(',').map((tag, idx) => {
-                const trimmedTag = tag.trim();
-                if (!trimmedTag) return null;
-                return (
-                  <span
-                    key={idx}
-                    style={{
-                      background: `${darkTheme.colors.accent}20`,
-                      border: `1px solid ${darkTheme.colors.accent}`,
-                      color: darkTheme.colors.accent,
-                      padding: '4px 12px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: '500'
-                    }}
-                  >
-                    {trimmedTag}
-                  </span>
-                );
-              })}
+        {/* Display user's class (auto-fetched from profile) */}
+        {user?.class && (
+          <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
+              Your Class <span style={{ fontSize: '11px', color: darkTheme.colors.textSecondary }}>(from profile)</span>
+            </label>
+            <div
+              style={{
+                width: '100%',
+                padding: isMobile ? '8px 12px' : '12px 16px',
+                background: darkTheme.colors.bgSecondary,
+                border: `1px solid ${darkTheme.colors.borderColor}`,
+                borderRadius: '12px',
+                color: darkTheme.colors.textPrimary,
+                boxSizing: 'border-box',
+                fontSize: isMobile ? '13px' : '14px',
+                opacity: 0.8
+              }}
+            >
+              Class {user.class}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* AI-Suggested Tags */}
+        {suggestedTags.length > 0 && (
+          <div style={{ marginBottom: isMobile ? '8px' : '24px' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '11px' : '14px', fontWeight: '500' }}>
+              <i className="fas fa-tags" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
+              AI-Suggested Tags
+            </label>
+            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {suggestedTags.map((tag, idx) => (
+                <span
+                  key={idx}
+                  style={{
+                    background: `${darkTheme.colors.accent}20`,
+                    border: `1px solid ${darkTheme.colors.accent}`,
+                    color: darkTheme.colors.accent,
+                    padding: '4px 12px',
+                    borderRadius: '16px',
+                    fontSize: '12px',
+                    fontWeight: '500'
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Submit Button */}
         <button
