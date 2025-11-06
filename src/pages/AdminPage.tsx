@@ -264,7 +264,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleSaveNote = async (noteId: number, updates: { title?: string; description?: string; tags?: string[] }) => {
+  const handleSaveNote = async (noteId: number, updates: { title?: string; description?: string; tags?: string[]; content?: string }) => {
     try {
       await api.request(`/api/admin/notes/${noteId}`, {
         method: 'PUT',
@@ -276,6 +276,10 @@ export default function AdminPage() {
       console.error('Failed to update note:', error);
       throw error;
     }
+  };
+
+  const handleModalAdminLike = async (noteId: number) => {
+    await handleAdminLike(noteId);
   };
 
   const handleDeleteUser = async (userId: number) => {
@@ -813,6 +817,8 @@ export default function AdminPage() {
           note={editingNote}
           onClose={() => setEditingNote(null)}
           onSave={handleSaveNote}
+          onAdminLike={handleModalAdminLike}
+          isLiking={actionLoading === editingNote.id}
         />
       )}
     </div>

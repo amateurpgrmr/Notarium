@@ -13,17 +13,24 @@ interface Note {
   likes: number;
   admin_upvotes: number;
   created_at: string;
+  content?: string;
+  extracted_text?: string;
+  summary?: string;
+  admin_liked?: boolean;
 }
 
 interface AdminNoteEditModalProps {
   note: Note | null;
   onClose: () => void;
-  onSave: (noteId: number, updates: { title?: string; description?: string; tags?: string[] }) => Promise<void>;
+  onSave: (noteId: number, updates: { title?: string; description?: string; tags?: string[]; content?: string }) => Promise<void>;
+  onAdminLike?: (noteId: number) => Promise<void>;
+  isLiking?: boolean;
 }
 
-export default function AdminNoteEditModal({ note, onClose, onSave }: AdminNoteEditModalProps) {
+export default function AdminNoteEditModal({ note, onClose, onSave, onAdminLike, isLiking }: AdminNoteEditModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -31,6 +38,7 @@ export default function AdminNoteEditModal({ note, onClose, onSave }: AdminNoteE
     if (note) {
       setTitle(note.title || '');
       setDescription(note.description || '');
+      setContent(note.content || note.extracted_text || note.summary || '');
 
       // Handle tags - could be string or array
       if (note.tags) {
@@ -59,6 +67,7 @@ export default function AdminNoteEditModal({ note, onClose, onSave }: AdminNoteE
       await onSave(note.id, {
         title,
         description,
+        content,
         tags: tagArray
       });
       onClose();
@@ -67,6 +76,12 @@ export default function AdminNoteEditModal({ note, onClose, onSave }: AdminNoteE
       alert('Failed to save changes');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAdminLike = async () => {
+    if (onAdminLike) {
+      await onAdminLike(note.id);
     }
   };
 
@@ -115,18 +130,40 @@ export default function AdminNoteEditModal({ note, onClose, onSave }: AdminNoteE
           <h2 style={{ fontSize: '20px', margin: 0, fontWeight: '600' }}>
             Edit Note
           </h2>
-          <button
-            onClick={onClose}
-            style={{
-              fontSize: '24px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: darkTheme.colors.textSecondary
-            }}
-          >
-            ×
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {onAdminLike && (
+              <button
+                onClick={handleAdminLike}
+                disabled={isLiking}
+                style={{
+                  padding: '8px 16px',
+                  background: note.admin_liked ? `${darkTheme.colors.accent}40` : `${darkTheme.colors.accent}20`,
+                  border: `1px solid ${darkTheme.colors.accent}`,
+                  color: darkTheme.colors.accent,
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: isLiking ? 'not-allowed' : 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  opacity: isLiking ? 0.6 : 1
+                }}
+                title="Admin Like (+5 diamonds)"
+              >
+                {isLiking ? '...' : note.admin_liked ? '⭐ Liked' : '⭐ Admin Like'}
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              style={{
+                fontSize: '24px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: darkTheme.colors.textSecondary
+              }}
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -136,9 +173,45 @@ export default function AdminNoteEditModal({ note, onClose, onSave }: AdminNoteE
             <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginBottom: '4px' }}>
               Author: <span style={{ color: darkTheme.colors.textPrimary, fontWeight: '500' }}>{note.author_name}</span>
             </div>
-            <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>
+            <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginBottom: '4px' }}>
               Subject: <span style={{ color: darkTheme.colors.textPrimary, fontWeight: '500' }}>{note.subject_name || 'Unknown'}</span>
             </div>
+            <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>
+              <span style={{ marginRight: '12px' }}>
+                <i className="fas fa-heart" style={{ marginRight: '4px' }}></i>
+                {note.likes} Likes
+              </span>
+              <span style={{ color: darkTheme.colors.accent }}>
+                <i className="fas fa-star" style={{ marginRight: '4px' }}></i>
+                {note.admin_upvotes} Admin Likes
+              </span>
+            </div>
+          </div>
+
+          {/* Full Content */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+              Full Content <span style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>(editable for typos & improvements)</span>
+            </label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={8}
+              placeholder="Edit the full content of the note here..."
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: darkTheme.colors.bgSecondary,
+                border: `1px solid ${darkTheme.colors.borderColor}`,
+                borderRadius: darkTheme.borderRadius.md,
+                outline: 'none',
+                color: darkTheme.colors.textPrimary,
+                fontSize: '14px',
+                resize: 'vertical',
+                boxSizing: 'border-box',
+                fontFamily: 'inherit'
+              }}
+            />
           </div>
 
           {/* Title */}
