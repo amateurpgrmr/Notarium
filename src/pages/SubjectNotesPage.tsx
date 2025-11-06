@@ -14,6 +14,7 @@ export interface Note {
   content?: string;
   author_name: string;
   author_class: string;
+  author_photo?: string;
   subject_id: number;
   image?: string;
   tags?: string[];
@@ -58,68 +59,48 @@ export default function SubjectNotesPage({
 
     try {
       setIsLoading(true);
-      // Mock notes data per subject
-      const mockNotes: Note[] = [
-        {
-          id: 1,
-          title: `Introduction to ${subject.name}`,
-          description: `Learn the fundamentals of ${subject.name}. This comprehensive note covers all basics.`,
-          content: `# Introduction to ${subject.name}\n\n## Key Concepts\n1. Foundation Principles\n2. Core Definitions\n3. Basic Applications\n\n## Learning Objectives\n- Understand fundamental concepts\n- Apply basic principles\n- Solve introductory problems\n\n## Study Tips\n- Review flashcards regularly\n- Practice problems daily\n- Form study groups`,
-          author_name: 'Alice Johnson',
-          author_class: '10-A',
-          subject_id: subject.id,
-          image: '📄',
-          tags: ['basics', 'fundamental'],
-          likes: 24,
-          admin_upvotes: 3,
-          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          liked_by_me: false,
-          upvoted_by_me: false,
-        },
-        {
-          id: 2,
-          title: `Advanced Topics in ${subject.name}`,
-          description: `Deep dive into advanced concepts. Perfect for exam preparation.`,
-          content: `# Advanced Topics in ${subject.name}\n\n## Complex Theories\n- Theory A: Detailed explanation\n- Theory B: Comparative analysis\n- Theory C: Real-world applications\n\n## Problem-Solving Strategies\n1. Analysis methods\n2. Systematic approach\n3. Optimization techniques\n\n## Practice Questions\n- Multiple choice problems\n- Essay questions\n- Case studies`,
-          author_name: 'Bob Smith',
-          author_class: '10-B',
-          subject_id: subject.id,
-          image: '📚',
-          tags: ['advanced', 'exam-prep'],
-          likes: 18,
-          admin_upvotes: 5,
-          created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          liked_by_me: false,
-          upvoted_by_me: false,
-        },
-        {
-          id: 3,
-          title: `Quick Summary of ${subject.name}`,
-          description: `Quick revision notes for last-minute preparation.`,
-          content: `# Quick Summary of ${subject.name}\n\n## Quick Facts\n- Point 1: Brief explanation\n- Point 2: Key takeaway\n- Point 3: Important detail\n\n## Memory Aids\n- Acronyms: ABC = Always Be Clear\n- Mnemonics: Remember by association\n- Visual maps: Create diagrams\n\n## Common Mistakes\n✗ Don't confuse A with B\n✗ Avoid oversimplifying concepts\n✗ Check your work twice\n\n## Last-Minute Tips\n✓ Focus on key points\n✓ Review practice problems\n✓ Get good sleep before exam`,
-          author_name: 'Carol White',
-          author_class: '10-C',
-          subject_id: subject.id,
-          image: '📋',
-          tags: ['summary', 'revision'],
-          likes: 42,
-          admin_upvotes: 2,
-          created_at: new Date().toISOString(),
-          liked_by_me: false,
-          upvoted_by_me: false,
-        }
-      ];
 
-      setNotes(mockNotes);
-
-      // Extract all unique tags
-      const tags = new Set<string>();
-      mockNotes.forEach(note => {
-        note.tags?.forEach(tag => tags.add(tag));
+      // Fetch real notes from backend
+      const response = await api.request(`/api/notes/subject/${subject.id}`, {
+        method: 'GET'
       });
-      setAllTags(Array.from(tags));
+
+      if (response.notes) {
+        // Map backend response to frontend Note interface
+        const loadedNotes: Note[] = response.notes.map((note: any) => ({
+          id: note.id,
+          title: note.title,
+          description: note.description || note.summary,
+          content: note.extracted_text,
+          author_name: note.author_name || 'Anonymous',
+          author_class: note.author_class || 'Unknown',
+          author_photo: note.author_photo,
+          subject_id: note.subject_id,
+          image: note.image_path || '📄', // Use uploaded image or default icon
+          tags: note.tags ? (typeof note.tags === 'string' ? JSON.parse(note.tags) : note.tags) : [],
+          likes: note.likes || 0,
+          admin_upvotes: note.admin_upvotes || 0,
+          created_at: note.created_at,
+          liked_by_me: note.liked_by_me || false,
+          upvoted_by_me: note.upvoted_by_me || false,
+        }));
+
+        setNotes(loadedNotes);
+
+        // Extract all unique tags
+        const tags = new Set<string>();
+        loadedNotes.forEach(note => {
+          note.tags?.forEach(tag => tags.add(tag));
+        });
+        setAllTags(Array.from(tags));
+      } else {
+        setNotes([]);
+        setAllTags([]);
+      }
     } catch (error) {
       console.error('Failed to load subject notes:', error);
+      setNotes([]);
+      setAllTags([]);
     } finally {
       setIsLoading(false);
     }
