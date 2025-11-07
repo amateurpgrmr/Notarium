@@ -22,7 +22,7 @@ interface UploadNoteModalProps {
 export default function UploadNoteModal({ onClose, subjects, onSuccess, preselectedSubject }: UploadNoteModalProps) {
   const { user } = useAuth();
   const [uploadMode, setUploadMode] = useState<'scan' | 'photo'>('scan');
-  const [uploadImage, setUploadImage] = useState<string | null>(null);
+  const [uploadImages, setUploadImages] = useState<string[]>([]);
   const [showCamera, setShowCamera] = useState(false);
   const [extractedText, setExtractedText] = useState('');
   const [isProcessingOCR, setIsProcessingOCR] = useState(false);
@@ -32,6 +32,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [generatedSummary, setGeneratedSummary] = useState('');
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+  const [fullscreenImage, setFullscreenImage] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Track window resize for responsive design
@@ -50,10 +52,11 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
-        setUploadImage(reader.result);
+        const newImage = reader.result;
+        setUploadImages(prev => [...prev, newImage]);
         // Auto-process OCR if in scan mode
         if (uploadMode === 'scan') {
-          processOCR(reader.result);
+          processOCR(newImage, prev.length);
         }
       }
     };
@@ -62,26 +65,30 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
   const handlePhotoCapture = async (photoBase64: string) => {
     setShowCamera(false);
-    setUploadImage(photoBase64);
+    setUploadImages(prev => [...prev, photoBase64]);
 
     // Auto-process OCR if in scan mode
     if (uploadMode === 'scan') {
-      await processOCR(photoBase64);
+      await processOCR(photoBase64, uploadImages.length);
     }
   };
 
-  const processOCR = async (base64Image: string) => {
+  const processOCR = async (base64Image: string, pageNumber: number) => {
     setIsProcessingOCR(true);
     try {
       const result = await api.ai.performOCR(base64Image, 'image/jpeg');
       if (result.success) {
-        setExtractedText(result.text);
+        // Append text with page marker
+        setExtractedText(prev => {
+          const pageMarker = pageNumber > 0 ? `\n\n--- Page ${pageNumber + 1} ---\n\n` : '';
+          return prev + pageMarker + result.text;
+        });
 
         // Auto-generate summary and tags in parallel after OCR completes
         if (result.text && noteTitle) {
           const [summary, tags] = await Promise.all([
-            generateQuickSummary(result.text, noteTitle),
-            generateAutoTags(result.text, noteTitle)
+            generateQuickSummary(extractedText + result.text, noteTitle),
+            generateAutoTags(extractedText + result.text, noteTitle)
           ]);
           setGeneratedSummary(summary);
           setSuggestedTags(tags);
@@ -130,7 +137,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   };
 
   const handleSubmit = async () => {
-    if (!noteTitle || !uploadImage) {
+    if (!noteTitle || uploadImages.length === 0) {
       alert('Please fill in all required fields (Title and Image)');
       return;
     }
@@ -168,7 +175,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         description: quickSummary || 'No description available',
         subject_id: preselectedSubject, // REQUIRED - must be provided
         extracted_text: extractedText || 'No extracted text',
-        image_path: uploadImage,
+        image_path: uploadImages[0], // Use first image as primary
         quick_summary: quickSummary,
         tags: finalTags
       };
@@ -211,7 +218,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     generateAISuggestions();
   }, [noteTitle, extractedText]);
 
-  const canSubmit = noteTitle && uploadImage && !isProcessingOCR && !isSubmitting;
+  const canSubmit = noteTitle && uploadImages.length > 0 && !isProcessingOCR && !isSubmitting;
 
   return (
     <div
@@ -321,8 +328,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         </div>
 
-        {/* Upload Buttons - Only show if no image selected */}
-        {!uploadImage && (
+        {/* Upload Buttons */}
+        {uploadImages.length === 0 ? (
           <div style={{ marginBottom: isMobile ? '12px' : '24px' }}>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button
@@ -378,68 +385,184 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               style={{ display: 'none' }}
             />
           </div>
-        )}
-
-        {/* Image Thumbnail - Tiny indicator when image is selected */}
-        {uploadImage && (
-          <div
-            style={{
-              display: 'flex',
-              gap: isMobile ? '8px' : '12px',
-              marginBottom: isMobile ? '8px' : '12px',
-              padding: isMobile ? '4px 6px' : '6px 8px',
-              background: `${darkTheme.colors.accent}10`,
-              border: `1px solid ${darkTheme.colors.accent}30`,
-              borderRadius: '6px',
-              alignItems: 'center',
-              height: isMobile ? '40px' : '50px'
-            }}
-          >
-            <img
-              src={uploadImage}
-              alt="Selected"
-              style={{
-                width: isMobile ? '36px' : '45px',
-                height: isMobile ? '36px' : '45px',
-                borderRadius: '4px',
-                objectFit: 'cover',
-                flexShrink: 0
-              }}
-            />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: '2px 0', color: darkTheme.colors.accent, fontWeight: '500', fontSize: isMobile ? '11px' : '12px' }}>
-                <i className="fas fa-check-circle"></i> Photo ready
-              </p>
-              {isProcessingOCR && (
-                <p style={{ margin: '2px 0 0 0', color: darkTheme.colors.textSecondary, fontSize: isMobile ? '10px' : '11px' }}>
-                  <i className="fas fa-spinner fa-spin"></i> Scanning...
-                </p>
-              )}
-            </div>
+        ) : (
+          <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
             <button
-              onClick={() => {
-                setUploadImage(null);
-                setExtractedText('');
-              }}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isProcessingOCR}
               style={{
-                padding: isMobile ? '4px 8px' : '4px 10px',
-                background: 'transparent',
-                color: darkTheme.colors.textSecondary,
-                border: `1px solid ${darkTheme.colors.borderColor}`,
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: isMobile ? '10px' : '11px',
-                flexShrink: 0,
-                whiteSpace: 'nowrap'
+                width: '100%',
+                padding: isMobile ? '12px' : '14px',
+                background: darkTheme.colors.accent,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+                fontSize: isMobile ? '13px' : '14px',
+                fontWeight: '600',
+                transition: 'all 0.2s',
+                opacity: isProcessingOCR ? 0.5 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseOver={(e) => {
+                if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = darkTheme.colors.accent;
               }}
             >
-              Change
+              <i className="fas fa-plus"></i>
+              Add Another Page
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
+            />
+          </div>
+        )}
+
+        {/* Multi-Page Preview with Navigation */}
+        {uploadImages.length > 0 && (
+          <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
+              <i className="fas fa-images" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
+              Note Pages ({uploadImages.length})
+            </label>
+            <div style={{
+              position: 'relative',
+              background: `${darkTheme.colors.accent}10`,
+              border: `1px solid ${darkTheme.colors.accent}30`,
+              borderRadius: '12px',
+              padding: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              {/* Previous Page Arrow */}
+              {uploadImages.length > 1 && currentPage > 0 && (
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                  style={{
+                    background: darkTheme.colors.accent,
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white',
+                    fontSize: '14px',
+                    flexShrink: 0
+                  }}
+                >
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+              )}
+
+              {/* Current Page Image - Clickable for fullscreen */}
+              <div
+                onClick={() => setFullscreenImage(currentPage)}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  gap: '8px'
+                }}
+              >
+                <img
+                  src={uploadImages[currentPage]}
+                  alt={`Page ${currentPage + 1}`}
+                  style={{
+                    width: '100%',
+                    maxHeight: '150px',
+                    objectFit: 'contain',
+                    borderRadius: '8px',
+                    border: `2px solid ${darkTheme.colors.accent}`
+                  }}
+                />
+                <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>
+                  Page {currentPage + 1} of {uploadImages.length} - Click to view fullscreen
+                </div>
+                {isProcessingOCR && (
+                  <div style={{ fontSize: '11px', color: darkTheme.colors.accent }}>
+                    <i className="fas fa-spinner fa-spin"></i> Scanning...
+                  </div>
+                )}
+              </div>
+
+              {/* Next Page Arrow */}
+              {uploadImages.length > 1 && currentPage < uploadImages.length - 1 && (
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(uploadImages.length - 1, prev + 1))}
+                  style={{
+                    background: darkTheme.colors.accent,
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white',
+                    fontSize: '14px',
+                    flexShrink: 0
+                  }}
+                >
+                  <i className="fas fa-chevron-right"></i>
+                </button>
+              )}
+            </div>
+
+            {/* Delete Current Page Button */}
+            <button
+              onClick={() => {
+                const newImages = uploadImages.filter((_, idx) => idx !== currentPage);
+                setUploadImages(newImages);
+                if (newImages.length === 0) {
+                  setExtractedText('');
+                  setCurrentPage(0);
+                } else if (currentPage >= newImages.length) {
+                  setCurrentPage(newImages.length - 1);
+                }
+              }}
+              style={{
+                marginTop: '8px',
+                padding: '6px 12px',
+                background: 'transparent',
+                color: 'rgba(239, 68, 68, 0.8)',
+                border: `1px solid rgba(239, 68, 68, 0.5)`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <i className="fas fa-trash" style={{ marginRight: '6px' }}></i>
+              Delete Page {currentPage + 1}
             </button>
           </div>
         )}
 
         {/* Scanning Indicator - Show while OCR is processing */}
-        {uploadMode === 'scan' && uploadImage && isProcessingOCR && !extractedText && (
+        {uploadMode === 'scan' && uploadImages.length > 0 && isProcessingOCR && (
           <div
             style={{
               marginBottom: isMobile ? '8px' : '12px',
@@ -730,6 +853,143 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           title="Take Photo of Note"
           facingMode="environment"
         />
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage !== null && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            flexDirection: 'column',
+            gap: '20px'
+          }}
+          onClick={() => setFullscreenImage(null)}
+        >
+          {/* Close Button */}
+          <button
+            onClick={() => setFullscreenImage(null)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '50%',
+              width: '48px',
+              height: '48px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'white',
+              fontSize: '24px',
+              zIndex: 2001
+            }}
+          >
+            ×
+          </button>
+
+          {/* Navigation Arrows */}
+          {uploadImages.length > 1 && fullscreenImage > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullscreenImage(prev => prev !== null ? Math.max(0, prev - 1) : 0);
+              }}
+              style={{
+                position: 'absolute',
+                left: '20px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '50%',
+                width: '56px',
+                height: '56px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'white',
+                fontSize: '24px',
+                zIndex: 2001
+              }}
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+          )}
+
+          {uploadImages.length > 1 && fullscreenImage < uploadImages.length - 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullscreenImage(prev => prev !== null ? Math.min(uploadImages.length - 1, prev + 1) : uploadImages.length - 1);
+              }}
+              style={{
+                position: 'absolute',
+                right: '20px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '50%',
+                width: '56px',
+                height: '56px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'white',
+                fontSize: '24px',
+                zIndex: 2001
+              }}
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          )}
+
+          {/* Image */}
+          <img
+            src={uploadImages[fullscreenImage]}
+            alt={`Page ${fullscreenImage + 1} Fullscreen`}
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '85vh',
+              objectFit: 'contain',
+              borderRadius: '12px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Page Indicator */}
+          {uploadImages.length > 1 && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '24px',
+                padding: '12px 24px',
+                color: 'white',
+                fontSize: '16px',
+                fontWeight: '500',
+                zIndex: 2001
+              }}
+            >
+              Page {fullscreenImage + 1} of {uploadImages.length}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
