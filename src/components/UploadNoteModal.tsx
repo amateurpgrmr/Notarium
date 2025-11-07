@@ -135,11 +135,6 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       return;
     }
 
-    if (!user?.class) {
-      alert('User class not found. Please update your profile.');
-      return;
-    }
-
     if (!preselectedSubject) {
       alert('Subject not found. Please select a subject before uploading.');
       return;
