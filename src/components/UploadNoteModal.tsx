@@ -34,6 +34,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const [fullscreenImage, setFullscreenImage] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [ocrCompleted, setOcrCompleted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Track window resize for responsive design
@@ -54,10 +55,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       if (typeof reader.result === 'string') {
         const newImage = reader.result;
         setUploadImages(prev => [...prev, newImage]);
-        // Auto-process OCR if in scan mode
-        if (uploadMode === 'scan') {
-          processOCR(newImage, prev.length);
-        }
+        // Don't auto-process OCR - wait for user confirmation
       }
     };
     reader.readAsDataURL(file);
@@ -66,39 +64,43 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const handlePhotoCapture = async (photoBase64: string) => {
     setShowCamera(false);
     setUploadImages(prev => [...prev, photoBase64]);
-
-    // Auto-process OCR if in scan mode
-    if (uploadMode === 'scan') {
-      await processOCR(photoBase64, uploadImages.length);
-    }
+    // Don't auto-process OCR - wait for user confirmation
   };
 
-  const processOCR = async (base64Image: string, pageNumber: number) => {
-    setIsProcessingOCR(true);
-    try {
-      const result = await api.ai.performOCR(base64Image, 'image/jpeg');
-      if (result.success) {
-        // Append text with page marker
-        setExtractedText(prev => {
-          const pageMarker = pageNumber > 0 ? `\n\n--- Page ${pageNumber + 1} ---\n\n` : '';
-          return prev + pageMarker + result.text;
-        });
+  const processAllPages = async () => {
+    if (uploadImages.length === 0) return;
 
-        // Auto-generate summary and tags in parallel after OCR completes
-        if (result.text && noteTitle) {
-          const [summary, tags] = await Promise.all([
-            generateQuickSummary(extractedText + result.text, noteTitle),
-            generateAutoTags(extractedText + result.text, noteTitle)
-          ]);
-          setGeneratedSummary(summary);
-          setSuggestedTags(tags);
+    setIsProcessingOCR(true);
+    setExtractedText(''); // Clear any existing text
+
+    try {
+      let combinedText = '';
+
+      // Process each image sequentially
+      for (let i = 0; i < uploadImages.length; i++) {
+        try {
+          const result = await api.ai.performOCR(uploadImages[i], 'image/jpeg');
+          if (result.success) {
+            const pageMarker = i > 0 ? `\n\n--- Page ${i + 1} ---\n\n` : '';
+            combinedText += pageMarker + result.text;
+
+            // Update text as we process each page
+            setExtractedText(combinedText);
+          } else {
+            throw new Error(`Failed to process page ${i + 1}`);
+          }
+        } catch (pageError) {
+          console.error(`Error processing page ${i + 1}:`, pageError);
+          alert(`Failed to process page ${i + 1}. Continuing with other pages...`);
         }
-      } else {
-        alert('Failed to process image');
       }
+
+      setOcrCompleted(true);
+      alert(`Successfully processed ${uploadImages.length} page(s)!`);
+
     } catch (error) {
       console.error('OCR Error:', error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Failed to process image'}`);
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to process images'}`);
     } finally {
       setIsProcessingOCR(false);
     }
@@ -281,9 +283,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         <div style={{ display: 'flex', gap: isMobile ? '8px' : '16px', marginBottom: isMobile ? '12px' : '24px' }}>
           <div
             onClick={() => {
-              if (!isProcessingOCR) {
+              if (!isProcessingOCR && uploadImages.length === 0) {
                 setUploadMode('scan');
                 setExtractedText('');
+                setOcrCompleted(false);
               }
             }}
             style={{
@@ -292,10 +295,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               borderRadius: '12px',
               border: `2px dashed ${uploadMode === 'scan' ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
               background: uploadMode === 'scan' ? `${darkTheme.colors.accent}15` : 'transparent',
-              cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+              cursor: (isProcessingOCR || uploadImages.length > 0) ? 'not-allowed' : 'pointer',
               textAlign: 'center',
               transition: 'all 0.3s',
-              opacity: isProcessingOCR && uploadMode !== 'scan' ? 0.5 : 1
+              opacity: (isProcessingOCR || uploadImages.length > 0) && uploadMode !== 'scan' ? 0.5 : 1
             }}
           >
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>
@@ -305,8 +308,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
           <div
             onClick={() => {
-              if (!isProcessingOCR) {
+              if (!isProcessingOCR && uploadImages.length === 0) {
                 setUploadMode('photo');
+                setOcrCompleted(false);
               }
             }}
             style={{
@@ -315,10 +319,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               borderRadius: '12px',
               border: `2px dashed ${uploadMode === 'photo' ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
               background: uploadMode === 'photo' ? `${darkTheme.colors.accent}15` : 'transparent',
-              cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+              cursor: (isProcessingOCR || uploadImages.length > 0) ? 'not-allowed' : 'pointer',
               textAlign: 'center',
               transition: 'all 0.3s',
-              opacity: isProcessingOCR ? 0.5 : 1
+              opacity: (isProcessingOCR || uploadImages.length > 0) && uploadMode !== 'photo' ? 0.5 : 1
             }}
           >
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>
@@ -387,36 +391,144 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         ) : (
           <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isProcessingOCR}
-              style={{
-                width: '100%',
-                padding: isMobile ? '12px' : '14px',
-                background: darkTheme.colors.accent,
-                color: 'white',
-                border: 'none',
-                borderRadius: '12px',
-                cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
-                fontSize: isMobile ? '13px' : '14px',
-                fontWeight: '600',
-                transition: 'all 0.2s',
-                opacity: isProcessingOCR ? 0.5 : 1,
+            {/* Start OCR Scan Button - Show only if scan mode and OCR not completed */}
+            {uploadMode === 'scan' && !ocrCompleted && (
+              <button
+                onClick={processAllPages}
+                disabled={isProcessingOCR || uploadImages.length === 0}
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '14px' : '16px',
+                  background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, ${darkTheme.colors.accentHover} 100%)`,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: (isProcessingOCR || uploadImages.length === 0) ? 'not-allowed' : 'pointer',
+                  fontSize: isMobile ? '14px' : '16px',
+                  fontWeight: '700',
+                  transition: 'all 0.2s',
+                  opacity: (isProcessingOCR || uploadImages.length === 0) ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginBottom: '12px',
+                  boxShadow: darkTheme.shadows.default
+                }}
+                onMouseOver={(e) => {
+                  if (!isProcessingOCR && uploadImages.length > 0) {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = darkTheme.shadows.lg;
+                  }
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = darkTheme.shadows.default;
+                }}
+              >
+                {isProcessingOCR ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Processing {uploadImages.length} page(s)...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-magic"></i>
+                    Start OCR Scan ({uploadImages.length} page{uploadImages.length !== 1 ? 's' : ''})
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Add Another Page Button - Show only after OCR is completed or in photo mode */}
+            {(uploadMode === 'photo' || ocrCompleted) && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessingOCR}
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '12px' : '14px',
+                  background: darkTheme.colors.accent,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+                  fontSize: isMobile ? '13px' : '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s',
+                  opacity: isProcessingOCR ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  marginBottom: uploadMode === 'scan' && ocrCompleted ? '12px' : '0'
+                }}
+                onMouseOver={(e) => {
+                  if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = darkTheme.colors.accent;
+                }}
+              >
+                <i className="fas fa-plus"></i>
+                Add Another Page
+              </button>
+            )}
+
+            {/* Re-scan Button - Show if OCR completed and user wants to add more pages and re-scan */}
+            {uploadMode === 'scan' && ocrCompleted && (
+              <button
+                onClick={() => {
+                  setOcrCompleted(false);
+                  setExtractedText('');
+                }}
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '10px' : '12px',
+                  background: 'transparent',
+                  color: darkTheme.colors.accent,
+                  border: `1px solid ${darkTheme.colors.accent}`,
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: isMobile ? '12px' : '13px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = `${darkTheme.colors.accent}15`;
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <i className="fas fa-redo"></i>
+                Re-scan All Pages
+              </button>
+            )}
+
+            {/* Helper text for scan mode before OCR */}
+            {uploadMode === 'scan' && !ocrCompleted && uploadImages.length > 0 && !isProcessingOCR && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                background: `${darkTheme.colors.accent}10`,
+                border: `1px solid ${darkTheme.colors.accent}30`,
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: darkTheme.colors.textSecondary,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
                 gap: '8px'
-              }}
-              onMouseOver={(e) => {
-                if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = darkTheme.colors.accent;
-              }}
-            >
-              <i className="fas fa-plus"></i>
-              Add Another Page
-            </button>
+              }}>
+                <i className="fas fa-info-circle" style={{ color: darkTheme.colors.accent }}></i>
+                <span>Add all pages first, then click "Start OCR Scan" to extract text from all pages at once.</span>
+              </div>
+            )}
+
             <input
               ref={fileInputRef}
               type="file"
@@ -532,6 +644,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 if (newImages.length === 0) {
                   setExtractedText('');
                   setCurrentPage(0);
+                  setOcrCompleted(false);
                 } else if (currentPage >= newImages.length) {
                   setCurrentPage(newImages.length - 1);
                 }
