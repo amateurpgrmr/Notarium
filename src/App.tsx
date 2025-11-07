@@ -302,6 +302,32 @@ function HomePage() {
                 <i style={{ marginRight: '6px' }} className="fas fa-cog"></i>Admin
               </button>
             )}
+
+            {/* Logout Button */}
+            <button
+              onClick={logout}
+              style={{
+                padding: '10px 18px',
+                background: 'transparent',
+                border: `1px solid ${darkTheme.colors.borderColor}`,
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
+              }}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-sign-out-alt"></i>Logout
+            </button>
           </div>
         )}
 
