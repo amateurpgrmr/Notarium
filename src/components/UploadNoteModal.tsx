@@ -211,7 +211,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     generateAISuggestions();
   }, [noteTitle, extractedText]);
 
-  const canSubmit = noteTitle && uploadImage && user?.class && !isProcessingOCR && !isSubmitting;
+  const canSubmit = noteTitle && uploadImage && !isProcessingOCR && !isSubmitting;
 
   return (
     <div
@@ -462,35 +462,51 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         )}
 
-        {/* Extracted Text */}
+        {/* Extracted Text - Editable */}
         {uploadMode === 'scan' && extractedText && (
           <div style={{ marginBottom: '16px', flex: isMobile ? 1 : 'auto', display: 'flex', flexDirection: 'column' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
               <i className="fas fa-check-circle" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
-              Extracted Text (OCR Result)
+              Extracted Text (Editable - Fix any errors)
             </label>
-            <div
+            <textarea
+              value={extractedText}
+              onChange={(e) => setExtractedText(e.target.value)}
+              spellCheck={true}
               style={{
                 background: `${darkTheme.colors.accent}10`,
                 border: `1px solid ${darkTheme.colors.accent}30`,
                 borderRadius: '12px',
                 padding: isMobile ? '12px' : '16px',
                 maxHeight: isMobile ? '400px' : '250px',
-                overflowY: 'auto',
-                flex: isMobile ? 1 : 'auto'
+                minHeight: '150px',
+                resize: 'vertical',
+                flex: isMobile ? 1 : 'auto',
+                whiteSpace: 'pre-wrap',
+                fontSize: isMobile ? '12px' : '14px',
+                fontFamily: 'monospace',
+                color: darkTheme.colors.textPrimary,
+                width: '100%',
+                boxSizing: 'border-box',
+                outline: 'none'
               }}
-            >
-              <pre
-                style={{
-                  whiteSpace: 'pre-wrap',
-                  fontSize: isMobile ? '12px' : '14px',
-                  fontFamily: 'monospace',
-                  margin: 0,
-                  color: darkTheme.colors.textSecondary
-                }}
-              >
-                {extractedText}
-              </pre>
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = darkTheme.colors.accent;
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = `${darkTheme.colors.accent}30`;
+              }}
+            />
+            <div style={{
+              marginTop: '6px',
+              fontSize: '11px',
+              color: darkTheme.colors.textSecondary,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <i className="fas fa-info-circle"></i>
+              <span>Edit the text above to fix any OCR errors. Typos are highlighted automatically.</span>
             </div>
           </div>
         )}
@@ -519,28 +535,89 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           />
         </div>
 
-        {/* AI-Generated Summary Preview */}
-        {generatedSummary && (
+        {/* AI-Generated Summary Preview with Regenerate Button */}
+        {uploadMode === 'scan' && extractedText && (
           <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
-              <i className="fas fa-magic" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
-              AI-Generated Summary
-            </label>
-            <div
-              style={{
-                width: '100%',
-                padding: isMobile ? '8px 12px' : '12px 16px',
-                background: `${darkTheme.colors.accent}10`,
-                border: `1px solid ${darkTheme.colors.accent}30`,
-                borderRadius: '12px',
-                color: darkTheme.colors.textSecondary,
-                boxSizing: 'border-box',
-                fontSize: isMobile ? '13px' : '14px',
-                fontStyle: 'italic'
-              }}
-            >
-              {generatedSummary}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '500', margin: 0 }}>
+                <i className="fas fa-magic" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
+                AI-Generated Summary (2 sentences)
+              </label>
+              <button
+                onClick={async () => {
+                  if (!extractedText || !noteTitle) {
+                    alert('Please add a title first');
+                    return;
+                  }
+                  try {
+                    const summary = await generateQuickSummary(extractedText, noteTitle);
+                    setGeneratedSummary(summary);
+                    const tags = await generateAutoTags(extractedText, noteTitle);
+                    setSuggestedTags(tags);
+                  } catch (error) {
+                    alert('Failed to generate summary. Please try again.');
+                  }
+                }}
+                disabled={!noteTitle || !extractedText}
+                style={{
+                  padding: '4px 12px',
+                  background: darkTheme.colors.accent,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: noteTitle && extractedText ? 'pointer' : 'not-allowed',
+                  fontSize: isMobile ? '11px' : '12px',
+                  fontWeight: '500',
+                  opacity: noteTitle && extractedText ? 1 : 0.5,
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  if (noteTitle && extractedText) {
+                    e.currentTarget.style.background = darkTheme.colors.accentHover;
+                  }
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = darkTheme.colors.accent;
+                }}
+              >
+                <i className="fas fa-sync" style={{ marginRight: '4px' }}></i>
+                {generatedSummary ? 'Regenerate' : 'Generate'}
+              </button>
             </div>
+            {generatedSummary ? (
+              <div
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '8px 12px' : '12px 16px',
+                  background: `${darkTheme.colors.accent}10`,
+                  border: `1px solid ${darkTheme.colors.accent}30`,
+                  borderRadius: '12px',
+                  color: darkTheme.colors.textPrimary,
+                  boxSizing: 'border-box',
+                  fontSize: isMobile ? '13px' : '14px',
+                  lineHeight: '1.6'
+                }}
+              >
+                {generatedSummary}
+              </div>
+            ) : (
+              <div
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '8px 12px' : '12px 16px',
+                  background: `${darkTheme.colors.borderColor}20`,
+                  border: `1px dashed ${darkTheme.colors.borderColor}`,
+                  borderRadius: '12px',
+                  color: darkTheme.colors.textSecondary,
+                  boxSizing: 'border-box',
+                  fontSize: isMobile ? '12px' : '13px',
+                  fontStyle: 'italic',
+                  textAlign: 'center'
+                }}
+              >
+                Click "Generate" to create an AI summary from your note
+              </div>
+            )}
           </div>
         )}
 
