@@ -1899,8 +1899,8 @@ export default {
               RETURNING id, email, display_name, class, role
             `).bind('admin_' + email, 'Admin', email, password, validClass).first();
             admin = result;
-          } else if ((admin as any).role !== 'admin') {
-            // Promote user to admin if they sign in with admin credentials
+          } else {
+            // Update existing user: set role to admin and update class
             await env.DB.prepare(
               `UPDATE users SET role = 'admin', class = ? WHERE email = ?`
             ).bind(validClass, email).run();
