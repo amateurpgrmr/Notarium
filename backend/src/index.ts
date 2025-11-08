@@ -1875,6 +1875,8 @@ export default {
           const body = await request.json() as any;
           const { email, password, class: classValue } = body;
 
+          console.log('[ADMIN-LOGIN] Request:', { email, hasPassword: !!password, classValue });
+
           // Check admin credentials
           if (!email.endsWith('@notarium.site') || password !== 'notariumanagers') {
             return jsonResponse({ error: 'Invalid admin credentials' }, 401);
@@ -1882,14 +1884,17 @@ export default {
 
           // Validate class value
           const validClass = classValue || '10.1';
+          console.log('[ADMIN-LOGIN] Validated class:', validClass, 'type:', typeof validClass);
           if (!['10.1', '10.2', '10.3'].includes(validClass)) {
             return jsonResponse({ error: 'Invalid class value' }, 400);
           }
 
           // Check if admin user exists or create
+          console.log('[ADMIN-LOGIN] Checking for existing user...');
           let admin = await env.DB.prepare(
             `SELECT * FROM users WHERE email = ?`
           ).bind(email).first();
+          console.log('[ADMIN-LOGIN] Existing user found:', !!admin);
 
           if (!admin) {
             // Create admin user with specified class
@@ -1901,11 +1906,24 @@ export default {
             admin = result;
           } else {
             // Update existing user: set role to admin and update class
-            await env.DB.prepare(
-              `UPDATE users SET role = 'admin', class = ? WHERE email = ?`
-            ).bind(validClass, email).run();
-            (admin as any).role = 'admin';
-            (admin as any).class = validClass;
+            console.log('[ADMIN-LOGIN] Updating existing user:', email, 'with class:', validClass);
+            console.log('[ADMIN-LOGIN] Current user data:', admin);
+            try {
+              await env.DB.prepare(
+                `UPDATE users SET role = 'admin', class = ?, updated_at = datetime('now') WHERE email = ?`
+              ).bind(validClass, email).run();
+              console.log('[ADMIN-LOGIN] Update successful');
+
+              // Re-fetch the updated user
+              admin = await env.DB.prepare(
+                `SELECT * FROM users WHERE email = ?`
+              ).bind(email).first();
+              console.log('[ADMIN-LOGIN] Re-fetched user:', admin);
+            } catch (updateError: any) {
+              console.error('[ADMIN-LOGIN] Update failed:', updateError);
+              console.error('[ADMIN-LOGIN] Error details:', JSON.stringify(updateError));
+              throw new Error(`Failed to update admin user: ${updateError.message}`);
+            }
           }
 
           // Create token
