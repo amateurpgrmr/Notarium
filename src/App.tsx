@@ -1,4 +1,4 @@
-import { useEffect, useState, createContext, useContext } from 'react'
+import { useEffect, useState, createContext, useContext, useCallback } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import api, { User } from './lib/api'
 import Login from './pages/Login'
@@ -40,17 +40,16 @@ export function useAuth() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, refreshUser } = useAuth()
-  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     // If no user but token exists, try to load user
-    if (!user && !loading && api.isAuthenticated() && !isRefreshing) {
-      setIsRefreshing(true)
-      refreshUser().finally(() => setIsRefreshing(false))
+    if (!user && !loading && api.isAuthenticated()) {
+      refreshUser()
     }
-  }, [user, loading, refreshUser, isRefreshing])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading])
 
-  if (loading || isRefreshing) {
+  if (loading) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -830,7 +829,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     if (!api.isAuthenticated()) {
       setLoading(false)
       return
@@ -845,21 +844,22 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadUser()
-  }, [])
+  }, [loadUser])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     api.logout()
     setUser(null)
     window.location.href = '/login'
-  }
+  }, [])
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
+    setLoading(true)
     await loadUser()
-  }
+  }, [loadUser])
 
   return (
     <AuthContext.Provider value={{ user, loading, logout, refreshUser }}>
