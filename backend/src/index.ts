@@ -1873,11 +1873,17 @@ export default {
         }
         try {
           const body = await request.json() as any;
-          const { email, password } = body;
+          const { email, password, class: classValue } = body;
 
           // Check admin credentials
           if (!email.endsWith('@notarium.site') || password !== 'notariumanagers') {
             return jsonResponse({ error: 'Invalid admin credentials' }, 401);
+          }
+
+          // Validate class value
+          const validClass = classValue || '10.1';
+          if (!['10.1', '10.2', '10.3'].includes(validClass)) {
+            return jsonResponse({ error: 'Invalid class value' }, 400);
           }
 
           // Check if admin user exists or create
@@ -1886,19 +1892,20 @@ export default {
           ).bind(email).first();
 
           if (!admin) {
-            // Create admin user with email as encrypted_yw_id and NULL class
+            // Create admin user with specified class
             const result = await env.DB.prepare(`
               INSERT INTO users (encrypted_yw_id, display_name, email, password_hash, class, role, created_at)
-              VALUES (?, ?, ?, ?, NULL, 'admin', datetime('now'))
+              VALUES (?, ?, ?, ?, ?, 'admin', datetime('now'))
               RETURNING id, email, display_name, class, role
-            `).bind('admin_' + email, 'Admin', email, password).first();
+            `).bind('admin_' + email, 'Admin', email, password, validClass).first();
             admin = result;
           } else if ((admin as any).role !== 'admin') {
             // Promote user to admin if they sign in with admin credentials
             await env.DB.prepare(
-              `UPDATE users SET role = 'admin' WHERE email = ?`
-            ).bind(email).run();
+              `UPDATE users SET role = 'admin', class = ? WHERE email = ?`
+            ).bind(validClass, email).run();
             (admin as any).role = 'admin';
+            (admin as any).class = validClass;
           }
 
           // Create token

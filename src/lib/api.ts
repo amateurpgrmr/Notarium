@@ -26,6 +26,7 @@ export interface LoginResponse {
 export interface LoginCredentials {
   email: string;
   password: string;
+  class?: string;
 }
 
 let cachedToken: string | null = null;

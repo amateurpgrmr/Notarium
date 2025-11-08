@@ -6,6 +6,7 @@ import { darkTheme } from '../theme';
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [classValue, setClassValue] = useState('10.1');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const response = await api.auth.adminLogin({ email, password });
+      const response = await api.auth.adminLogin({ email, password, class: classValue });
       if (response.token) {
         localStorage.setItem('token', response.token);
         navigate('/', { replace: true });
@@ -173,6 +174,42 @@ export default function AdminLogin() {
               onFocus={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'}
               onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
             />
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              color: darkTheme.colors.textPrimary,
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+              Class
+            </label>
+            <select
+              value={classValue}
+              onChange={(e) => setClassValue(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: darkTheme.colors.bgPrimary,
+                border: `1px solid ${darkTheme.colors.borderColor}`,
+                borderRadius: darkTheme.borderRadius.md,
+                color: darkTheme.colors.textPrimary,
+                fontSize: '14px',
+                boxSizing: 'border-box',
+                transition: darkTheme.transitions.default,
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+              onFocus={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'}
+              onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
+            >
+              <option value="10.1">10.1</option>
+              <option value="10.2">10.2</option>
+              <option value="10.3">10.3</option>
+            </select>
           </div>
 
           <button
