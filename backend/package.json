@@ -7,7 +7,9 @@
     "dev:wrangler": "wrangler dev",
     "start": "node dev-server.js",
     "build": "tsc",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "migrate": "wrangler d1 execute notarium-db --file=migrations/0001_allow_null_class.sql",
+    "migrate:local": "wrangler d1 execute notarium-db-local --local --file=migrations/0001_allow_null_class.sql"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
