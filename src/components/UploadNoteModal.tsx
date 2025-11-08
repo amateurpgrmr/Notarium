@@ -636,41 +636,107 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               )}
             </div>
 
-            {/* Delete Current Page Button */}
-            <button
-              onClick={() => {
-                const newImages = uploadImages.filter((_, idx) => idx !== currentPage);
-                setUploadImages(newImages);
-                if (newImages.length === 0) {
-                  setExtractedText('');
-                  setCurrentPage(0);
-                  setOcrCompleted(false);
-                } else if (currentPage >= newImages.length) {
-                  setCurrentPage(newImages.length - 1);
-                }
-              }}
-              style={{
-                marginTop: '8px',
-                padding: '6px 12px',
-                background: 'transparent',
-                color: 'rgba(239, 68, 68, 0.8)',
-                border: `1px solid rgba(239, 68, 68, 0.5)`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '11px',
-                fontWeight: '500',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <i className="fas fa-trash" style={{ marginRight: '6px' }}></i>
-              Delete Page {currentPage + 1}
-            </button>
+            {/* Action Buttons Row */}
+            <div style={{
+              marginTop: '8px',
+              display: 'flex',
+              gap: '8px',
+              alignItems: 'center'
+            }}>
+              {/* Delete Current Page Button */}
+              <button
+                onClick={() => {
+                  const newImages = uploadImages.filter((_, idx) => idx !== currentPage);
+                  setUploadImages(newImages);
+                  if (newImages.length === 0) {
+                    setExtractedText('');
+                    setCurrentPage(0);
+                    setOcrCompleted(false);
+                  } else if (currentPage >= newImages.length) {
+                    setCurrentPage(newImages.length - 1);
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: '6px 12px',
+                  background: 'transparent',
+                  color: 'rgba(239, 68, 68, 0.8)',
+                  border: `1px solid rgba(239, 68, 68, 0.5)`,
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <i className="fas fa-trash" style={{ marginRight: '6px' }}></i>
+                Delete
+              </button>
+
+              {/* Add Page Button (Below Preview) - Only show before OCR is completed */}
+              {uploadMode === 'scan' && !ocrCompleted && !isProcessingOCR && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    flex: 1,
+                    padding: '6px 12px',
+                    background: darkTheme.colors.accent,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = darkTheme.colors.accentHover;
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = darkTheme.colors.accent;
+                  }}
+                >
+                  <i className="fas fa-plus" style={{ marginRight: '6px' }}></i>
+                  Add Page
+                </button>
+              )}
+
+              {/* Add Page Button for Photo Mode or After OCR */}
+              {(uploadMode === 'photo' || ocrCompleted) && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessingOCR}
+                  style={{
+                    flex: 1,
+                    padding: '6px 12px',
+                    background: darkTheme.colors.accent,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+                    fontSize: '11px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s',
+                    opacity: isProcessingOCR ? 0.5 : 1
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = darkTheme.colors.accent;
+                  }}
+                >
+                  <i className="fas fa-plus" style={{ marginRight: '6px' }}></i>
+                  Add Page
+                </button>
+              )}
+            </div>
           </div>
         )}
 

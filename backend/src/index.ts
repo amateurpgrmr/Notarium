@@ -1206,11 +1206,19 @@ async function suspendUser(userId: string, request: Request, env: Env) {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
   }
 
-  await env.DB.prepare(
-    'UPDATE users SET suspended = 1, updated_at = datetime("now") WHERE id = ?'
-  ).bind(userId).run();
+  const body = await request.json() as any;
+  const { days, reason } = body;
 
-  return jsonResponse({ success: true });
+  // Calculate suspension end date
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + (days || 7)); // Default 7 days
+  const endDateISO = endDate.toISOString();
+
+  await env.DB.prepare(
+    'UPDATE users SET suspended = 1, suspension_end_date = ?, suspension_reason = ?, updated_at = datetime("now") WHERE id = ?'
+  ).bind(endDateISO, reason || 'Suspended by admin', userId).run();
+
+  return jsonResponse({ success: true, suspension_end_date: endDateISO, reason });
 }
 
 // Remove user (soft delete - keep data but mark as removed)

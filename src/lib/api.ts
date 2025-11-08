@@ -15,6 +15,9 @@ export interface User {
   total_admin_upvotes?: number;
   description?: string;
   photo_url?: string;
+  suspended?: number;
+  suspension_end_date?: string;
+  suspension_reason?: string;
 }
 
 export interface LoginResponse {
@@ -468,12 +471,13 @@ export const api = {
         throw error;
       }
     },
-    suspendUser: async (userId: number) => {
+    suspendUser: async (userId: number, days: number, reason: string) => {
       try {
         const response = await api.request(`/api/admin/suspend/${userId}`, {
-          method: 'POST'
+          method: 'POST',
+          body: { days, reason }
         });
-        return { success: true };
+        return { success: true, ...response };
       } catch (error: any) {
         console.error('Failed to suspend user:', error);
         throw error;

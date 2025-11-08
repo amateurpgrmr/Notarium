@@ -371,6 +371,60 @@ function HomePage() {
         )}
       </nav>
 
+      {/* Suspension Warning Banner */}
+      {user?.suspended && (user?.suspension_end_date || user?.suspension_reason) && (
+        <div style={{
+          position: 'fixed',
+          top: isMobile ? '64px' : '76px',
+          left: 0,
+          right: 0,
+          background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.95), rgba(153, 27, 27, 0.95))',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '2px solid rgba(239, 68, 68, 0.5)',
+          padding: '16px 20px',
+          zIndex: 999,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+        }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <div style={{ fontSize: '24px', flexShrink: 0 }}>⚠️</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '6px', color: 'white' }}>
+                  Account Suspended
+                </div>
+                {user.suspension_end_date && (
+                  <div style={{ fontSize: '14px', marginBottom: '6px', color: 'rgba(255, 255, 255, 0.95)' }}>
+                    Your account is suspended until {new Date(user.suspension_end_date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                )}
+                {user.suspension_reason && (
+                  <div style={{
+                    fontSize: '13px',
+                    padding: '10px',
+                    background: 'rgba(0, 0, 0, 0.2)',
+                    borderRadius: '6px',
+                    marginTop: '8px',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    borderLeft: '3px solid rgba(255, 255, 255, 0.5)'
+                  }}>
+                    <strong>Reason:</strong> {user.suspension_reason}
+                  </div>
+                )}
+                <div style={{ fontSize: '12px', marginTop: '10px', color: 'rgba(255, 255, 255, 0.8)' }}>
+                  You can still view content but cannot upload notes or interact during this time.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Menu Overlay */}
       {isMobile && isMobileMenuOpen && (
         <div style={{

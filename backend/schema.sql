@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS users (
   total_likes INTEGER NOT NULL DEFAULT 0,
   total_admin_upvotes INTEGER NOT NULL DEFAULT 0,
   suspended INTEGER NOT NULL DEFAULT 0 CHECK(suspended IN (0, 1)),
+  suspension_end_date TEXT,
+  suspension_reason TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 ) STRICT;
