@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS users (
   suspended INTEGER NOT NULL DEFAULT 0 CHECK(suspended IN (0, 1)),
   suspension_end_date TEXT,
   suspension_reason TEXT,
+  warning INTEGER NOT NULL DEFAULT 0 CHECK(warning IN (0, 1)),
+  warning_message TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 ) STRICT;

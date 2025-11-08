@@ -1221,6 +1221,25 @@ async function suspendUser(userId: string, request: Request, env: Env) {
   return jsonResponse({ success: true, suspension_end_date: endDateISO, reason });
 }
 
+// Warn user
+async function warnUser(userId: string, request: Request, env: Env) {
+  // Verify admin using Bearer token
+  const adminUser = getUserFromToken(request);
+
+  if (!adminUser || adminUser.role !== 'admin') {
+    return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
+  }
+
+  const body = await request.json() as any;
+  const { message } = body;
+
+  await env.DB.prepare(
+    'UPDATE users SET warning = 1, warning_message = ?, updated_at = datetime("now") WHERE id = ?'
+  ).bind(message || 'Warning issued by admin', userId).run();
+
+  return jsonResponse({ success: true, message });
+}
+
 // Remove user (soft delete - keep data but mark as removed)
 async function removeUser(userId: string, request: Request, env: Env) {
   // Verify admin using Bearer token
@@ -2330,6 +2349,11 @@ Tags:`
       if (path.match(/^\/api\/admin\/suspend\/\d+$/) && request.method === 'POST') {
         const userId = path.split('/')[4];
         return await suspendUser(userId, request, env);
+      }
+
+      if (path.match(/^\/api\/admin\/warn\/\d+$/) && request.method === 'POST') {
+        const userId = path.split('/')[4];
+        return await warnUser(userId, request, env);
       }
 
       if (path.match(/^\/api\/admin\/user\/\d+$/) && request.method === 'DELETE') {

@@ -18,6 +18,8 @@ export interface User {
   suspended?: number;
   suspension_end_date?: string;
   suspension_reason?: string;
+  warning?: number;
+  warning_message?: string;
 }
 
 export interface LoginResponse {
@@ -480,6 +482,18 @@ export const api = {
         return { success: true, ...response };
       } catch (error: any) {
         console.error('Failed to suspend user:', error);
+        throw error;
+      }
+    },
+    warnUser: async (userId: number, message: string) => {
+      try {
+        const response = await api.request(`/api/admin/warn/${userId}`, {
+          method: 'POST',
+          body: { message }
+        });
+        return { success: true, ...response };
+      } catch (error: any) {
+        console.error('Failed to warn user:', error);
         throw error;
       }
     },

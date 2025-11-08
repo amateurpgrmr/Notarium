@@ -371,7 +371,47 @@ function HomePage() {
         )}
       </nav>
 
-      {/* Suspension Warning Banner */}
+      {/* Warning Banner (Yellow) */}
+      {user?.warning && user?.warning_message && !user?.suspended && (
+        <div style={{
+          position: 'fixed',
+          top: isMobile ? '64px' : '76px',
+          left: 0,
+          right: 0,
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95))',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '2px solid rgba(245, 158, 11, 0.5)',
+          padding: '14px 20px',
+          zIndex: 999,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+        }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <div style={{ fontSize: '22px', flexShrink: 0 }}>⚠️</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px', color: 'white' }}>
+                  Account Warning
+                </div>
+                <div style={{
+                  fontSize: '13px',
+                  padding: '10px',
+                  background: 'rgba(0, 0, 0, 0.15)',
+                  borderRadius: '6px',
+                  color: 'rgba(255, 255, 255, 0.95)',
+                  borderLeft: '3px solid rgba(255, 255, 255, 0.6)'
+                }}>
+                  {user.warning_message}
+                </div>
+                <div style={{ fontSize: '11px', marginTop: '8px', color: 'rgba(255, 255, 255, 0.85)', fontStyle: 'italic' }}>
+                  This is a warning. Repeated violations may result in account suspension.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suspension Banner (Red) - Blocks Actions */}
       {user?.suspended && (user?.suspension_end_date || user?.suspension_reason) && (
         <div style={{
           position: 'fixed',

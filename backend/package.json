@@ -8,9 +8,10 @@
     "start": "node dev-server.js",
     "build": "tsc",
     "deploy": "wrangler deploy",
-    "migrate": "wrangler d1 execute notarium-db --file=migrations/0001_allow_null_class.sql && wrangler d1 execute notarium-db --file=migrations/0002_add_suspension_fields.sql",
-    "migrate:local": "wrangler d1 execute notarium-db-local --local --file=migrations/0001_allow_null_class.sql && wrangler d1 execute notarium-db-local --local --file=migrations/0002_add_suspension_fields.sql",
-    "migrate:suspension": "wrangler d1 execute notarium-db --file=migrations/0002_add_suspension_fields.sql"
+    "migrate": "wrangler d1 execute notarium-db --file=migrations/0001_allow_null_class.sql && wrangler d1 execute notarium-db --file=migrations/0002_add_suspension_fields.sql && wrangler d1 execute notarium-db --file=migrations/0003_add_warning_system.sql",
+    "migrate:local": "wrangler d1 execute notarium-db-local --local --file=migrations/0001_allow_null_class.sql && wrangler d1 execute notarium-db-local --local --file=migrations/0002_add_suspension_fields.sql && wrangler d1 execute notarium-db-local --local --file=migrations/0003_add_warning_system.sql",
+    "migrate:suspension": "wrangler d1 execute notarium-db --file=migrations/0002_add_suspension_fields.sql",
+    "migrate:warning": "wrangler d1 execute notarium-db --file=migrations/0003_add_warning_system.sql"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
