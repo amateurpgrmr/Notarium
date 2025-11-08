@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   display_name TEXT,
   photo_url TEXT,
   email TEXT,
-  class TEXT CHECK(class IN ('10.1', '10.2', '10.3')),
+  class TEXT CHECK(class IS NULL OR class IN ('10.1', '10.2', '10.3')),
   role TEXT NOT NULL DEFAULT 'student' CHECK(role IN ('student', 'admin')),
   notes_uploaded INTEGER NOT NULL DEFAULT 0,
   total_likes INTEGER NOT NULL DEFAULT 0,

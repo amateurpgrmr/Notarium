@@ -1886,24 +1886,13 @@ export default {
           ).bind(email).first();
 
           if (!admin) {
-            // Create admin user without class field (admins don't need class)
-            try {
-              const result = await env.DB.prepare(`
-                INSERT INTO users (display_name, email, password_hash, role, created_at)
-                VALUES (?, ?, ?, 'admin', datetime('now'))
-                RETURNING id, email, display_name, class, role
-              `).bind('Admin', email, password).first();
-              admin = result;
-            } catch (createError: any) {
-              console.error('Failed to create admin user:', createError);
-              // Fallback: try with NULL class explicitly
-              const result = await env.DB.prepare(`
-                INSERT INTO users (display_name, email, password_hash, class, role, created_at)
-                VALUES (?, ?, ?, NULL, 'admin', datetime('now'))
-                RETURNING id, email, display_name, class, role
-              `).bind('Admin', email, password).first();
-              admin = result;
-            }
+            // Create admin user with email as encrypted_yw_id and NULL class
+            const result = await env.DB.prepare(`
+              INSERT INTO users (encrypted_yw_id, display_name, email, password_hash, class, role, created_at)
+              VALUES (?, ?, ?, ?, NULL, 'admin', datetime('now'))
+              RETURNING id, email, display_name, class, role
+            `).bind('admin_' + email, 'Admin', email, password).first();
+            admin = result;
           } else if ((admin as any).role !== 'admin') {
             // Promote user to admin if they sign in with admin credentials
             await env.DB.prepare(
