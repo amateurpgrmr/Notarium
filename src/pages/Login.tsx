@@ -24,7 +24,8 @@ export default function Login() {
       // Token exists, redirect to home - the app will validate the token
       navigate('/', { replace: true });
     }
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load saved credentials from localStorage
   useEffect(() => {
@@ -47,10 +48,9 @@ export default function Login() {
       const response = await api.auth.login({ email, password });
       if (response.token) {
         localStorage.setItem('token', response.token);
-        // Give a moment for the token to be available for the next request
-        await new Promise(resolve => setTimeout(resolve, 100));
+        navigate('/', { replace: true });
       }
-      navigate('/');
+
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     } finally {
