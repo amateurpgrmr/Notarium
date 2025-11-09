@@ -413,7 +413,7 @@ app.post('/api/chat/sessions/:sessionId/ai-response', async (req, res) => {
       }]
     }));
 
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAN0B5T7psGFbnoiKMe8eVyH6w5S6LP4Co';
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAXy40iGkSBoxidqqrhoz9ZjNlLcyxYO7A';
     const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
     const systemPrompt = `You are an expert study tutor trained to help students learn effectively. Your role is to:
@@ -497,7 +497,7 @@ app.post('/api/gemini/auto-tags', async (req, res) => {
     return res.status(400).json({ error: 'title and content are required' });
   }
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAN0B5T7psGFbnoiKMe8eVyH6w5S6LP4Co';
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAXy40iGkSBoxidqqrhoz9ZjNlLcyxYO7A';
   const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   try {
@@ -566,7 +566,7 @@ app.post('/api/gemini/quick-summary', async (req, res) => {
     return res.status(400).json({ error: 'title and content are required' });
   }
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAN0B5T7psGFbnoiKMe8eVyH6w5S6LP4Co';
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAXy40iGkSBoxidqqrhoz9ZjNlLcyxYO7A';
   const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   try {
@@ -617,7 +617,7 @@ app.post('/api/gemini/summarize', async (req, res) => {
     return res.status(400).json({ error: 'title and description are required' });
   }
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAN0B5T7psGFbnoiKMe8eVyH6w5S6LP4Co';
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAXy40iGkSBoxidqqrhoz9ZjNlLcyxYO7A';
   const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   try {

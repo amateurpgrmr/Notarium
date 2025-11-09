@@ -439,7 +439,7 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
 // OCR using Google Cloud Vision API + Gemini 2.0 for text formatting
 async function performOCR(imageBase64: string, mimeType: string, env: Env) {
   try {
-    const apiKey = env.GOOGLE_CLOUD_VISION_API_KEY || env.GEMINI_API_KEY;
+    const apiKey = env.GOOGLE_CLOUD_VISION_API_KEY || env.GEMINI_API_KEY || 'AIzaSyAXy40iGkSBoxidqqrhoz9ZjNlLcyxYO7A';
 
     if (!apiKey) {
       throw new Error('Google Cloud Vision API key is not configured');
@@ -525,60 +525,16 @@ ${rawText}`
   }
 }
 
-// Generate note summary - EXACTLY 2 sentences (Uses DeepSeek due to Gemini region restrictions)
+// Generate note summary - EXACTLY 2 sentences (Uses Gemini)
 async function generateNoteSummary(content: string, title: string, env: Env) {
-  // Use DeepSeek as primary (Gemini blocked in some regions)
   try {
-    const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-e9c8a89081d546f2862630ac21f0f730';
+    const apiKey = env.GEMINI_API_KEY || 'AIzaSyAXy40iGkSBoxidqqrhoz9ZjNlLcyxYO7A';
 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${deepseekApiKey}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [{
-          role: 'user',
-          content: `Summarize this study note in EXACTLY 2 sentences. Focus on the main concepts and key points.
-
-Title: "${title}"
-
-Content:
-${content.substring(0, 3000)}
-
-IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
-        }],
-        max_tokens: 150,
-        temperature: 0.3
-      })
-    });
-
-    const data = await response.json() as any;
-
-    if (!response.ok || !data.choices || data.choices.length === 0) {
-      throw new Error(data.error?.message || 'DeepSeek API error');
-    }
-
-    const summary = data.choices[0].message.content.trim();
-
-    // Ensure it's only 2 sentences by splitting and taking first 2
-    const sentences = summary.match(/[^.!?]+[.!?]+/g) || [summary];
-    const twoSentences = sentences.slice(0, 2).join(' ').trim();
-
-    return twoSentences;
-  } catch (deepseekError: any) {
-    console.error('DeepSeek summary error, trying Gemini fallback:', deepseekError);
-
-    // Fallback to Gemini (may not work in all regions)
-    try {
-      const client = getGeminiClient(env);
-      const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-      const response = await model.generateContent({
         contents: [{
-          role: 'user',
           parts: [{
             text: `Summarize this study note in EXACTLY 2 sentences. Focus on the main concepts and key points.
 
@@ -594,19 +550,25 @@ IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
           maxOutputTokens: 150,
           temperature: 0.3,
         }
-      } as any);
+      })
+    });
 
-      const summary = response.response.text().trim();
+    const data = await response.json() as any;
 
-      // Ensure it's only 2 sentences by splitting and taking first 2
-      const sentences = summary.match(/[^.!?]+[.!?]+/g) || [summary];
-      const twoSentences = sentences.slice(0, 2).join(' ').trim();
-
-      return twoSentences;
-    } catch (geminiError: any) {
-      console.error('Gemini fallback also failed:', geminiError);
-      throw new Error(`Failed to generate summary with both DeepSeek and Gemini: ${deepseekError.message}`);
+    if (!response.ok || !data.candidates || !data.candidates[0]) {
+      throw new Error(data.error?.message || 'Gemini API error');
     }
+
+    const summary = data.candidates[0].content.parts[0].text.trim();
+
+    // Ensure it's only 2 sentences by splitting and taking first 2
+    const sentences = summary.match(/[^.!?]+[.!?]+/g) || [summary];
+    const twoSentences = sentences.slice(0, 2).join(' ').trim();
+
+    return twoSentences;
+  } catch (error: any) {
+    console.error('Gemini summary error:', error);
+    throw new Error(`Failed to generate summary: ${error.message}`);
   }
 }
 
