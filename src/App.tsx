@@ -10,6 +10,7 @@ import SubjectNotesPage from './pages/SubjectNotesPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import ChatPage from './pages/ChatPage'
 import AdminPage from './pages/AdminPage'
+import MyNotesPage from './pages/MyNotesPage'
 import ProfileEditor from './components/ProfileEditor'
 import ProfileStats from './components/ProfileStats'
 import LoadingSpinner from './components/LoadingSpinner'
@@ -307,6 +308,26 @@ function HomePage() {
                 <i style={{ marginRight: '6px' }} className="fas fa-cog"></i>Admin
               </button>
             )}
+
+            {/* My Notes Button */}
+            <button
+              onClick={() => window.location.href = '/my-notes'}
+              style={{
+                padding: '10px 18px',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-book"></i>My Notes
+            </button>
 
             {/* Logout Button */}
             <button
@@ -780,6 +801,34 @@ function HomePage() {
               margin: '8px 0'
             }}></div>
 
+            {/* My Notes Button */}
+            <button
+              onClick={() => {
+                closeMobileMenu()
+                window.location.href = '/my-notes'
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '15px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md,
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <i className="fas fa-book" style={{ width: '20px' }}></i>My Notes
+            </button>
+
             {/* Logout Button */}
             <button
               onClick={() => {
@@ -979,6 +1028,14 @@ function App() {
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/suspended" element={<Suspended />} />
+          <Route
+            path="/my-notes"
+            element={
+              <ProtectedRoute>
+                <MyNotesPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/"
             element={

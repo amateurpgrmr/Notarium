@@ -1333,6 +1333,84 @@ async function userUpdateNote(noteId: string, request: Request, env: Env) {
   }
 }
 
+// Get user's own notes
+async function getMyNotes(request: Request, env: Env) {
+  try {
+    const user = await getOrCreateUser(request, env);
+
+    const { results: notes } = await env.DB.prepare(`
+      SELECT
+        n.id,
+        n.title,
+        n.subject,
+        s.name as subject_name,
+        n.extracted_text,
+        n.summary,
+        n.tags,
+        n.likes,
+        n.admin_upvotes,
+        n.created_at,
+        n.image_path
+      FROM notes n
+      LEFT JOIN subjects s ON n.subject = s.id
+      WHERE n.author_id = ?
+      ORDER BY s.name, n.created_at DESC
+    `).bind(user.id).all();
+
+    return jsonResponse({ notes });
+  } catch (error: any) {
+    console.error('Error getting user notes:', error);
+    return jsonResponse({ error: 'Failed to get notes' }, 500);
+  }
+}
+
+// User delete own note (with point deduction)
+async function userDeleteNote(noteId: string, request: Request, env: Env) {
+  try {
+    const user = await getOrCreateUser(request, env);
+
+    // Verify ownership
+    const note = await env.DB.prepare('SELECT author_id, subject_id, likes, admin_upvotes FROM notes WHERE id = ?').bind(noteId).first() as any;
+
+    if (!note) {
+      return jsonResponse({ error: 'Note not found' }, 404);
+    }
+
+    if (note.author_id !== user.id) {
+      return jsonResponse({ error: 'Unauthorized - You can only delete your own notes' }, 403);
+    }
+
+    // Calculate points to deduct: user likes (1 each) + admin upvotes (5 each)
+    const pointsToDeduct = (note.likes || 0) + ((note.admin_upvotes || 0) * 5);
+
+    // Delete related data and update stats
+    await env.DB.batch([
+      // Delete note likes
+      env.DB.prepare('DELETE FROM note_likes WHERE note_id = ?').bind(noteId),
+      // Delete admin note likes
+      env.DB.prepare('DELETE FROM admin_note_likes WHERE note_id = ?').bind(noteId),
+      // Delete the note itself
+      env.DB.prepare('DELETE FROM notes WHERE id = ?').bind(noteId),
+      // Update note count in subjects table
+      env.DB.prepare('UPDATE subjects SET note_count = note_count - 1 WHERE id = ?').bind(note.subject_id),
+      // Update user stats: decrease notes_uploaded, total_likes, and total_admin_upvotes
+      env.DB.prepare(`
+        UPDATE users
+        SET
+          notes_uploaded = notes_uploaded - 1,
+          total_likes = total_likes - ?,
+          total_admin_upvotes = total_admin_upvotes - ?
+        WHERE id = ?
+      `).bind(note.likes || 0, note.admin_upvotes || 0, user.id)
+    ]);
+
+    return jsonResponse({ success: true, points_deducted: pointsToDeduct });
+  } catch (error: any) {
+    console.error('Error deleting note:', error);
+    return jsonResponse({ error: 'Failed to delete note' }, 500);
+  }
+}
+
 // Admin update note
 async function updateNote(noteId: string, request: Request, env: Env) {
   // Verify admin using Bearer token
@@ -2554,7 +2632,15 @@ export default {
         return await toggleNoteLike(noteId, request, env);
       }
 
+      // My Notes routes
+      if (path === '/api/notes/my-notes' && request.method === 'GET') {
+        return await getMyNotes(request, env);
+      }
 
+      if (path.match(/^\/api\/notes\/\d+$/) && request.method === 'DELETE') {
+        const noteId = path.split('/')[3];
+        return await userDeleteNote(noteId, request, env);
+      }
 
       // Leaderboard
       if (path === '/api/leaderboard' && request.method === 'GET') {
