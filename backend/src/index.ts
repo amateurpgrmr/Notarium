@@ -525,18 +525,23 @@ ${rawText}`
   }
 }
 
-// Generate note summary - EXACTLY 2 sentences
+// Generate note summary - EXACTLY 2 sentences (Uses DeepSeek due to Gemini region restrictions)
 async function generateNoteSummary(content: string, title: string, env: Env) {
+  // Use DeepSeek as primary (Gemini blocked in some regions)
   try {
-    // Try Gemini first
-    const client = getGeminiClient(env);
-    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-e9c8a89081d546f2862630ac21f0f730';
 
-    const response = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{
-          text: `Summarize this study note in EXACTLY 2 sentences. Focus on the main concepts and key points.
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${deepseekApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{
+          role: 'user',
+          content: `Summarize this study note in EXACTLY 2 sentences. Focus on the main concepts and key points.
 
 Title: "${title}"
 
@@ -544,39 +549,38 @@ Content:
 ${content.substring(0, 3000)}
 
 IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
-        }]
-      }],
-      generationConfig: {
-        maxOutputTokens: 150,
-        temperature: 0.3,
-      }
-    } as any);
+        }],
+        max_tokens: 150,
+        temperature: 0.3
+      })
+    });
 
-    const summary = response.response.text().trim();
+    const data = await response.json() as any;
+
+    if (!response.ok || !data.choices || data.choices.length === 0) {
+      throw new Error(data.error?.message || 'DeepSeek API error');
+    }
+
+    const summary = data.choices[0].message.content.trim();
 
     // Ensure it's only 2 sentences by splitting and taking first 2
     const sentences = summary.match(/[^.!?]+[.!?]+/g) || [summary];
     const twoSentences = sentences.slice(0, 2).join(' ').trim();
 
     return twoSentences;
-  } catch (geminiError: any) {
-    console.error('Gemini summary generation error, trying DeepSeek fallback:', geminiError);
+  } catch (deepseekError: any) {
+    console.error('DeepSeek summary error, trying Gemini fallback:', deepseekError);
 
-    // Fallback to DeepSeek
+    // Fallback to Gemini (may not work in all regions)
     try {
-      const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-e9c8a89081d546f2862630ac21f0f730';
+      const client = getGeminiClient(env);
+      const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${deepseekApiKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [{
-            role: 'user',
-            content: `Summarize this study note in EXACTLY 2 sentences. Focus on the main concepts and key points.
+      const response = await model.generateContent({
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `Summarize this study note in EXACTLY 2 sentences. Focus on the main concepts and key points.
 
 Title: "${title}"
 
@@ -584,28 +588,24 @@ Content:
 ${content.substring(0, 3000)}
 
 IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
-          }],
-          max_tokens: 150,
-          temperature: 0.3
-        })
-      });
+          }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 150,
+          temperature: 0.3,
+        }
+      } as any);
 
-      const data = await response.json() as any;
-
-      if (!response.ok || !data.choices || data.choices.length === 0) {
-        throw new Error(data.error?.message || 'DeepSeek API error');
-      }
-
-      const summary = data.choices[0].message.content.trim();
+      const summary = response.response.text().trim();
 
       // Ensure it's only 2 sentences by splitting and taking first 2
       const sentences = summary.match(/[^.!?]+[.!?]+/g) || [summary];
       const twoSentences = sentences.slice(0, 2).join(' ').trim();
 
       return twoSentences;
-    } catch (deepseekError: any) {
-      console.error('DeepSeek summary generation error:', deepseekError);
-      throw new Error(`Failed to generate summary: ${geminiError.message}`);
+    } catch (geminiError: any) {
+      console.error('Gemini fallback also failed:', geminiError);
+      throw new Error(`Failed to generate summary with both DeepSeek and Gemini: ${deepseekError.message}`);
     }
   }
 }
