@@ -686,9 +686,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 Delete
               </button>
 
-              {/* Add Page Button - Always available */}
+              {/* Add Page Button - Opens camera for scan/photo mode */}
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setShowCamera(true)}
                 disabled={isProcessingOCR}
                 style={{
                   flex: 1,
@@ -710,7 +710,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                   e.currentTarget.style.background = darkTheme.colors.accent;
                 }}
               >
-                <i className="fas fa-plus" style={{ marginRight: '6px' }}></i>
+                <i className="fas fa-camera" style={{ marginRight: '6px' }}></i>
                 Add Page
               </button>
             </div>
