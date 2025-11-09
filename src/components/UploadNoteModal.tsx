@@ -55,8 +55,14 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
         const newImage = reader.result;
-        setUploadImages(prev => [...prev, newImage]);
-        // Don't auto-process OCR - wait for user confirmation
+        setUploadImages(prev => {
+          const newImages = [...prev, newImage];
+          // Auto-process OCR if in scan mode
+          if (uploadMode === 'scan') {
+            setTimeout(() => processImagesOCR(newImages), 100);
+          }
+          return newImages;
+        });
       }
     };
     reader.readAsDataURL(file);
@@ -64,44 +70,49 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
   const handlePhotoCapture = async (photoBase64: string) => {
     setShowCamera(false);
-    setUploadImages(prev => [...prev, photoBase64]);
-    // Don't auto-process OCR - wait for user confirmation
+    setUploadImages(prev => {
+      const newImages = [...prev, photoBase64];
+      // Auto-process OCR if in scan mode
+      if (uploadMode === 'scan') {
+        setTimeout(() => processImagesOCR(newImages), 100);
+      }
+      return newImages;
+    });
   };
 
-  const processAllPages = async () => {
-    if (uploadImages.length === 0) return;
+  const processImagesOCR = async (images: string[]) => {
+    if (images.length === 0 || isProcessingOCR) return;
 
     setIsProcessingOCR(true);
     setExtractedText(''); // Clear any existing text
+    setOcrCompleted(false);
 
     try {
       let combinedText = '';
 
       // Process each image sequentially
-      for (let i = 0; i < uploadImages.length; i++) {
+      for (let i = 0; i < images.length; i++) {
         try {
-          const result = await api.ai.performOCR(uploadImages[i], 'image/jpeg');
+          const result = await api.ai.performOCR(images[i], 'image/jpeg');
           if (result.success) {
             const pageMarker = i > 0 ? `\n\n--- Page ${i + 1} ---\n\n` : '';
             combinedText += pageMarker + result.text;
 
-            // Update text as we process each page
+            // Update text as we process each page (Gemini-formatted)
             setExtractedText(combinedText);
           } else {
             throw new Error(`Failed to process page ${i + 1}`);
           }
         } catch (pageError) {
           console.error(`Error processing page ${i + 1}:`, pageError);
-          alert(`Failed to process page ${i + 1}. Continuing with other pages...`);
+          // Continue with other pages silently - don't alert on every error
         }
       }
 
       setOcrCompleted(true);
-      alert(`Successfully processed ${uploadImages.length} page(s)!`);
 
     } catch (error) {
       console.error('OCR Error:', error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Failed to process images'}`);
     } finally {
       setIsProcessingOCR(false);
     }
@@ -392,143 +403,37 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         ) : (
           <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
-            {/* Start OCR Scan Button - Show only if scan mode and OCR not completed */}
-            {uploadMode === 'scan' && !ocrCompleted && (
-              <button
-                onClick={processAllPages}
-                disabled={isProcessingOCR || uploadImages.length === 0}
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '14px' : '16px',
-                  background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, ${darkTheme.colors.accentHover} 100%)`,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  cursor: (isProcessingOCR || uploadImages.length === 0) ? 'not-allowed' : 'pointer',
-                  fontSize: isMobile ? '14px' : '16px',
-                  fontWeight: '700',
-                  transition: 'all 0.2s',
-                  opacity: (isProcessingOCR || uploadImages.length === 0) ? 0.5 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  marginBottom: '12px',
-                  boxShadow: darkTheme.shadows.default
-                }}
-                onMouseOver={(e) => {
-                  if (!isProcessingOCR && uploadImages.length > 0) {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = darkTheme.shadows.lg;
-                  }
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = darkTheme.shadows.default;
-                }}
-              >
-                {isProcessingOCR ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i>
-                    Processing {uploadImages.length} page(s)...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-magic"></i>
-                    Start OCR Scan ({uploadImages.length} page{uploadImages.length !== 1 ? 's' : ''})
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Add Another Page Button - Show only after OCR is completed or in photo mode */}
-            {(uploadMode === 'photo' || ocrCompleted) && (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessingOCR}
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '12px' : '14px',
-                  background: darkTheme.colors.accent,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
-                  fontSize: isMobile ? '13px' : '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s',
-                  opacity: isProcessingOCR ? 0.5 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  marginBottom: uploadMode === 'scan' && ocrCompleted ? '12px' : '0'
-                }}
-                onMouseOver={(e) => {
-                  if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = darkTheme.colors.accent;
-                }}
-              >
-                <i className="fas fa-plus"></i>
-                Add Another Page
-              </button>
-            )}
-
-            {/* Re-scan Button - Show if OCR completed and user wants to add more pages and re-scan */}
-            {uploadMode === 'scan' && ocrCompleted && (
-              <button
-                onClick={() => {
-                  setOcrCompleted(false);
-                  setExtractedText('');
-                }}
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '10px' : '12px',
-                  background: 'transparent',
-                  color: darkTheme.colors.accent,
-                  border: `1px solid ${darkTheme.colors.accent}`,
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontSize: isMobile ? '12px' : '13px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = `${darkTheme.colors.accent}15`;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                <i className="fas fa-redo"></i>
-                Re-scan All Pages
-              </button>
-            )}
-
-            {/* Helper text for scan mode before OCR */}
-            {uploadMode === 'scan' && !ocrCompleted && uploadImages.length > 0 && !isProcessingOCR && (
-              <div style={{
-                marginTop: '8px',
-                padding: '8px 12px',
-                background: `${darkTheme.colors.accent}10`,
-                border: `1px solid ${darkTheme.colors.accent}30`,
-                borderRadius: '8px',
-                fontSize: '12px',
-                color: darkTheme.colors.textSecondary,
+            {/* Add Another Page Button - Always available */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isProcessingOCR}
+              style={{
+                width: '100%',
+                padding: isMobile ? '12px' : '14px',
+                background: darkTheme.colors.accent,
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+                fontSize: isMobile ? '13px' : '14px',
+                fontWeight: '600',
+                transition: 'all 0.2s',
+                opacity: isProcessingOCR ? 0.5 : 1,
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '8px'
-              }}>
-                <i className="fas fa-info-circle" style={{ color: darkTheme.colors.accent }}></i>
-                <span>Add all pages first, then click "Start OCR Scan" to extract text from all pages at once.</span>
-              </div>
-            )}
+              }}
+              onMouseOver={(e) => {
+                if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = darkTheme.colors.accent;
+              }}
+            >
+              <i className="fas fa-plus"></i>
+              Add Another Page
+            </button>
 
             <input
               ref={fileInputRef}
@@ -751,63 +656,33 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 Delete
               </button>
 
-              {/* Add Page Button (Below Preview) - Only show before OCR is completed */}
-              {uploadMode === 'scan' && !ocrCompleted && !isProcessingOCR && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    flex: 1,
-                    padding: '6px 12px',
-                    background: darkTheme.colors.accent,
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '11px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = darkTheme.colors.accentHover;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = darkTheme.colors.accent;
-                  }}
-                >
-                  <i className="fas fa-plus" style={{ marginRight: '6px' }}></i>
-                  Add Page
-                </button>
-              )}
-
-              {/* Add Page Button for Photo Mode or After OCR */}
-              {(uploadMode === 'photo' || ocrCompleted) && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isProcessingOCR}
-                  style={{
-                    flex: 1,
-                    padding: '6px 12px',
-                    background: darkTheme.colors.accent,
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
-                    fontSize: '11px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s',
-                    opacity: isProcessingOCR ? 0.5 : 1
-                  }}
-                  onMouseOver={(e) => {
-                    if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = darkTheme.colors.accent;
-                  }}
-                >
-                  <i className="fas fa-plus" style={{ marginRight: '6px' }}></i>
-                  Add Page
-                </button>
-              )}
+              {/* Add Page Button - Always available */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessingOCR}
+                style={{
+                  flex: 1,
+                  padding: '6px 12px',
+                  background: darkTheme.colors.accent,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  opacity: isProcessingOCR ? 0.5 : 1
+                }}
+                onMouseOver={(e) => {
+                  if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = darkTheme.colors.accent;
+                }}
+              >
+                <i className="fas fa-plus" style={{ marginRight: '6px' }}></i>
+                Add Page
+              </button>
             </div>
           </div>
         )}
