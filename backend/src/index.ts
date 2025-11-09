@@ -1234,7 +1234,7 @@ async function warnUser(userId: string, request: Request, env: Env) {
   const { message } = body;
 
   await env.DB.prepare(
-    'UPDATE users SET warning = 1, warning_message = ?, updated_at = datetime("now") WHERE id = ?'
+    'UPDATE users SET warning = 1, warning_message = ?, warning_first_viewed = NULL, warning_view_count = 0, updated_at = datetime("now") WHERE id = ?'
   ).bind(message || 'Warning issued by admin', userId).run();
 
   return jsonResponse({ success: true, message });
@@ -1757,6 +1757,13 @@ async function meEndpoint(request: Request, env: Env) {
             total_admin_upvotes,
             COALESCE(diamonds, 0) as diamonds,
             description,
+            suspended,
+            suspension_end_date,
+            suspension_reason,
+            warning,
+            warning_message,
+            warning_first_viewed,
+            warning_view_count,
             (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 6) as points
           FROM users WHERE id = ?
         `).bind(userId).first() as any;
@@ -1774,6 +1781,13 @@ async function meEndpoint(request: Request, env: Env) {
             total_likes,
             total_admin_upvotes,
             description,
+            suspended,
+            suspension_end_date,
+            suspension_reason,
+            warning,
+            warning_message,
+            warning_first_viewed,
+            warning_view_count,
             (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 6) as points
           FROM users WHERE id = ?
         `).bind(userId).first() as any;
@@ -1784,6 +1798,59 @@ async function meEndpoint(request: Request, env: Env) {
 
       if (!userData) {
         return jsonResponse({ error: 'User not found' }, 404);
+      }
+
+      // Handle warning tracking and auto-dismissal
+      if (userData.warning === 1 && userData.warning_message) {
+        const now = new Date();
+        let shouldClearWarning = false;
+
+        // Set first viewed timestamp if not set
+        if (!userData.warning_first_viewed) {
+          await env.DB.prepare(`
+            UPDATE users
+            SET warning_first_viewed = ?, warning_view_count = 1, updated_at = datetime("now")
+            WHERE id = ?
+          `).bind(now.toISOString(), userId).run();
+          userData.warning_view_count = 1;
+          userData.warning_first_viewed = now.toISOString();
+        } else {
+          // Check if 24 hours have passed
+          const firstViewed = new Date(userData.warning_first_viewed);
+          const hoursPassed = (now.getTime() - firstViewed.getTime()) / (1000 * 60 * 60);
+
+          if (hoursPassed >= 24) {
+            shouldClearWarning = true;
+          } else {
+            // Increment view count
+            const newViewCount = (userData.warning_view_count || 0) + 1;
+
+            if (newViewCount >= 5) {
+              shouldClearWarning = true;
+            } else {
+              // Update view count
+              await env.DB.prepare(`
+                UPDATE users
+                SET warning_view_count = ?, updated_at = datetime("now")
+                WHERE id = ?
+              `).bind(newViewCount, userId).run();
+              userData.warning_view_count = newViewCount;
+            }
+          }
+        }
+
+        // Clear warning if conditions are met
+        if (shouldClearWarning) {
+          await env.DB.prepare(`
+            UPDATE users
+            SET warning = 0, warning_message = NULL, warning_first_viewed = NULL, warning_view_count = 0, updated_at = datetime("now")
+            WHERE id = ?
+          `).bind(userId).run();
+          userData.warning = 0;
+          userData.warning_message = null;
+          userData.warning_first_viewed = null;
+          userData.warning_view_count = 0;
+        }
       }
 
       // Map database fields to frontend interface
@@ -1799,7 +1866,12 @@ async function meEndpoint(request: Request, env: Env) {
         diamonds: userData.diamonds || 0,
         points: userData.points || 0,
         photo_url: userData.photo_url || null,
-        description: userData.description || null
+        description: userData.description || null,
+        suspended: userData.suspended || 0,
+        suspension_end_date: userData.suspension_end_date || null,
+        suspension_reason: userData.suspension_reason || null,
+        warning: userData.warning || 0,
+        warning_message: userData.warning_message || null
       };
 
       return jsonResponse({ user });
