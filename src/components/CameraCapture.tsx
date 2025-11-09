@@ -145,6 +145,13 @@ export default function CameraCapture({
     }
   };
 
+  const handleConfirmAndContinue = async () => {
+    if (preview) {
+      await onCapture(preview);
+      setPreview(null); // Reset to camera view for another photo
+    }
+  };
+
   const handleRetake = () => {
     setPreview(null);
   };
@@ -169,10 +176,28 @@ export default function CameraCapture({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Calculate appropriate image height based on screen size
-  const imageHeight = isMobile
-    ? Math.min(window.innerHeight * 0.5, 300) // Mobile: 50vh or 300px max
-    : Math.min(window.innerHeight * 0.6, 400); // Desktop: 60vh or 400px max
+  // Calculate appropriate image height based on screen size using A4 page aspect ratio (210mm x 297mm = ~0.707)
+  const calculatePageDimensions = () => {
+    const maxWidth = isMobile ? window.innerWidth * 0.9 : 600;
+    const maxHeight = isMobile ? window.innerHeight * 0.6 : window.innerHeight * 0.7;
+
+    // A4 aspect ratio: width/height = 210/297 = 0.707
+    const pageRatio = 210 / 297;
+
+    // Calculate dimensions while maintaining page aspect ratio
+    let width = maxWidth;
+    let height = width / pageRatio;
+
+    // If height exceeds max, recalculate based on height
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * pageRatio;
+    }
+
+    return { width, height };
+  };
+
+  const { width: imageWidth, height: imageHeight } = calculatePageDimensions();
 
   return (
     <div
@@ -195,7 +220,7 @@ export default function CameraCapture({
           background: darkTheme.colors.bgSecondary,
           borderRadius: darkTheme.borderRadius.lg,
           padding: isMobile ? '16px' : '24px',
-          maxWidth: '600px',
+          maxWidth: `${imageWidth + (isMobile ? 32 : 48)}px`,
           width: '100%',
           maxHeight: '95vh',
           display: 'flex',
@@ -233,11 +258,12 @@ export default function CameraCapture({
               muted
               style={{
                 display: 'block',
-                width: '100%',
+                width: `${imageWidth}px`,
                 height: `${imageHeight}px`,
                 background: 'black',
                 borderRadius: darkTheme.borderRadius.md,
-                objectFit: 'cover'
+                objectFit: 'contain',
+                margin: '0 auto'
               }}
             />
 
@@ -334,27 +360,28 @@ export default function CameraCapture({
               src={preview}
               alt="Captured"
               style={{
-                width: '100%',
+                width: `${imageWidth}px`,
                 height: `${imageHeight}px`,
                 borderRadius: darkTheme.borderRadius.md,
                 objectFit: 'contain',
                 background: 'black',
-                flexShrink: 0
+                flexShrink: 0,
+                margin: '0 auto'
               }}
             />
-            <div style={{ display: 'flex', gap: '12px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexDirection: isMobile ? 'column' : 'row' }}>
               <button
                 onClick={handleRetake}
                 style={{
-                  flex: 1,
-                  padding: isMobile ? '10px 20px' : '12px 24px',
+                  flex: isMobile ? undefined : 1,
+                  padding: isMobile ? '10px 16px' : '12px 24px',
                   background: darkTheme.colors.bgTertiary,
                   border: `1px solid ${darkTheme.colors.borderColor}`,
                   color: darkTheme.colors.textPrimary,
                   borderRadius: darkTheme.borderRadius.md,
                   cursor: 'pointer',
                   fontWeight: '600',
-                  fontSize: isMobile ? '14px' : '16px',
+                  fontSize: isMobile ? '13px' : '15px',
                   transition: darkTheme.transitions.default
                 }}
                 onMouseOver={(e) => {
@@ -369,23 +396,48 @@ export default function CameraCapture({
                 🔄 Retake
               </button>
               <button
+                onClick={handleConfirmAndContinue}
+                style={{
+                  flex: isMobile ? undefined : 1,
+                  padding: isMobile ? '10px 16px' : '12px 24px',
+                  background: 'rgba(34, 197, 94, 0.2)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  color: '#86efac',
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: isMobile ? '13px' : '15px',
+                  transition: darkTheme.transitions.default
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(34, 197, 94, 0.3)';
+                  e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.5)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(34, 197, 94, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                }}
+              >
+                ➕ Add & Take Another
+              </button>
+              <button
                 onClick={handleConfirm}
                 style={{
-                  flex: 1,
-                  padding: isMobile ? '10px 20px' : '12px 24px',
+                  flex: isMobile ? undefined : 1,
+                  padding: isMobile ? '10px 16px' : '12px 24px',
                   background: darkTheme.colors.accent,
                   border: 'none',
                   color: 'white',
                   borderRadius: darkTheme.borderRadius.md,
                   cursor: 'pointer',
                   fontWeight: '600',
-                  fontSize: isMobile ? '14px' : '16px',
+                  fontSize: isMobile ? '13px' : '15px',
                   transition: darkTheme.transitions.default
                 }}
                 onMouseOver={(e) => (e.currentTarget.style.opacity = '0.9')}
                 onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
               >
-                ✓ Use Photo
+                ✓ Done
               </button>
             </div>
           </>
