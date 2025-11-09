@@ -474,6 +474,14 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
           {/* Stats Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '20px' }}>
             <div style={{ padding: '16px', background: darkTheme.colors.bgSecondary, borderRadius: darkTheme.borderRadius.md }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#fbbf24' }}>
+                {(user as any).points || 0}
+              </div>
+              <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginTop: '4px' }}>
+                🏆 Total Points
+              </div>
+            </div>
+            <div style={{ padding: '16px', background: darkTheme.colors.bgSecondary, borderRadius: darkTheme.borderRadius.md }}>
               <div style={{ fontSize: '24px', fontWeight: '700', color: darkTheme.colors.accent }}>
                 {user.diamonds || 0}
               </div>
@@ -801,6 +809,10 @@ export default function AdminPage() {
                             {user.email}
                           </div>
                         </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
+                        <span style={{ color: darkTheme.colors.textSecondary }}>🏆 Points:</span>
+                        <span style={{ fontWeight: '600', color: '#fbbf24' }}>{(user as any).points || 0}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
                         <span style={{ color: darkTheme.colors.textSecondary }}>💎 Diamonds:</span>

@@ -941,12 +941,13 @@ async function getLeaderboard(env: Env) {
       notes_uploaded,
       total_likes,
       total_admin_upvotes,
-      diamonds,
-      diamonds as score
+      COALESCE(diamonds, 0) as diamonds,
+      (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 6) as points,
+      COALESCE(diamonds, 0) as score
     FROM users
-    WHERE notes_uploaded > 0
-    ORDER BY diamonds DESC, notes_uploaded DESC
-    LIMIT 50
+    WHERE role != 'admin'
+    ORDER BY points DESC, diamonds DESC, notes_uploaded DESC
+    LIMIT 100
   `).all();
 
   return jsonResponse({ leaderboard: results });
@@ -1265,9 +1266,29 @@ async function getAllUsers(request: Request, env: Env) {
   }
 
   try {
-    const { results } = await env.DB.prepare(
-      'SELECT id, display_name, email, class, role, created_at FROM users ORDER BY created_at DESC'
-    ).all();
+    const { results } = await env.DB.prepare(`
+      SELECT
+        id,
+        display_name,
+        email,
+        class,
+        role,
+        notes_uploaded,
+        total_likes,
+        total_admin_upvotes,
+        COALESCE(diamonds, 0) as diamonds,
+        (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 6) as points,
+        suspended,
+        suspension_end_date,
+        suspension_reason,
+        warning,
+        warning_message,
+        photo_url,
+        description,
+        created_at
+      FROM users
+      ORDER BY created_at DESC
+    `).all();
 
     return jsonResponse({ users: results });
   } catch (error: any) {
