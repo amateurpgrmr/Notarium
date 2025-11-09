@@ -906,9 +906,9 @@ async function toggleNoteLike(noteId: string, request: Request, env: Env) {
     await env.DB.batch([
       env.DB.prepare('DELETE FROM note_likes WHERE note_id = ? AND user_id = ?').bind(noteId, user.id),
       env.DB.prepare('UPDATE notes SET likes = likes - 1 WHERE id = ?').bind(noteId),
-      // Decrement author's total_likes and diamonds
+      // Decrement author's total_likes (diamonds only from notes now)
       ...(note && note.author_id ? [
-        env.DB.prepare('UPDATE users SET total_likes = total_likes - 1, diamonds = diamonds - 5 WHERE id = ?').bind(note.author_id)
+        env.DB.prepare('UPDATE users SET total_likes = total_likes - 1 WHERE id = ?').bind(note.author_id)
       ] : [])
     ]);
     return jsonResponse({ liked: false });
@@ -919,9 +919,9 @@ async function toggleNoteLike(noteId: string, request: Request, env: Env) {
     await env.DB.batch([
       env.DB.prepare('INSERT INTO note_likes (note_id, user_id) VALUES (?, ?)').bind(noteId, user.id),
       env.DB.prepare('UPDATE notes SET likes = likes + 1 WHERE id = ?').bind(noteId),
-      // Increment author's total_likes and diamonds
+      // Increment author's total_likes (diamonds only from notes now)
       ...(note && note.author_id ? [
-        env.DB.prepare('UPDATE users SET total_likes = total_likes + 1, diamonds = diamonds + 5 WHERE id = ?').bind(note.author_id)
+        env.DB.prepare('UPDATE users SET total_likes = total_likes + 1 WHERE id = ?').bind(note.author_id)
       ] : [])
     ]);
     return jsonResponse({ liked: true });
@@ -942,7 +942,7 @@ async function getLeaderboard(env: Env) {
       total_likes,
       total_admin_upvotes,
       COALESCE(diamonds, 0) as diamonds,
-      (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 6) as points,
+      (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 4.5) as points,
       COALESCE(diamonds, 0) as score
     FROM users
     WHERE role != 'admin'
@@ -1055,9 +1055,9 @@ async function adminLikeNote(noteId: string, request: Request, env: Env) {
     await env.DB.batch([
       env.DB.prepare('DELETE FROM admin_note_likes WHERE note_id = ? AND admin_id = ?').bind(noteId, adminUser.id),
       env.DB.prepare('UPDATE notes SET admin_upvotes = admin_upvotes - 1 WHERE id = ?').bind(noteId),
-      // Update user's total admin upvotes and diamonds (-5 diamonds)
+      // Update user's total admin upvotes (diamonds only from notes now)
       ...(note && note.author_id ? [
-        env.DB.prepare('UPDATE users SET total_admin_upvotes = total_admin_upvotes - 1, diamonds = diamonds - 5 WHERE id = ?').bind(note.author_id)
+        env.DB.prepare('UPDATE users SET total_admin_upvotes = total_admin_upvotes - 1 WHERE id = ?').bind(note.author_id)
       ] : [])
     ]);
 
@@ -1072,14 +1072,14 @@ async function adminLikeNote(noteId: string, request: Request, env: Env) {
     await env.DB.batch([
       env.DB.prepare('INSERT INTO admin_note_likes (note_id, admin_id) VALUES (?, ?)').bind(noteId, adminUser.id),
       env.DB.prepare('UPDATE notes SET admin_upvotes = admin_upvotes + 1 WHERE id = ?').bind(noteId),
-      // Update user's total admin upvotes and diamonds (+5 diamonds)
+      // Update user's total admin upvotes (diamonds only from notes now)
       ...(note && note.author_id ? [
-        env.DB.prepare('UPDATE users SET total_admin_upvotes = total_admin_upvotes + 1, diamonds = diamonds + 5 WHERE id = ?').bind(note.author_id)
+        env.DB.prepare('UPDATE users SET total_admin_upvotes = total_admin_upvotes + 1 WHERE id = ?').bind(note.author_id)
       ] : [])
     ]);
 
     // Log activity
-    await logAdminActivity(env, adminUser.id, adminUser.email, 'like', 'note', parseInt(noteId), `Admin liked note: ${note?.title || noteId} (+5 diamonds to author)`);
+    await logAdminActivity(env, adminUser.id, adminUser.email, 'like', 'note', parseInt(noteId), `Admin liked note: ${note?.title || noteId} (+4.5 points to author)`);
 
     return jsonResponse({ liked: true });
   }
@@ -1112,8 +1112,8 @@ async function deleteNote(noteId: string, request: Request, env: Env) {
       env.DB.prepare('DELETE FROM notes WHERE id = ?').bind(noteId),
       // Update note count in subjects table
       env.DB.prepare('UPDATE subjects SET note_count = note_count - 1 WHERE id = ?').bind(note.subject_id),
-      // Update notes_uploaded count for the author
-      env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded - 1 WHERE id = ?').bind(note.author_id)
+      // Update notes_uploaded count and diamonds for the author (1 note = 1 diamond)
+      env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded - 1, diamonds = diamonds - 1 WHERE id = ?').bind(note.author_id)
     ]);
 
     // Log activity
@@ -1277,7 +1277,7 @@ async function getAllUsers(request: Request, env: Env) {
         total_likes,
         total_admin_upvotes,
         COALESCE(diamonds, 0) as diamonds,
-        (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 6) as points,
+        (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 4.5) as points,
         suspended,
         suspension_end_date,
         suspension_reason,
@@ -1568,7 +1568,7 @@ async function signupEndpoint(request: Request, env: Env) {
     const token = Buffer.from(JSON.stringify({ id: (user as any).id, email: (user as any).email })).toString('base64');
 
     // Calculate points
-    const points = ((user as any).notes_uploaded || 0) * 10 + ((user as any).total_likes || 0) * 4 + ((user as any).total_admin_upvotes || 0) * 6;
+    const points = ((user as any).notes_uploaded || 0) * 10 + ((user as any).total_likes || 0) * 4 + ((user as any).total_admin_upvotes || 0) * 4.5;
 
     return jsonResponse({
       token,
@@ -1693,7 +1693,7 @@ async function loginEndpoint(request: Request, env: Env) {
     })).toString('base64');
 
     // Calculate points
-    const points = (user as any).notes_uploaded * 10 + (user as any).total_likes * 4 + (user as any).total_admin_upvotes * 6;
+    const points = (user as any).notes_uploaded * 10 + (user as any).total_likes * 4 + (user as any).total_admin_upvotes * 4.5;
 
     console.log('[LOGIN] Login successful for user:', (user as any).id);
 
