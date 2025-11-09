@@ -433,10 +433,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         ) : (
           <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
-            {/* Add Another Page Button - Always available */}
+            {/* Add Another Page Button - Opens camera, available during OCR */}
             <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isProcessingOCR}
+              onClick={() => setShowCamera(true)}
               style={{
                 width: '100%',
                 padding: isMobile ? '12px' : '14px',
@@ -444,24 +443,23 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 color: 'white',
                 border: 'none',
                 borderRadius: '12px',
-                cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
                 fontSize: isMobile ? '13px' : '14px',
                 fontWeight: '600',
                 transition: 'all 0.2s',
-                opacity: isProcessingOCR ? 0.5 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px'
               }}
               onMouseOver={(e) => {
-                if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
+                e.currentTarget.style.background = darkTheme.colors.accentHover;
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = darkTheme.colors.accent;
               }}
             >
-              <i className="fas fa-plus"></i>
+              <i className="fas fa-camera"></i>
               Add Another Page
             </button>
 
@@ -686,10 +684,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 Delete
               </button>
 
-              {/* Add Page Button - Opens camera for scan/photo mode */}
+              {/* Add Page Button - Opens camera, works during OCR */}
               <button
                 onClick={() => setShowCamera(true)}
-                disabled={isProcessingOCR}
                 style={{
                   flex: 1,
                   padding: '6px 12px',
@@ -697,14 +694,13 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+                  cursor: 'pointer',
                   fontSize: '11px',
                   fontWeight: '500',
-                  transition: 'all 0.2s',
-                  opacity: isProcessingOCR ? 0.5 : 1
+                  transition: 'all 0.2s'
                 }}
                 onMouseOver={(e) => {
-                  if (!isProcessingOCR) e.currentTarget.style.background = darkTheme.colors.accentHover;
+                  e.currentTarget.style.background = darkTheme.colors.accentHover;
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.background = darkTheme.colors.accent;
