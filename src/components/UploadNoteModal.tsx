@@ -81,8 +81,12 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   };
 
   const processImagesOCR = async (images: string[]) => {
-    if (images.length === 0 || isProcessingOCR) return;
+    if (images.length === 0 || isProcessingOCR) {
+      console.log('Skipping OCR:', { imagesLength: images.length, isProcessingOCR });
+      return;
+    }
 
+    console.log('Starting OCR for', images.length, 'images');
     setIsProcessingOCR(true);
     setExtractedText(''); // Clear any existing text
     setOcrCompleted(false);
@@ -93,26 +97,36 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       // Process each image sequentially
       for (let i = 0; i < images.length; i++) {
         try {
+          console.log(`Processing image ${i + 1}/${images.length}...`);
           const result = await api.ai.performOCR(images[i], 'image/jpeg');
-          if (result.success) {
+          console.log(`OCR result for image ${i + 1}:`, result);
+
+          if (result.success && result.text) {
             const pageMarker = i > 0 ? `\n\n--- Page ${i + 1} ---\n\n` : '';
             combinedText += pageMarker + result.text;
 
             // Update text as we process each page (Gemini-formatted)
             setExtractedText(combinedText);
+            console.log(`Extracted text updated (${combinedText.length} chars)`);
           } else {
-            throw new Error(`Failed to process page ${i + 1}`);
+            console.error(`OCR failed for page ${i + 1}:`, result);
           }
         } catch (pageError) {
           console.error(`Error processing page ${i + 1}:`, pageError);
-          // Continue with other pages silently - don't alert on every error
+          alert(`OCR Error on page ${i + 1}: ${pageError instanceof Error ? pageError.message : 'Unknown error'}`);
         }
       }
 
+      if (combinedText.length === 0) {
+        alert('OCR completed but no text was extracted. The image may be blank or the API key may be invalid.');
+      }
+
       setOcrCompleted(true);
+      console.log('OCR complete! Total text length:', combinedText.length);
 
     } catch (error) {
       console.error('OCR Error:', error);
+      alert(`OCR failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsProcessingOCR(false);
     }
@@ -815,17 +829,17 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                     // Error already shown by generateQuickSummary
                   }
                 }}
-                disabled={!noteTitle || !extractedText}
+                disabled={!noteTitle}
                 style={{
                   padding: '4px 12px',
                   background: darkTheme.colors.accent,
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
-                  cursor: noteTitle && extractedText ? 'pointer' : 'not-allowed',
+                  cursor: noteTitle ? 'pointer' : 'not-allowed',
                   fontSize: isMobile ? '11px' : '12px',
                   fontWeight: '500',
-                  opacity: noteTitle && extractedText ? 1 : 0.5,
+                  opacity: noteTitle ? 1 : 0.5,
                   transition: 'all 0.2s'
                 }}
                 onMouseOver={(e) => {
