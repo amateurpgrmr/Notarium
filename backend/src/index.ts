@@ -407,7 +407,7 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
     const allMessages = [
       {
         role: 'system',
-        content: 'You are a helpful study assistant. Use the provided study notes to answer questions accurately. Always base your answers on the user\'s materials when available.'
+        content: 'You are a helpful study assistant. Use the provided study notes to answer questions accurately. Always base your answers on the user\'s materials when available. IMPORTANT: Always respond in Indonesian (Bahasa Indonesia).'
       },
       ...conversationHistory
     ];
@@ -579,7 +579,7 @@ Title: "${title}"
 Content:
 ${content.substring(0, 3000)}
 
-IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
+IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less. Write the summary in Indonesian (Bahasa Indonesia).`
         }],
         max_tokens: 150,
         temperature: 0.3
@@ -635,6 +635,8 @@ Return the response as a JSON object with this structure:
   ]
 }
 
+IMPORTANT: Write all questions, options, and explanations in Indonesian (Bahasa Indonesia).
+
 Content:
 ${content}`
         }],
@@ -685,7 +687,7 @@ The plan should:
 - Include practice problems and self-assessment
 - Prepare for exams
 
-Format as a detailed markdown text with clear daily breakdowns.`
+Format as a detailed markdown text with clear daily breakdowns. Write the entire plan in Indonesian (Bahasa Indonesia).`
         }],
         max_tokens: 2048,
         temperature: 0.4
@@ -730,7 +732,7 @@ Your explanation should:
 - Suggest how to remember it
 - Provide practice tips
 
-Make it engaging and suitable for high school students.`
+Make it engaging and suitable for high school students. Write the entire explanation in Indonesian (Bahasa Indonesia).`
         }],
         max_tokens: 1500,
         temperature: 0.5
@@ -2632,7 +2634,7 @@ export default {
               model: 'deepseek-chat',
               messages: [{
                 role: 'user',
-                content: `Generate 3-5 relevant study tags for this note. Return ONLY the tags as a comma-separated list, nothing else.
+                content: `Generate 3-5 relevant study tags for this note. Return ONLY the tags as a comma-separated list, nothing else. Write the tags in Indonesian (Bahasa Indonesia).
 
 Title: ${title || 'Untitled'}
 Content: ${content?.substring(0, 500) || 'No content'}
