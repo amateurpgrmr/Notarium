@@ -836,16 +836,21 @@ async function createNote(request: Request, env: Env) {
     // Convert tags array to JSON string for storage
     const tagsJson = body.tags && Array.isArray(body.tags) ? JSON.stringify(body.tags) : '[]';
 
+    // Get user's class for the note
+    const userData = await env.DB.prepare('SELECT class FROM users WHERE id = ?').bind(user.id).first() as any;
+    const userClass = userData?.class || null;
+
     // Create note
     const note = await env.DB.prepare(`
-      INSERT INTO notes (title, description, subject_id, author_id, extracted_text, image_path, content, tags, summary)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO notes (title, description, subject_id, author_id, author_class, extracted_text, image_path, content, tags, summary)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING *
     `).bind(
       body.title,
       body.description || 'No description',
       body.subject_id,
       user.id,
+      userClass,
       body.extracted_text || '',
       body.image_path || '',
       body.content || body.description || '',
@@ -938,6 +943,7 @@ async function getLeaderboard(env: Env) {
       display_name,
       email,
       photo_url,
+      class,
       notes_uploaded,
       total_likes,
       total_admin_upvotes,
@@ -1123,6 +1129,77 @@ async function deleteNote(noteId: string, request: Request, env: Env) {
   } catch (error: any) {
     console.error('Error deleting note:', error);
     return jsonResponse({ error: 'Failed to delete note' }, 500);
+  }
+}
+
+// User update own note
+async function userUpdateNote(noteId: string, request: Request, env: Env) {
+  try {
+    const user = await getOrCreateUser(request, env);
+    const body = await request.json() as any;
+
+    // Verify ownership
+    const note = await env.DB.prepare('SELECT author_id FROM notes WHERE id = ?').bind(noteId).first() as any;
+
+    if (!note) {
+      return jsonResponse({ error: 'Note not found' }, 404);
+    }
+
+    if (note.author_id !== user.id) {
+      return jsonResponse({ error: 'Unauthorized - You can only edit your own notes' }, 403);
+    }
+
+    // Build update query dynamically based on provided fields
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (body.title !== undefined) {
+      updates.push('title = ?');
+      values.push(body.title);
+    }
+    if (body.description !== undefined) {
+      updates.push('description = ?');
+      values.push(body.description);
+    }
+    if (body.content !== undefined) {
+      updates.push('content = ?');
+      values.push(body.content);
+    }
+    if (body.extracted_text !== undefined) {
+      updates.push('extracted_text = ?');
+      values.push(body.extracted_text);
+    }
+    if (body.image_path !== undefined) {
+      updates.push('image_path = ?');
+      values.push(body.image_path);
+    }
+    if (body.summary !== undefined) {
+      updates.push('summary = ?');
+      values.push(body.summary);
+    }
+    if (body.tags !== undefined) {
+      updates.push('tags = ?');
+      values.push(JSON.stringify(body.tags));
+    }
+
+    if (updates.length === 0) {
+      return jsonResponse({ error: 'No fields to update' }, 400);
+    }
+
+    // Always update updated_at
+    updates.push('updated_at = datetime("now")');
+    values.push(noteId);
+
+    const query = `UPDATE notes SET ${updates.join(', ')} WHERE id = ?`;
+    await env.DB.prepare(query).bind(...values).run();
+
+    // Get updated note
+    const updatedNote = await env.DB.prepare('SELECT * FROM notes WHERE id = ?').bind(noteId).first();
+
+    return jsonResponse({ success: true, note: updatedNote });
+  } catch (error: any) {
+    console.error('Error updating note:', error);
+    return jsonResponse({ error: 'Failed to update note' }, 500);
   }
 }
 
@@ -2259,6 +2336,11 @@ export default {
 
       if (path === '/api/notes' && request.method === 'POST') {
         return await createNote(request, env);
+      }
+
+      if (path.match(/^\/api\/notes\/\d+$/) && request.method === 'PUT') {
+        const noteId = path.split('/')[3];
+        return await userUpdateNote(noteId, request, env);
       }
 
       if (path.match(/^\/api\/notes\/\d+\/summary$/) && request.method === 'PUT') {
