@@ -380,10 +380,10 @@ function formatNotesForContext(notes: any[]): string {
   return `\n\nKnowledge Base (User's Study Materials - Use these as primary reference):\n${notesSummary}\n\nInstructions: Answer based on the knowledge base above first, then supplement with general knowledge if needed.`;
 }
 
-// Chat with Gemini AI using note context - Automatically feeds AI-cleaned note content as knowledge base
+// Chat with DeepSeek AI using note context - Automatically feeds AI-cleaned note content as knowledge base
 async function chatWithGemini(sessionId: string, userMessage: string, subject: string, userId: number, request: Request, env: Env) {
   try {
-    // Get user's notes for context - includes Gemini-cleaned extracted text from OCR
+    // Get user's notes for context - includes DeepSeek-cleaned extracted text from OCR
     const userNotes = await getUserNotes(userId, subject, env);
     const notesContext = formatNotesForContext(userNotes);
 
@@ -397,31 +397,54 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
 
     const reverseMessages = (messages || []).reverse();
 
-    const client = getGeminiClient(env);
-    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    // Build conversation history from past messages only
+    // Build conversation history for DeepSeek
     const conversationHistory = reverseMessages.map((msg: any) => ({
-      role: msg.role === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.content }]
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.content
     }));
 
-    // Start chat session with system context about being a study assistant
-    const chat = model.startChat({
-      history: conversationHistory,
-      generationConfig: {
-        maxOutputTokens: 2048,
-        temperature: 0.7,
+    // Add system message at the beginning
+    const allMessages = [
+      {
+        role: 'system',
+        content: 'You are a helpful study assistant. Use the provided study notes to answer questions accurately. Always base your answers on the user\'s materials when available.'
       },
-    });
+      ...conversationHistory
+    ];
 
     // Send message with knowledge base context (invisible to user but feeds the AI)
     const contextualMessage = notesContext
       ? `${userMessage}${notesContext}`
       : userMessage;
 
-    const response = await chat.sendMessage(contextualMessage);
-    const aiResponse = response.response.text();
+    allMessages.push({
+      role: 'user',
+      content: contextualMessage
+    });
+
+    const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-5691768e614e4bfc9f563f0a45741be1';
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${deepseekApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: allMessages,
+        max_tokens: 2048,
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json() as any;
+
+    if (!response.ok || !data.choices || data.choices.length === 0) {
+      throw new Error(data.error?.message || 'DeepSeek API error');
+    }
+
+    const aiResponse = data.choices[0].message.content.trim();
 
     // Save AI response to database
     await env.DB.prepare(`
@@ -431,7 +454,7 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
 
     return aiResponse;
   } catch (error: any) {
-    console.error('Gemini chat error:', error);
+    console.error('DeepSeek chat error:', error);
     throw new Error(`Failed to get AI response: ${error.message}`);
   }
 }
@@ -491,32 +514,41 @@ async function performOCR(imageBase64: string, mimeType: string, env: Env) {
       throw new Error('Invalid response from Cloud Vision API');
     }
 
-    // Step 2: Use Gemini 2.0 to clean up and format the text
+    // Step 2: Use DeepSeek to clean up and format the text
     try {
-      const client = getGeminiClient(env);
-      const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-5691768e614e4bfc9f563f0a45741be1';
 
-      const formatResponse = await model.generateContent({
-        contents: [{
-          role: 'user',
-          parts: [{
-            text: `Clean up and properly format this OCR-extracted text. Fix any obvious OCR errors, improve formatting, add proper line breaks and structure, but keep all the content intact. Return only the cleaned text without any explanations.
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepseekApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{
+            role: 'user',
+            content: `Clean up and properly format this OCR-extracted text. Fix any obvious OCR errors, improve formatting, add proper line breaks and structure, but keep all the content intact. Return only the cleaned text without any explanations.
 
 Raw OCR Text:
 ${rawText}`
-          }]
-        }],
-        generationConfig: {
-          maxOutputTokens: 4096,
-          temperature: 0.2,
-        }
-      } as any);
+          }],
+          max_tokens: 4096,
+          temperature: 0.2
+        })
+      });
 
-      const formattedText = formatResponse.response.text().trim();
-      return formattedText;
-    } catch (geminiError: any) {
-      console.error('Gemini formatting failed, returning raw OCR text:', geminiError);
-      // Fallback to raw text if Gemini fails
+      const data = await response.json() as any;
+
+      if (response.ok && data.choices && data.choices[0]) {
+        const formattedText = data.choices[0].message.content.trim();
+        return formattedText;
+      } else {
+        console.error('DeepSeek formatting failed, returning raw OCR text:', data);
+        return rawText;
+      }
+    } catch (deepseekError: any) {
+      console.error('DeepSeek formatting failed, returning raw OCR text:', deepseekError);
       return rawText;
     }
   } catch (error: any) {
@@ -525,18 +557,22 @@ ${rawText}`
   }
 }
 
-// Generate note summary - EXACTLY 2 sentences (Uses Gemini)
+// Generate note summary - EXACTLY 2 sentences (Uses DeepSeek)
 async function generateNoteSummary(content: string, title: string, env: Env) {
   try {
-    const apiKey = env.GEMINI_API_KEY || 'AIzaSyAXy40iGkSBoxidqqrhoz9ZjNlLcyxYO7A';
+    const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-5691768e614e4bfc9f563f0a45741be1';
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${deepseekApiKey}`
+      },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Summarize this study note in EXACTLY 2 sentences. Focus on the main concepts and key points.
+        model: 'deepseek-chat',
+        messages: [{
+          role: 'user',
+          content: `Summarize this study note in EXACTLY 2 sentences. Focus on the main concepts and key points.
 
 Title: "${title}"
 
@@ -544,22 +580,19 @@ Content:
 ${content.substring(0, 3000)}
 
 IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
-          }]
         }],
-        generationConfig: {
-          maxOutputTokens: 150,
-          temperature: 0.3,
-        }
+        max_tokens: 150,
+        temperature: 0.3
       })
     });
 
     const data = await response.json() as any;
 
-    if (!response.ok || !data.candidates || !data.candidates[0]) {
-      throw new Error(data.error?.message || 'Gemini API error');
+    if (!response.ok || !data.choices || data.choices.length === 0) {
+      throw new Error(data.error?.message || 'DeepSeek API error');
     }
 
-    const summary = data.candidates[0].content.parts[0].text.trim();
+    const summary = data.choices[0].message.content.trim();
 
     // Ensure it's only 2 sentences by splitting and taking first 2
     const sentences = summary.match(/[^.!?]+[.!?]+/g) || [summary];
@@ -567,7 +600,7 @@ IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
 
     return twoSentences;
   } catch (error: any) {
-    console.error('Gemini summary error:', error);
+    console.error('DeepSeek summary error:', error);
     throw new Error(`Failed to generate summary: ${error.message}`);
   }
 }
@@ -575,14 +608,19 @@ IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
 // Generate quiz from note
 async function generateQuiz(content: string, title: string, env: Env) {
   try {
-    const client = getGeminiClient(env);
-    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-5691768e614e4bfc9f563f0a45741be1';
 
-    const response = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{
-          text: `Create a quiz with 5 multiple-choice questions based on the following study note titled "${title}".
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${deepseekApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{
+          role: 'user',
+          content: `Create a quiz with 5 multiple-choice questions based on the following study note titled "${title}".
 
 Return the response as a JSON object with this structure:
 {
@@ -599,15 +637,19 @@ Return the response as a JSON object with this structure:
 
 Content:
 ${content}`
-        }]
-      }],
-      generationConfig: {
-        maxOutputTokens: 2048,
-        temperature: 0.5,
-      }
-    } as any);
+        }],
+        max_tokens: 2048,
+        temperature: 0.5
+      })
+    });
 
-    const responseText = response.response.text();
+    const data = await response.json() as any;
+
+    if (!response.ok || !data.choices || data.choices.length === 0) {
+      throw new Error(data.error?.message || 'DeepSeek API error');
+    }
+
+    const responseText = data.choices[0].message.content;
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
@@ -622,14 +664,19 @@ ${content}`
 // Generate study plan
 async function generateStudyPlan(subject: string, topic: string, env: Env) {
   try {
-    const client = getGeminiClient(env);
-    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-5691768e614e4bfc9f563f0a45741be1';
 
-    const response = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{
-          text: `Create a comprehensive 7-day study plan for a student learning about "${topic}" in ${subject}.
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${deepseekApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{
+          role: 'user',
+          content: `Create a comprehensive 7-day study plan for a student learning about "${topic}" in ${subject}.
 
 The plan should:
 - Be realistic and achievable for a high school student
@@ -639,15 +686,19 @@ The plan should:
 - Prepare for exams
 
 Format as a detailed markdown text with clear daily breakdowns.`
-        }]
-      }],
-      generationConfig: {
-        maxOutputTokens: 2048,
-        temperature: 0.4,
-      }
-    } as any);
+        }],
+        max_tokens: 2048,
+        temperature: 0.4
+      })
+    });
 
-    return response.response.text();
+    const data = await response.json() as any;
+
+    if (!response.ok || !data.choices || data.choices.length === 0) {
+      throw new Error(data.error?.message || 'DeepSeek API error');
+    }
+
+    return data.choices[0].message.content.trim();
   } catch (error: any) {
     console.error('Study plan generation error:', error);
     throw new Error(`Failed to generate study plan: ${error.message}`);
@@ -657,14 +708,19 @@ Format as a detailed markdown text with clear daily breakdowns.`
 // Explain concept
 async function explainConcept(concept: string, subject: string, env: Env) {
   try {
-    const client = getGeminiClient(env);
-    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-5691768e614e4bfc9f563f0a45741be1';
 
-    const response = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [{
-          text: `Explain the concept of "${concept}" in the context of ${subject}.
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${deepseekApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{
+          role: 'user',
+          content: `Explain the concept of "${concept}" in the context of ${subject}.
 
 Your explanation should:
 - Start with a simple definition
@@ -675,15 +731,19 @@ Your explanation should:
 - Provide practice tips
 
 Make it engaging and suitable for high school students.`
-        }]
-      }],
-      generationConfig: {
-        maxOutputTokens: 1500,
-        temperature: 0.5,
-      }
-    } as any);
+        }],
+        max_tokens: 1500,
+        temperature: 0.5
+      })
+    });
 
-    return response.response.text();
+    const data = await response.json() as any;
+
+    if (!response.ok || !data.choices || data.choices.length === 0) {
+      throw new Error(data.error?.message || 'DeepSeek API error');
+    }
+
+    return data.choices[0].message.content.trim();
   } catch (error: any) {
     console.error('Concept explanation error:', error);
     throw new Error(`Failed to explain concept: ${error.message}`);
@@ -2485,38 +2545,41 @@ export default {
       }
 
       if (path === '/api/gemini/auto-tags' && request.method === 'POST') {
-        if (!env.GEMINI_API_KEY) {
-          // Fallback when no API key
-          const tags = ['study', 'learning', 'education', 'notes'];
-          return jsonResponse({ success: true, tags });
-        }
-
         try {
           const body = await request.json() as any;
           const { title, content } = body;
 
-          const client = getGeminiClient(env);
-          const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+          const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-5691768e614e4bfc9f563f0a45741be1';
 
-          const response = await model.generateContent({
-            contents: [{
-              role: 'user',
-              parts: [{
-                text: `Generate 3-5 relevant study tags for this note. Return ONLY the tags as a comma-separated list, nothing else.
+          const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${deepseekApiKey}`
+            },
+            body: JSON.stringify({
+              model: 'deepseek-chat',
+              messages: [{
+                role: 'user',
+                content: `Generate 3-5 relevant study tags for this note. Return ONLY the tags as a comma-separated list, nothing else.
 
 Title: ${title || 'Untitled'}
 Content: ${content?.substring(0, 500) || 'No content'}
 
 Tags:`
-              }]
-            }],
-            generationConfig: {
-              maxOutputTokens: 50,
-              temperature: 0.4,
-            }
-          } as any);
+              }],
+              max_tokens: 50,
+              temperature: 0.4
+            })
+          });
 
-          const tagsText = response.response.text().trim();
+          const data = await response.json() as any;
+
+          if (!response.ok || !data.choices || data.choices.length === 0) {
+            throw new Error('DeepSeek API error');
+          }
+
+          const tagsText = data.choices[0].message.content.trim();
           const tags = tagsText.split(',').map(t => t.trim()).filter(t => t && t.length > 0).slice(0, 5);
 
           return jsonResponse({ success: true, tags: tags.length > 0 ? tags : ['study', 'notes'] });
