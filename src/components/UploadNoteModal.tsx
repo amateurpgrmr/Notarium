@@ -120,17 +120,27 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
   const generateQuickSummary = async (content: string, title: string): Promise<string> => {
     try {
+      if (!content || content.trim().length === 0) {
+        throw new Error('No content available to summarize. Please upload an image first.');
+      }
+
       const response = await api.request('/api/gemini/quick-summary', {
         method: 'POST',
         body: {
-          title: title,
+          title: title || 'Untitled',
           content: content
         }
       });
-      return response.summary || '';
-    } catch (error) {
+
+      if (!response.success || !response.summary) {
+        throw new Error(response.error || 'Failed to generate summary');
+      }
+
+      return response.summary;
+    } catch (error: any) {
       console.error('Summary generation error:', error);
-      return '';
+      alert(`Summary Error: ${error.message || 'Failed to generate summary. Please try again.'}`);
+      throw error;
     }
   };
 
@@ -216,6 +226,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   useEffect(() => {
     const generateAISuggestions = async () => {
       if (noteTitle && extractedText && !generatedSummary && !isProcessingOCR) {
+        console.log('Auto-generating summary and tags...', {
+          titleLength: noteTitle.length,
+          textLength: extractedText.length
+        });
         try {
           const [summary, tags] = await Promise.all([
             generateQuickSummary(extractedText, noteTitle),
@@ -223,8 +237,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           ]);
           setGeneratedSummary(summary);
           setSuggestedTags(tags);
+          console.log('Auto-generation complete');
         } catch (error) {
           console.error('Error generating AI suggestions:', error);
+          // Don't show alert for auto-generation - user can manually trigger
         }
       }
     };
@@ -769,17 +785,34 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               </label>
               <button
                 onClick={async () => {
-                  if (!extractedText || !noteTitle) {
+                  console.log('Generate Summary clicked', {
+                    hasTitle: !!noteTitle,
+                    hasText: !!extractedText,
+                    textLength: extractedText?.length
+                  });
+
+                  if (!noteTitle || noteTitle.trim().length === 0) {
                     alert('Please add a title first');
                     return;
                   }
+
+                  if (!extractedText || extractedText.trim().length === 0) {
+                    alert('No extracted text available. Please wait for OCR to complete or upload an image.');
+                    return;
+                  }
+
                   try {
+                    console.log('Starting summary generation...');
                     const summary = await generateQuickSummary(extractedText, noteTitle);
+                    console.log('Summary generated:', summary);
                     setGeneratedSummary(summary);
+
                     const tags = await generateAutoTags(extractedText, noteTitle);
+                    console.log('Tags generated:', tags);
                     setSuggestedTags(tags);
-                  } catch (error) {
-                    alert('Failed to generate summary. Please try again.');
+                  } catch (error: any) {
+                    console.error('Summary generation failed:', error);
+                    // Error already shown by generateQuickSummary
                   }
                 }}
                 disabled={!noteTitle || !extractedText}
