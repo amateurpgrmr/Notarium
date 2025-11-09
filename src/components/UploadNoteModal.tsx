@@ -35,6 +35,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [fullscreenImage, setFullscreenImage] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [ocrCompleted, setOcrCompleted] = useState(false);
+  const [viewMode, setViewMode] = useState<'image' | 'text'>('image'); // Toggle between image and text view
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Track window resize for responsive design
@@ -542,10 +543,59 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         {/* Multi-Page Preview with Navigation */}
         {uploadImages.length > 0 && (
           <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
-              <i className="fas fa-images" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
-              Note Pages ({uploadImages.length})
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: '500', margin: 0 }}>
+                <i className="fas fa-images" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
+                Note Pages ({uploadImages.length})
+              </label>
+
+              {/* View Mode Toggle - Only show if OCR text exists */}
+              {uploadMode === 'scan' && extractedText && (
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  background: darkTheme.colors.bgSecondary,
+                  padding: '4px',
+                  borderRadius: '8px',
+                  border: `1px solid ${darkTheme.colors.borderColor}`
+                }}>
+                  <button
+                    onClick={() => setViewMode('image')}
+                    style={{
+                      padding: '6px 12px',
+                      background: viewMode === 'image' ? darkTheme.colors.accent : 'transparent',
+                      color: viewMode === 'image' ? 'white' : darkTheme.colors.textSecondary,
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: isMobile ? '11px' : '12px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <i className="fas fa-image" style={{ marginRight: '4px' }}></i>
+                    Image
+                  </button>
+                  <button
+                    onClick={() => setViewMode('text')}
+                    style={{
+                      padding: '6px 12px',
+                      background: viewMode === 'text' ? darkTheme.colors.accent : 'transparent',
+                      color: viewMode === 'text' ? 'white' : darkTheme.colors.textSecondary,
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: isMobile ? '11px' : '12px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <i className="fas fa-align-left" style={{ marginRight: '4px' }}></i>
+                    Text
+                  </button>
+                </div>
+              )}
+            </div>
             <div style={{
               position: 'relative',
               background: `${darkTheme.colors.accent}10`,
@@ -556,83 +606,105 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               alignItems: 'center',
               gap: '12px'
             }}>
-              {/* Previous Page Arrow */}
-              {uploadImages.length > 1 && currentPage > 0 && (
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
-                  style={{
-                    background: darkTheme.colors.accent,
-                    border: 'none',
-                    borderRadius: '8px',
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: 'white',
-                    fontSize: '14px',
-                    flexShrink: 0
-                  }}
-                >
-                  <i className="fas fa-chevron-left"></i>
-                </button>
-              )}
+              {/* Show Image View or Text View based on viewMode */}
+              {viewMode === 'image' ? (
+                <>
+                  {/* Previous Page Arrow */}
+                  {uploadImages.length > 1 && currentPage > 0 && (
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                      style={{
+                        background: darkTheme.colors.accent,
+                        border: 'none',
+                        borderRadius: '8px',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: 'white',
+                        fontSize: '14px',
+                        flexShrink: 0
+                      }}
+                    >
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+                  )}
 
-              {/* Current Page Image - Clickable for fullscreen */}
-              <div
-                onClick={() => setFullscreenImage(currentPage)}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  gap: '8px'
-                }}
-              >
-                <img
-                  src={uploadImages[currentPage]}
-                  alt={`Page ${currentPage + 1}`}
-                  style={{
-                    width: '100%',
-                    maxHeight: '150px',
-                    objectFit: 'contain',
-                    borderRadius: '8px',
-                    border: `2px solid ${darkTheme.colors.accent}`
-                  }}
-                />
-                <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>
-                  Page {currentPage + 1} of {uploadImages.length} - Click to view fullscreen
-                </div>
-                {isProcessingOCR && (
-                  <div style={{ fontSize: '11px', color: darkTheme.colors.accent }}>
-                    <i className="fas fa-spinner fa-spin"></i> Scanning...
+                  {/* Current Page Image - Clickable for fullscreen */}
+                  <div
+                    onClick={() => setFullscreenImage(currentPage)}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      gap: '8px'
+                    }}
+                  >
+                    <img
+                      src={uploadImages[currentPage]}
+                      alt={`Page ${currentPage + 1}`}
+                      style={{
+                        width: '100%',
+                        maxHeight: '150px',
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                        border: `2px solid ${darkTheme.colors.accent}`
+                      }}
+                    />
+                    <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>
+                      Page {currentPage + 1} of {uploadImages.length} - Click to view fullscreen
+                    </div>
+                    {isProcessingOCR && (
+                      <div style={{ fontSize: '11px', color: darkTheme.colors.accent }}>
+                        <i className="fas fa-spinner fa-spin"></i> Scanning...
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Next Page Arrow */}
-              {uploadImages.length > 1 && currentPage < uploadImages.length - 1 && (
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(uploadImages.length - 1, prev + 1))}
-                  style={{
-                    background: darkTheme.colors.accent,
-                    border: 'none',
-                    borderRadius: '8px',
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: 'white',
-                    fontSize: '14px',
-                    flexShrink: 0
-                  }}
-                >
-                  <i className="fas fa-chevron-right"></i>
-                </button>
+                  {/* Next Page Arrow */}
+                  {uploadImages.length > 1 && currentPage < uploadImages.length - 1 && (
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(uploadImages.length - 1, prev + 1))}
+                      style={{
+                        background: darkTheme.colors.accent,
+                        border: 'none',
+                        borderRadius: '8px',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: 'white',
+                        fontSize: '14px',
+                        flexShrink: 0
+                      }}
+                    >
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  )}
+                </>
+              ) : (
+                /* Text View - Show extracted text */
+                <div style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: darkTheme.colors.bgPrimary,
+                  borderRadius: '8px',
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  fontSize: isMobile ? '12px' : '13px',
+                  lineHeight: '1.6',
+                  whiteSpace: 'pre-wrap',
+                  fontFamily: 'monospace',
+                  color: darkTheme.colors.textPrimary
+                }}>
+                  {extractedText || 'No text extracted yet. Click "Start OCR Scan" to extract text.'}
+                </div>
               )}
             </div>
 

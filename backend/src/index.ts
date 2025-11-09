@@ -437,7 +437,7 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
   }
 }
 
-// OCR using Google Cloud Vision API
+// OCR using Google Cloud Vision API + Gemini 2.0 for text formatting
 async function performOCR(imageBase64: string, mimeType: string, env: Env) {
   try {
     const apiKey = env.GOOGLE_CLOUD_VISION_API_KEY || env.GEMINI_API_KEY;
@@ -452,7 +452,7 @@ async function performOCR(imageBase64: string, mimeType: string, env: Env) {
       cleanBase64 = imageBase64.split(',')[1];
     }
 
-    // Cloud Vision API endpoint
+    // Step 1: Extract raw text with Cloud Vision API
     const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
       method: 'POST',
       headers: {
@@ -478,19 +478,47 @@ async function performOCR(imageBase64: string, mimeType: string, env: Env) {
       throw new Error(errorMessage);
     }
 
+    let rawText = '';
     if (result.responses && result.responses[0]) {
       const textAnnotations = result.responses[0].textAnnotations;
       if (textAnnotations && textAnnotations.length > 0) {
-        // First annotation contains all the text
-        const extractedText = textAnnotations[0].description;
-        return extractedText;
+        rawText = textAnnotations[0].description;
       } else if (result.responses[0].fullTextAnnotation) {
-        return result.responses[0].fullTextAnnotation.text;
+        rawText = result.responses[0].fullTextAnnotation.text;
       } else {
         return ''; // No text found in image
       }
     } else {
       throw new Error('Invalid response from Cloud Vision API');
+    }
+
+    // Step 2: Use Gemini 2.0 to clean up and format the text
+    try {
+      const client = getGeminiClient(env);
+      const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+      const formatResponse = await model.generateContent({
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `Clean up and properly format this OCR-extracted text. Fix any obvious OCR errors, improve formatting, add proper line breaks and structure, but keep all the content intact. Return only the cleaned text without any explanations.
+
+Raw OCR Text:
+${rawText}`
+          }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 4096,
+          temperature: 0.2,
+        }
+      } as any);
+
+      const formattedText = formatResponse.response.text().trim();
+      return formattedText;
+    } catch (geminiError: any) {
+      console.error('Gemini formatting failed, returning raw OCR text:', geminiError);
+      // Fallback to raw text if Gemini fails
+      return rawText;
     }
   } catch (error: any) {
     console.error('OCR error:', error);
