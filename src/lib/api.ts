@@ -497,6 +497,17 @@ export const api = {
         throw error;
       }
     },
+    unsuspendUser: async (userId: number) => {
+      try {
+        const response = await api.request(`/api/admin/unsuspend/${userId}`, {
+          method: 'POST'
+        });
+        return { success: true, ...response };
+      } catch (error: any) {
+        console.error('Failed to unsuspend user:', error);
+        throw error;
+      }
+    },
     likeNote: async (noteId: number) => {
       try {
         const response = await api.request(`/api/admin/notes/${noteId}/like`, {

@@ -4,6 +4,7 @@ import api, { User } from './lib/api'
 import Login from './pages/Login'
 import AdminLogin from './pages/AdminLogin'
 import Signup from './pages/Signup'
+import Suspended from './pages/Suspended'
 import SubjectsPage from './pages/SubjectsPage'
 import SubjectNotesPage from './pages/SubjectNotesPage'
 import LeaderboardPage from './pages/LeaderboardPage'
@@ -66,6 +67,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  // Check if user is suspended
+  if (user.suspended && user.suspension_end_date) {
+    return <Navigate to="/suspended" replace />
   }
 
   return <>{children}</>
@@ -972,6 +978,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/suspended" element={<Suspended />} />
           <Route
             path="/"
             element={

@@ -717,6 +717,23 @@ export default function AdminPage() {
     }
   };
 
+  const handleUnsuspendUser = async (userId: number) => {
+    if (!confirm('Are you sure you want to remove the suspension from this user?')) {
+      return;
+    }
+    try {
+      setActionLoading(userId);
+      const response = await api.admin.unsuspendUser(userId);
+      // Reload data to get updated suspension info
+      await loadData();
+    } catch (error) {
+      console.error('Failed to unsuspend user:', error);
+      alert('Failed to unsuspend user');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // Group notes by subject
   const notesBySubject = notes.reduce((acc, note) => {
     const subject = note.subject_name || note.subject || 'Unknown';
@@ -855,7 +872,7 @@ export default function AdminPage() {
                               Warn
                             </button>
                           )}
-                          {!user.suspended && (
+                          {!user.suspended ? (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -874,6 +891,26 @@ export default function AdminPage() {
                               }}
                             >
                               Suspend
+                            </button>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnsuspendUser(user.id);
+                              }}
+                              disabled={actionLoading === user.id}
+                              style={{
+                                padding: '4px 8px',
+                                background: 'rgba(34, 197, 94, 0.2)',
+                                color: '#86efac',
+                                border: '1px solid rgba(34, 197, 94, 0.3)',
+                                borderRadius: darkTheme.borderRadius.sm,
+                                cursor: 'pointer',
+                                fontSize: '11px',
+                                fontWeight: '500'
+                              }}
+                            >
+                              Unsuspend
                             </button>
                           )}
                           <button

@@ -1463,6 +1463,23 @@ async function removeUser(userId: string, request: Request, env: Env) {
   return jsonResponse({ success: true });
 }
 
+// Unsuspend user (admin only)
+async function unsuspendUser(userId: string, request: Request, env: Env) {
+  // Verify admin using Bearer token
+  const adminUser = getUserFromToken(request);
+
+  if (!adminUser || adminUser.role !== 'admin') {
+    return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
+  }
+
+  // Clear suspension
+  await env.DB.prepare(
+    'UPDATE users SET suspended = 0, suspension_end_date = NULL, suspension_reason = NULL, updated_at = datetime("now") WHERE id = ?'
+  ).bind(userId).run();
+
+  return jsonResponse({ success: true });
+}
+
 // Get all users (admin only)
 async function getAllUsers(request: Request, env: Env) {
   // Verify admin using Bearer token
@@ -1844,7 +1861,10 @@ async function loginEndpoint(request: Request, env: Env) {
           total_admin_upvotes,
           COALESCE(diamonds, 0) as diamonds,
           description,
-          photo_url
+          photo_url,
+          suspended,
+          suspension_end_date,
+          suspension_reason
         FROM users WHERE email = ?
       `).bind(email).first();
       console.log('[LOGIN] User query result:', { found: !!user, userId: (user as any)?.id });
@@ -1865,7 +1885,10 @@ async function loginEndpoint(request: Request, env: Env) {
             total_likes,
             total_admin_upvotes,
             description,
-            photo_url
+            photo_url,
+            suspended,
+            suspension_end_date,
+            suspension_reason
           FROM users WHERE email = ?
         `).bind(email).first();
 
@@ -1888,6 +1911,37 @@ async function loginEndpoint(request: Request, env: Env) {
     if ((user as any).password_hash !== password) {
       console.log('[LOGIN] Password mismatch for user:', email);
       return jsonResponse({ error: 'Invalid email or password' }, 401);
+    }
+
+    // Check if user is suspended
+    if ((user as any).suspended === 1) {
+      const now = new Date();
+      const suspensionEndDate = (user as any).suspension_end_date ? new Date((user as any).suspension_end_date) : null;
+
+      // If suspension has expired, clear it
+      if (suspensionEndDate && now > suspensionEndDate) {
+        console.log('[LOGIN] Suspension expired, clearing for user:', (user as any).id);
+        await env.DB.prepare(
+          'UPDATE users SET suspended = 0, suspension_end_date = NULL, suspension_reason = NULL, updated_at = datetime("now") WHERE id = ?'
+        ).bind((user as any).id).run();
+        (user as any).suspended = 0;
+        (user as any).suspension_end_date = null;
+        (user as any).suspension_reason = null;
+      } else {
+        // Suspension is still active
+        console.log('[LOGIN] User is suspended:', (user as any).id);
+        const daysRemaining = suspensionEndDate
+          ? Math.ceil((suspensionEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+
+        return jsonResponse({
+          error: 'Account suspended',
+          suspended: true,
+          suspension_end_date: (user as any).suspension_end_date,
+          suspension_reason: (user as any).suspension_reason || 'Suspended by admin',
+          days_remaining: daysRemaining
+        }, 403);
+      }
     }
 
     console.log('[LOGIN] Creating token for user:', (user as any).id);
@@ -2026,6 +2080,23 @@ async function meEndpoint(request: Request, env: Env) {
 
       if (!userData) {
         return jsonResponse({ error: 'User not found' }, 404);
+      }
+
+      // Check if user is suspended and if suspension has expired
+      if (userData.suspended === 1) {
+        const now = new Date();
+        const suspensionEndDate = userData.suspension_end_date ? new Date(userData.suspension_end_date) : null;
+
+        // If suspension has expired, clear it
+        if (suspensionEndDate && now > suspensionEndDate) {
+          console.log('[ME] Suspension expired, clearing for user:', userId);
+          await env.DB.prepare(
+            'UPDATE users SET suspended = 0, suspension_end_date = NULL, suspension_reason = NULL, updated_at = datetime("now") WHERE id = ?'
+          ).bind(userId).run();
+          userData.suspended = 0;
+          userData.suspension_end_date = null;
+          userData.suspension_reason = null;
+        }
       }
 
       // Handle warning tracking and auto-dismissal
@@ -2662,6 +2733,11 @@ Tags:`
       if (path.match(/^\/api\/admin\/warn\/\d+$/) && request.method === 'POST') {
         const userId = path.split('/')[4];
         return await warnUser(userId, request, env);
+      }
+
+      if (path.match(/^\/api\/admin\/unsuspend\/\d+$/) && request.method === 'POST') {
+        const userId = path.split('/')[4];
+        return await unsuspendUser(userId, request, env);
       }
 
       if (path.match(/^\/api\/admin\/user\/\d+$/) && request.method === 'DELETE') {
