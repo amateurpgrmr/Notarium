@@ -437,11 +437,14 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
   }
 }
 
-// OCR using Gemini Vision
+// OCR using Google Cloud Vision API
 async function performOCR(imageBase64: string, mimeType: string, env: Env) {
   try {
-    const client = getGeminiClient(env);
-    const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const apiKey = env.GOOGLE_CLOUD_VISION_API_KEY || env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('Google Cloud Vision API key is not configured');
+    }
 
     // Remove data URI prefix if present
     let cleanBase64 = imageBase64;
@@ -449,29 +452,46 @@ async function performOCR(imageBase64: string, mimeType: string, env: Env) {
       cleanBase64 = imageBase64.split(',')[1];
     }
 
-    const response = await model.generateContent({
-      contents: [{
-        role: 'user',
-        parts: [
-          {
-            inlineData: {
-              mimeType: mimeType as any,
-              data: cleanBase64
-            }
+    // Cloud Vision API endpoint
+    const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        requests: [{
+          image: {
+            content: cleanBase64
           },
-          {
-            text: 'Extract all text from this image. Format it clearly with proper sections and structure. Include any equations, diagrams descriptions, or important information.'
-          }
-        ]
-      }],
-      generationConfig: {
-        maxOutputTokens: 4096,
-        temperature: 0.2,
-      }
-    } as any);
+          features: [{
+            type: 'DOCUMENT_TEXT_DETECTION',
+            maxResults: 1
+          }]
+        }]
+      })
+    });
 
-    const extractedText = response.response.text();
-    return extractedText;
+    const result = await response.json() as any;
+
+    if (!response.ok) {
+      const errorMessage = result.error?.message || 'Unknown Cloud Vision error';
+      throw new Error(errorMessage);
+    }
+
+    if (result.responses && result.responses[0]) {
+      const textAnnotations = result.responses[0].textAnnotations;
+      if (textAnnotations && textAnnotations.length > 0) {
+        // First annotation contains all the text
+        const extractedText = textAnnotations[0].description;
+        return extractedText;
+      } else if (result.responses[0].fullTextAnnotation) {
+        return result.responses[0].fullTextAnnotation.text;
+      } else {
+        return ''; // No text found in image
+      }
+    } else {
+      throw new Error('Invalid response from Cloud Vision API');
+    }
   } catch (error: any) {
     console.error('OCR error:', error);
     throw new Error(`OCR failed: ${error.message}`);
@@ -481,6 +501,7 @@ async function performOCR(imageBase64: string, mimeType: string, env: Env) {
 // Generate note summary - EXACTLY 2 sentences
 async function generateNoteSummary(content: string, title: string, env: Env) {
   try {
+    // Try Gemini first
     const client = getGeminiClient(env);
     const model = client.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
@@ -511,9 +532,54 @@ IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
     const twoSentences = sentences.slice(0, 2).join(' ').trim();
 
     return twoSentences;
-  } catch (error: any) {
-    console.error('Summary generation error:', error);
-    throw new Error(`Failed to generate summary: ${error.message}`);
+  } catch (geminiError: any) {
+    console.error('Gemini summary generation error, trying DeepSeek fallback:', geminiError);
+
+    // Fallback to DeepSeek
+    try {
+      const deepseekApiKey = env.DEEPSEEK_API_KEY || 'sk-e9c8a89081d546f2862630ac21f0f730';
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepseekApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{
+            role: 'user',
+            content: `Summarize this study note in EXACTLY 2 sentences. Focus on the main concepts and key points.
+
+Title: "${title}"
+
+Content:
+${content.substring(0, 3000)}
+
+IMPORTANT: Your response must be EXACTLY 2 sentences, no more, no less.`
+          }],
+          max_tokens: 150,
+          temperature: 0.3
+        })
+      });
+
+      const data = await response.json() as any;
+
+      if (!response.ok || !data.choices || data.choices.length === 0) {
+        throw new Error(data.error?.message || 'DeepSeek API error');
+      }
+
+      const summary = data.choices[0].message.content.trim();
+
+      // Ensure it's only 2 sentences by splitting and taking first 2
+      const sentences = summary.match(/[^.!?]+[.!?]+/g) || [summary];
+      const twoSentences = sentences.slice(0, 2).join(' ').trim();
+
+      return twoSentences;
+    } catch (deepseekError: any) {
+      console.error('DeepSeek summary generation error:', deepseekError);
+      throw new Error(`Failed to generate summary: ${geminiError.message}`);
+    }
   }
 }
 
@@ -760,8 +826,23 @@ async function updateUserClass(request: Request, env: Env) {
 }
 
 // Get all subjects
-async function getSubjects(env: Env) {
-  const { results } = await env.DB.prepare('SELECT * FROM subjects ORDER BY name').all();
+async function getSubjects(request: Request, env: Env) {
+  const user = await getOrCreateUser(request, env);
+
+  // Get subjects with accurate note counts filtered by user's class
+  const { results } = await env.DB.prepare(`
+    SELECT
+      s.*,
+      (SELECT COUNT(*)
+       FROM notes n
+       JOIN users u ON n.author_id = u.id
+       WHERE n.subject_id = s.id
+       AND (u.class = ? OR u.class IS NULL OR ? IS NULL)
+      ) as note_count
+    FROM subjects s
+    ORDER BY s.name
+  `).bind(user.class, user.class).all();
+
   return jsonResponse({ subjects: results });
 }
 
@@ -2320,7 +2401,7 @@ export default {
         if (!env.DB) {
           return jsonResponse({ subjects: MOCK_SUBJECTS });
         }
-        return await getSubjects(env);
+        return await getSubjects(request, env);
       }
 
       // Note routes

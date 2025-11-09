@@ -664,7 +664,7 @@ app.post('/api/gemini/summarize', async (req, res) => {
   }
 });
 
-// OCR - Process image with Gemini Vision API
+// OCR - Process image with Google Cloud Vision API
 app.post('/api/gemini/ocr', async (req, res) => {
   const { imageBase64, mimeType } = req.body;
 
@@ -672,8 +672,7 @@ app.post('/api/gemini/ocr', async (req, res) => {
     return res.status(400).json({ error: 'imageBase64 is required' });
   }
 
-  const GEMINI_API_KEY = 'AIzaSyAN0B5T7psGFbnoiKMe8eVyH6w5S6LP4Co';
-  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+  const CLOUD_VISION_API_KEY = process.env.GOOGLE_CLOUD_VISION_API_KEY || process.env.GEMINI_API_KEY || 'AIzaSyAN0B5T7psGFbnoiKMe8eVyH6w5S6LP4Co';
 
   try {
     // Clean base64 string
@@ -682,43 +681,64 @@ app.post('/api/gemini/ocr', async (req, res) => {
       base64Data = imageBase64.split(',')[1];
     }
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${CLOUD_VISION_API_KEY}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            {
-              text: "Extract and return ALL text from this image. Include everything you can see - all words, numbers, headings, and content. Format the text as it appears in the image."
-            },
-            {
-              inline_data: {
-                mime_type: mimeType || 'image/jpeg',
-                data: base64Data
-              }
-            }
-          ]
+        requests: [{
+          image: {
+            content: base64Data
+          },
+          features: [{
+            type: 'DOCUMENT_TEXT_DETECTION',
+            maxResults: 1
+          }]
         }]
       })
     });
 
     const data = await response.json();
 
-    if (!response.ok || !data.candidates || !data.candidates[0]) {
-      console.error('Gemini API Error:', data);
+    if (!response.ok) {
+      const errorMessage = data.error?.message || 'Unknown Cloud Vision error';
+      console.error('Cloud Vision API Error:', data);
       return res.status(400).json({
         success: false,
         error: 'Failed to process image',
-        details: data.error?.message || 'Unknown error'
+        details: errorMessage
       });
     }
 
-    const extractedText = data.candidates[0].content.parts[0].text;
-
-    res.json({
-      success: true,
-      text: extractedText
-    });
+    if (data.responses && data.responses[0]) {
+      const textAnnotations = data.responses[0].textAnnotations;
+      if (textAnnotations && textAnnotations.length > 0) {
+        // First annotation contains all the text
+        const extractedText = textAnnotations[0].description;
+        res.json({
+          success: true,
+          text: extractedText
+        });
+      } else if (data.responses[0].fullTextAnnotation) {
+        res.json({
+          success: true,
+          text: data.responses[0].fullTextAnnotation.text
+        });
+      } else {
+        // No text found in image
+        res.json({
+          success: true,
+          text: ''
+        });
+      }
+    } else {
+      console.error('Invalid Cloud Vision response:', data);
+      return res.status(500).json({
+        success: false,
+        error: 'Invalid response from Cloud Vision API'
+      });
+    }
   } catch (error) {
     console.error('OCR Processing Error:', error);
     res.status(500).json({
