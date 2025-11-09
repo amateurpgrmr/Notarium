@@ -365,28 +365,27 @@ async function getUserNotes(userId: number, subject?: string, env?: Env): Promis
   }
 }
 
-// Format notes for Gemini context
+// Format notes for Gemini context - uses AI-cleaned extracted text as knowledge base
 function formatNotesForContext(notes: any[]): string {
   if (notes.length === 0) {
     return '';
   }
 
   const notesSummary = notes.map((note, idx) => {
+    // Prioritize extracted_text (Gemini-cleaned OCR) for accurate content
     const content = note.extracted_text || note.description || note.title;
-    return `Note ${idx + 1}: ${note.title}\n${content?.substring(0, 500) || '(No content)'}`;
+    return `[Note ${idx + 1}] ${note.title}\n${content?.substring(0, 800) || '(No content)'}`;
   }).join('\n\n---\n\n');
 
-  return `\n\nUser's Study Notes for Context:\n${notesSummary}`;
+  return `\n\nKnowledge Base (User's Study Materials - Use these as primary reference):\n${notesSummary}\n\nInstructions: Answer based on the knowledge base above first, then supplement with general knowledge if needed.`;
 }
 
-// Chat with Gemini AI using note context
+// Chat with Gemini AI using note context - Automatically feeds AI-cleaned note content as knowledge base
 async function chatWithGemini(sessionId: string, userMessage: string, subject: string, userId: number, request: Request, env: Env) {
   try {
-    // Get user's notes for context (optional)
+    // Get user's notes for context - includes Gemini-cleaned extracted text from OCR
     const userNotes = await getUserNotes(userId, subject, env);
-    const notesContext = userNotes.length > 0
-      ? `\n\nYou have these study notes available for reference:\n${formatNotesForContext(userNotes)}`
-      : '';
+    const notesContext = formatNotesForContext(userNotes);
 
     // Get chat history
     const { results: messages } = await env.DB.prepare(`
@@ -407,7 +406,7 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
       parts: [{ text: msg.content }]
     }));
 
-    // Start chat session with minimal config
+    // Start chat session with system context about being a study assistant
     const chat = model.startChat({
       history: conversationHistory,
       generationConfig: {
@@ -416,7 +415,7 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
       },
     });
 
-    // Send message with context about subject and notes
+    // Send message with knowledge base context (invisible to user but feeds the AI)
     const contextualMessage = notesContext
       ? `${userMessage}${notesContext}`
       : userMessage;

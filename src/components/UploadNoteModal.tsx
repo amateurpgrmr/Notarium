@@ -831,57 +831,32 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               style={{ fontSize: isMobile ? '16px' : '18px', color: darkTheme.colors.accent, flexShrink: 0 }}
             ></i>
             <p style={{ margin: 0, color: darkTheme.colors.accent, fontWeight: '500', fontSize: isMobile ? '12px' : '13px' }}>
-              Scanning with AI OCR...
+              Scanning with AI OCR and cleaning text...
             </p>
           </div>
         )}
 
-        {/* Extracted Text - Editable */}
-        {uploadMode === 'scan' && extractedText && (
-          <div style={{ marginBottom: '16px', flex: isMobile ? 1 : 'auto', display: 'flex', flexDirection: 'column' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
-              <i className="fas fa-check-circle" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
-              Extracted Text (Editable - Fix any errors)
-            </label>
-            <textarea
-              value={extractedText}
-              onChange={(e) => setExtractedText(e.target.value)}
-              spellCheck={true}
-              style={{
-                background: `${darkTheme.colors.accent}10`,
-                border: `1px solid ${darkTheme.colors.accent}30`,
-                borderRadius: '12px',
-                padding: isMobile ? '12px' : '16px',
-                maxHeight: isMobile ? '400px' : '250px',
-                minHeight: '150px',
-                resize: 'vertical',
-                flex: isMobile ? 1 : 'auto',
-                whiteSpace: 'pre-wrap',
-                fontSize: isMobile ? '12px' : '14px',
-                fontFamily: 'monospace',
-                color: darkTheme.colors.textPrimary,
-                width: '100%',
-                boxSizing: 'border-box',
-                outline: 'none'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = darkTheme.colors.accent;
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = `${darkTheme.colors.accent}30`;
-              }}
-            />
-            <div style={{
-              marginTop: '6px',
-              fontSize: '11px',
-              color: darkTheme.colors.textSecondary,
+        {/* Success message after OCR completes */}
+        {uploadMode === 'scan' && extractedText && !isProcessingOCR && (
+          <div
+            style={{
+              marginBottom: isMobile ? '8px' : '12px',
+              padding: isMobile ? '8px 12px' : '10px 14px',
+              background: `${darkTheme.colors.accent}10`,
+              border: `1px solid ${darkTheme.colors.accent}30`,
+              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px'
-            }}>
-              <i className="fas fa-info-circle"></i>
-              <span>Edit the text above to fix any OCR errors. Typos are highlighted automatically.</span>
-            </div>
+              gap: '8px'
+            }}
+          >
+            <i
+              className="fas fa-check-circle"
+              style={{ fontSize: isMobile ? '14px' : '16px', color: darkTheme.colors.accent, flexShrink: 0 }}
+            ></i>
+            <p style={{ margin: 0, color: darkTheme.colors.textSecondary, fontSize: isMobile ? '11px' : '12px' }}>
+              Text extracted and cleaned with AI. Use the Image/Text toggle above to view it.
+            </p>
           </div>
         )}
 
