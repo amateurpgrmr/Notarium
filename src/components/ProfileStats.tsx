@@ -309,26 +309,26 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
             </div>
           )}
 
-          {/* Diamonds Highlight - Full Width */}
+          {/* Points Highlight - Full Width */}
           <div style={{
-            background: 'linear-gradient(135deg, #f39c12, #e74c3c, #9b59b6)',
+            background: 'linear-gradient(135deg, #f59e0b, #d97706, #b45309)',
             borderRadius: '12px',
             padding: '24px',
             textAlign: 'center',
             color: 'white',
             marginBottom: '16px',
-            boxShadow: '0 8px 32px rgba(243, 156, 18, 0.3)',
+            boxShadow: '0 8px 32px rgba(245, 158, 11, 0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '16px'
           }}>
-            <div style={{ fontSize: '48px' }}>💎</div>
+            <div style={{ fontSize: '48px' }}>🪙</div>
             <div>
               <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '4px' }}>
-                {user?.diamonds || 0}
+                {user?.points || 0}
               </div>
-              <div style={{ fontSize: '13px', opacity: 0.95, fontWeight: '500' }}>Diamonds</div>
+              <div style={{ fontSize: '13px', opacity: 0.95, fontWeight: '500' }}>Points</div>
             </div>
           </div>
 

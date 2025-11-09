@@ -997,10 +997,10 @@ async function createNote(request: Request, env: Env) {
 
     console.log('[CREATE NOTE] Note created:', (note as any).id);
 
-    // Update user stats, diamonds, and subject count
+    // Update user stats and subject count
     try {
       await env.DB.batch([
-        env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded + 1, diamonds = diamonds + 1 WHERE id = ?').bind(user.id),
+        env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded + 1 WHERE id = ?').bind(user.id),
         env.DB.prepare('UPDATE subjects SET note_count = note_count + 1 WHERE id = ?').bind(body.subject_id)
       ]);
       console.log('[CREATE NOTE] Stats updated successfully');
@@ -1079,12 +1079,10 @@ async function getLeaderboard(env: Env) {
       notes_uploaded,
       total_likes,
       total_admin_upvotes,
-      COALESCE(diamonds, 0) as diamonds,
-      (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 4.5) as points,
-      COALESCE(diamonds, 0) as score
+      (total_likes + total_admin_upvotes * 5) as points
     FROM users
     WHERE role != 'admin'
-    ORDER BY points DESC, diamonds DESC, notes_uploaded DESC
+    ORDER BY points DESC, notes_uploaded DESC
     LIMIT 100
   `).all();
 

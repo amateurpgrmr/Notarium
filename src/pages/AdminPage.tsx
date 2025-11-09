@@ -18,7 +18,7 @@ interface AdminUser {
   warning_message?: string;
   notes_count?: number;
   notes_uploaded?: number;
-  diamonds?: number;
+  points?: number;
   total_likes?: number;
   total_admin_upvotes?: number;
   photo_url?: string;
@@ -483,10 +483,10 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
             </div>
             <div style={{ padding: '16px', background: darkTheme.colors.bgSecondary, borderRadius: darkTheme.borderRadius.md }}>
               <div style={{ fontSize: '24px', fontWeight: '700', color: darkTheme.colors.accent }}>
-                {user.diamonds || 0}
+                {user.points || 0}
               </div>
               <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginTop: '4px' }}>
-                💎 Total Diamonds
+                🪙 Total Points
               </div>
             </div>
             <div style={{ padding: '16px', background: darkTheme.colors.bgSecondary, borderRadius: darkTheme.borderRadius.md }}>
@@ -832,8 +832,8 @@ export default function AdminPage() {
                         <span style={{ fontWeight: '600', color: '#fbbf24' }}>{(user as any).points || 0}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                        <span style={{ color: darkTheme.colors.textSecondary }}>💎 Diamonds:</span>
-                        <span style={{ fontWeight: '600', color: darkTheme.colors.accent }}>{user.diamonds || 0}</span>
+                        <span style={{ color: darkTheme.colors.textSecondary }}>🪙 Points:</span>
+                        <span style={{ fontWeight: '600', color: darkTheme.colors.accent }}>{user.points || 0}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
                         <span style={{ color: darkTheme.colors.textSecondary }}>📝 Notes:</span>
@@ -1069,7 +1069,7 @@ export default function AdminPage() {
                                 fontWeight: '600',
                                 opacity: actionLoading === note.id ? 0.6 : 1
                               }}
-                              title="Admin Like (+5 diamonds)"
+                              title="Admin Like (+5 points)"
                             >
                               {actionLoading === note.id ? '...' : note.admin_liked ? '⭐ Liked' : '⭐ Admin Like'}
                             </button>
@@ -1161,7 +1161,7 @@ export default function AdminPage() {
                               fontSize: '11px',
                               fontWeight: '600'
                             }}
-                            title="Admin Like (+5 diamonds)"
+                            title="Admin Like (+5 points)"
                           >
                             ⭐ Admin Like
                           </button>

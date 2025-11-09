@@ -561,7 +561,7 @@ function HomePage() {
               </p>
             )}
 
-            {/* Diamonds Display */}
+            {/* Points Display */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -571,8 +571,8 @@ function HomePage() {
               fontSize: '14px',
               fontWeight: '600'
             }}>
-              <span style={{ color: '#4ecdc4' }}>💎</span>
-              <span>{user?.diamonds || 0} Diamonds</span>
+              <span style={{ color: '#4ecdc4' }}>🪙</span>
+              <span>{user?.points || 0} Points</span>
             </div>
 
             {/* Badges - Dynamic based on diamonds */}
@@ -584,9 +584,9 @@ function HomePage() {
               flexWrap: 'wrap'
             }}>
               {/* Bronze Badge (100+ diamonds) */}
-              {(user?.diamonds || 0) >= 100 && (
+              {(user?.points || 0) >= 100 && (
                 <div
-                  title="Bronze Badge - 100+ Diamonds"
+                  title="Bronze Badge - 100+ Points"
                   style={{
                     width: '32px',
                     height: '32px',
@@ -606,9 +606,9 @@ function HomePage() {
               )}
 
               {/* Silver Badge (250+ diamonds) */}
-              {(user?.diamonds || 0) >= 250 && (
+              {(user?.points || 0) >= 250 && (
                 <div
-                  title="Silver Badge - 250+ Diamonds"
+                  title="Silver Badge - 250+ Points"
                   style={{
                     width: '32px',
                     height: '32px',
@@ -628,9 +628,9 @@ function HomePage() {
               )}
 
               {/* Gold Badge (500+ diamonds) */}
-              {(user?.diamonds || 0) >= 500 && (
+              {(user?.points || 0) >= 500 && (
                 <div
-                  title="Gold Badge - 500+ Diamonds"
+                  title="Gold Badge - 500+ Points"
                   style={{
                     width: '32px',
                     height: '32px',
@@ -650,9 +650,9 @@ function HomePage() {
               )}
 
               {/* Platinum Badge (1000+ diamonds) */}
-              {(user?.diamonds || 0) >= 1000 && (
+              {(user?.points || 0) >= 1000 && (
                 <div
-                  title="Platinum Badge - 1000+ Diamonds"
+                  title="Platinum Badge - 1000+ Points"
                   style={{
                     width: '32px',
                     height: '32px',
