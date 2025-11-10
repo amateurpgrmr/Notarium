@@ -394,10 +394,15 @@ function formatNotesForContext(notes: any[]): string {
   const notesSummary = notes.map((note, idx) => {
     // Prioritize extracted_text (Gemini-cleaned OCR) for accurate content
     const content = note.extracted_text || note.description || note.title;
-    return `[Note ${idx + 1}] ${note.title}\n${content?.substring(0, 800) || '(No content)'}`;
+    return `[Note ${idx + 1}] ${note.title}\n${content?.substring(0, 1200) || '(No content)'}`;
   }).join('\n\n---\n\n');
 
-  return `\n\nKnowledge Base (User's Study Materials - Use these as primary reference):\n${notesSummary}\n\nInstructions: Answer based on the knowledge base above first, then supplement with general knowledge if needed.`;
+  return `\n\n📚 KNOWLEDGE BASE (User's Study Materials - PRIMARY SOURCE):\n${notesSummary}\n\n⚠️ CRITICAL INSTRUCTIONS:
+- You MUST derive AT LEAST 60% of your answer directly from the Knowledge Base above
+- Quote and reference specific information from the notes when available
+- Only use general knowledge to supplement or clarify when the notes don't fully cover the question
+- If the answer is in the notes, cite it explicitly
+- Use the exact terminology and concepts from the user's study materials`;
 }
 
 // Chat with DeepSeek AI using note context - Automatically feeds AI-cleaned note content as knowledge base
@@ -427,7 +432,29 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
     const allMessages = [
       {
         role: 'system',
-        content: 'You are a helpful study assistant. Use the provided study notes to answer questions accurately. Always base your answers on the user\'s materials when available. IMPORTANT: Always respond in Indonesian (Bahasa Indonesia).'
+        content: `You are a helpful study assistant and tutor.
+
+📋 RESPONSE FORMAT REQUIREMENTS:
+- Use proper markdown formatting: **bold**, *italic*, \`code\`, etc.
+- Use emojis to make responses engaging (✅ ❌ 📚 💡 🎯 ⚡ etc.)
+- Use bullet points (- or *) and numbered lists (1. 2. 3.) to organize information
+- Use headings (## or ###) for major sections
+- Keep paragraphs short and scannable
+- Add line breaks between sections for readability
+
+🎯 CONTENT REQUIREMENTS:
+- AT LEAST 60% of your answer MUST come directly from the user's study materials (Knowledge Base)
+- Quote specific facts, definitions, and examples from the provided notes
+- When referencing notes, mention "berdasarkan catatan kamu" (based on your notes)
+- Only use general knowledge to fill gaps or provide additional context
+- If the notes contain the answer, prioritize that information completely
+
+📚 SOURCING RULES:
+- Primary source (60%+): User's study materials/notes
+- Secondary source (40% max): General knowledge only when needed
+- Always cite when using information from the notes
+
+IMPORTANT: Always respond in Indonesian (Bahasa Indonesia).`
       },
       ...conversationHistory
     ];

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme, cardStyle, inputStyle, buttonPrimaryStyle } from '../theme';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -540,10 +541,42 @@ export default function ChatPage() {
                       : darkTheme.colors.bgSecondary,
                     color: msg.role === 'user' ? '#fff' : darkTheme.colors.textPrimary,
                     wordWrap: 'break-word',
-                    lineHeight: '1.5',
+                    lineHeight: '1.6',
                     fontSize: '15px'
                   }}>
-                    {msg.content}
+                    {msg.role === 'assistant' ? (
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
+                          ul: ({ children }) => <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>{children}</ul>,
+                          ol: ({ children }) => <ol style={{ margin: '8px 0', paddingLeft: '20px' }}>{children}</ol>,
+                          li: ({ children }) => <li style={{ margin: '4px 0' }}>{children}</li>,
+                          strong: ({ children }) => <strong style={{ fontWeight: '700', color: msg.role === 'user' ? '#fff' : darkTheme.colors.accent }}>{children}</strong>,
+                          em: ({ children }) => <em style={{ fontStyle: 'italic' }}>{children}</em>,
+                          code: ({ children }) => <code style={{
+                            background: 'rgba(0, 0, 0, 0.2)',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '13px',
+                            fontFamily: 'monospace'
+                          }}>{children}</code>,
+                          h1: ({ children }) => <h1 style={{ fontSize: '20px', fontWeight: '700', margin: '12px 0 8px 0' }}>{children}</h1>,
+                          h2: ({ children }) => <h2 style={{ fontSize: '18px', fontWeight: '700', margin: '12px 0 8px 0' }}>{children}</h2>,
+                          h3: ({ children }) => <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '10px 0 6px 0' }}>{children}</h3>,
+                          blockquote: ({ children }) => <blockquote style={{
+                            borderLeft: `3px solid ${darkTheme.colors.accent}`,
+                            paddingLeft: '12px',
+                            margin: '8px 0',
+                            fontStyle: 'italic',
+                            opacity: 0.9
+                          }}>{children}</blockquote>
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    ) : (
+                      msg.content
+                    )}
                   </div>
                 </div>
               ))}
