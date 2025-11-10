@@ -38,6 +38,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [viewMode, setViewMode] = useState<'image' | 'text'>('image'); // Toggle between image and text view
   const [saveAsDraft, setSaveAsDraft] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
+  const [visibility, setVisibility] = useState<'everyone' | 'class'>('everyone');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Track window resize for responsive design
@@ -219,7 +220,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         quick_summary: quickSummary,
         tags: finalTags,
         status: saveAsDraft ? 'draft' : 'published',
-        scheduled_publish_at: saveAsDraft && scheduledDate ? scheduledDate : null
+        scheduled_publish_at: saveAsDraft && scheduledDate ? scheduledDate : null,
+        visibility: visibility
       };
 
       const response = await api.request('/api/notes', {
@@ -972,6 +974,77 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             </div>
           </div>
         )}
+
+        {/* Visibility Toggle */}
+        <div style={{
+          background: darkTheme.colors.bgSecondary,
+          padding: '16px',
+          borderRadius: '12px',
+          marginTop: '16px'
+        }}>
+          <label style={{
+            display: 'block',
+            color: darkTheme.colors.textPrimary,
+            fontSize: '14px',
+            fontWeight: '500',
+            marginBottom: '12px'
+          }}>
+            Who can see this note?
+          </label>
+          <div style={{
+            display: 'flex',
+            gap: '8px'
+          }}>
+            <button
+              type="button"
+              onClick={() => setVisibility('everyone')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                background: visibility === 'everyone' ? darkTheme.colors.accent : darkTheme.colors.bgTertiary,
+                color: visibility === 'everyone' ? 'white' : darkTheme.colors.textSecondary,
+                border: `1px solid ${visibility === 'everyone' ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+            >
+              <div style={{ fontSize: '16px', marginBottom: '4px' }}>🌍</div>
+              Everyone
+            </button>
+            <button
+              type="button"
+              onClick={() => setVisibility('class')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                background: visibility === 'class' ? darkTheme.colors.accent : darkTheme.colors.bgTertiary,
+                color: visibility === 'class' ? 'white' : darkTheme.colors.textSecondary,
+                border: `1px solid ${visibility === 'class' ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+            >
+              <div style={{ fontSize: '16px', marginBottom: '4px' }}>👥</div>
+              My Class Only
+            </button>
+          </div>
+          <p style={{
+            fontSize: '11px',
+            color: darkTheme.colors.textSecondary,
+            marginTop: '8px',
+            fontStyle: 'italic'
+          }}>
+            {visibility === 'everyone'
+              ? 'All users can see this note'
+              : 'Only students in your class can see this note'}
+          </p>
+        </div>
 
         {/* Draft and Scheduling Options */}
         <div style={{

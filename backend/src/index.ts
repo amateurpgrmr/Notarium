@@ -201,6 +201,11 @@ async function initializeDatabase(env: Env) {
     } catch (e) {
       // Column already exists
     }
+    try {
+      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN visibility TEXT DEFAULT 'everyone'`).run();
+    } catch (e) {
+      // Column already exists
+    }
 
     // Create activity log table for admin actions
     await env.DB.prepare(`
@@ -895,18 +900,24 @@ async function updateUserClass(request: Request, env: Env) {
 async function getSubjects(request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
 
-  // Get subjects with accurate note counts (all published notes)
+  // Get subjects with accurate note counts (respecting visibility settings)
   const { results } = await env.DB.prepare(`
     SELECT
       s.*,
       (SELECT COUNT(*)
        FROM notes n
+       JOIN users u ON n.author_id = u.id
        WHERE n.subject_id = s.id
        AND (n.status = 'published' OR n.status IS NULL)
+       AND (
+         n.visibility = 'everyone'
+         OR n.visibility IS NULL
+         OR (n.visibility = 'class' AND u.class = ?)
+       )
       ) as note_count
     FROM subjects s
     ORDER BY s.name
-  `).all();
+  `).bind(user.class).all();
 
   return jsonResponse({ subjects: results });
 }
@@ -915,7 +926,9 @@ async function getSubjects(request: Request, env: Env) {
 async function getNotesBySubject(subjectId: string, request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
 
-  // Show all published notes regardless of class
+  // Show published notes based on visibility setting
+  // - Show if visibility is 'everyone' or NULL (old notes)
+  // - Show if visibility is 'class' and viewer's class matches author's class
   const { results } = await env.DB.prepare(`
     SELECT
       n.*,
@@ -926,8 +939,13 @@ async function getNotesBySubject(subjectId: string, request: Request, env: Env) 
     JOIN users u ON n.author_id = u.id
     WHERE n.subject_id = ?
       AND (n.status = 'published' OR n.status IS NULL)
+      AND (
+        n.visibility = 'everyone'
+        OR n.visibility IS NULL
+        OR (n.visibility = 'class' AND u.class = ?)
+      )
     ORDER BY n.created_at DESC
-  `).bind(subjectId).all();
+  `).bind(subjectId, user.class).all();
 
   return jsonResponse({ notes: results });
 }
@@ -936,7 +954,7 @@ async function getNotesBySubject(subjectId: string, request: Request, env: Env) 
 async function searchNotes(query: string, request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
 
-  // Search in title, description, and extracted_text, only published notes
+  // Search in title, description, and extracted_text, only published notes with visibility check
   const { results } = await env.DB.prepare(`
     SELECT
       n.*,
@@ -949,9 +967,14 @@ async function searchNotes(query: string, request: Request, env: Env) {
     JOIN subjects s ON n.subject_id = s.id
     WHERE (n.title LIKE ? OR n.description LIKE ? OR n.extracted_text LIKE ?)
       AND (n.status = 'published' OR n.status IS NULL)
+      AND (
+        n.visibility = 'everyone'
+        OR n.visibility IS NULL
+        OR (n.visibility = 'class' AND u.class = ?)
+      )
     ORDER BY n.created_at DESC
     LIMIT 50
-  `).bind(`%${query}%`, `%${query}%`, `%${query}%`).all();
+  `).bind(`%${query}%`, `%${query}%`, `%${query}%`, user.class).all();
 
   return jsonResponse({ notes: results });
 }
@@ -992,11 +1015,12 @@ async function createNote(request: Request, env: Env) {
     // Determine note status (draft or published)
     const noteStatus = body.status || 'published'; // Default to published for backward compatibility
     const scheduledPublishAt = body.scheduled_publish_at || null;
+    const visibility = body.visibility || 'everyone'; // Default to everyone for backward compatibility
 
     // Create note
     const note = await env.DB.prepare(`
-      INSERT INTO notes (title, description, subject_id, author_id, author_class, extracted_text, image_path, content, tags, summary, status, scheduled_publish_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO notes (title, description, subject_id, author_id, author_class, extracted_text, image_path, content, tags, summary, status, scheduled_publish_at, visibility)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING *
     `).bind(
       body.title,
@@ -1010,7 +1034,8 @@ async function createNote(request: Request, env: Env) {
       tagsJson,
       body.quick_summary || body.description || '',
       noteStatus,
-      scheduledPublishAt
+      scheduledPublishAt,
+      visibility
     ).first();
 
     if (!note) {
@@ -1383,7 +1408,8 @@ async function getMyNotes(request: Request, env: Env) {
         n.image_path,
         n.status,
         n.scheduled_publish_at,
-        n.subject_id
+        n.subject_id,
+        n.visibility
       FROM notes n
       LEFT JOIN subjects s ON n.subject_id = s.id
       WHERE n.author_id = ?
