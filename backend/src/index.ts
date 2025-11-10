@@ -1246,10 +1246,10 @@ async function deleteNote(noteId: string, request: Request, env: Env) {
       env.DB.prepare('DELETE FROM admin_note_likes WHERE note_id = ?').bind(noteId),
       // Delete the note itself
       env.DB.prepare('DELETE FROM notes WHERE id = ?').bind(noteId),
-      // Update note count in subjects table
-      env.DB.prepare('UPDATE subjects SET note_count = note_count - 1 WHERE id = ?').bind(note.subject_id),
-      // Update notes_uploaded count and diamonds for the author (1 note = 1 diamond)
-      env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded - 1, diamonds = diamonds - 1 WHERE id = ?').bind(note.author_id)
+      // Update note count in subjects table (ensure it doesn't go below 0)
+      env.DB.prepare('UPDATE subjects SET note_count = MAX(0, note_count - 1) WHERE id = ?').bind(note.subject_id),
+      // Update notes_uploaded count and diamonds for the author (ensure they don't go below 0)
+      env.DB.prepare('UPDATE users SET notes_uploaded = MAX(0, notes_uploaded - 1), diamonds = MAX(0, diamonds - 1) WHERE id = ?').bind(note.author_id)
     ]);
 
     // Log activity
@@ -1391,15 +1391,15 @@ async function userDeleteNote(noteId: string, request: Request, env: Env) {
       env.DB.prepare('DELETE FROM admin_note_likes WHERE note_id = ?').bind(noteId),
       // Delete the note itself
       env.DB.prepare('DELETE FROM notes WHERE id = ?').bind(noteId),
-      // Update note count in subjects table
-      env.DB.prepare('UPDATE subjects SET note_count = note_count - 1 WHERE id = ?').bind(note.subject_id),
-      // Update user stats: decrease notes_uploaded, total_likes, and total_admin_upvotes
+      // Update note count in subjects table (ensure it doesn't go below 0)
+      env.DB.prepare('UPDATE subjects SET note_count = MAX(0, note_count - 1) WHERE id = ?').bind(note.subject_id),
+      // Update user stats: decrease notes_uploaded, total_likes, and total_admin_upvotes (ensure they don't go below 0)
       env.DB.prepare(`
         UPDATE users
         SET
-          notes_uploaded = notes_uploaded - 1,
-          total_likes = total_likes - ?,
-          total_admin_upvotes = total_admin_upvotes - ?
+          notes_uploaded = MAX(0, notes_uploaded - 1),
+          total_likes = MAX(0, total_likes - ?),
+          total_admin_upvotes = MAX(0, total_admin_upvotes - ?)
         WHERE id = ?
       `).bind(note.likes || 0, note.admin_upvotes || 0, user.id)
     ]);

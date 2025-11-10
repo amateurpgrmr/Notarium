@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { darkTheme } from '../theme';
 import { useAuth } from '../App';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ProfileEditor from '../components/ProfileEditor';
 
 interface Note {
   id: number;
@@ -23,7 +25,8 @@ interface NotesBySubject {
 }
 
 export default function MyNotesPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -31,10 +34,29 @@ export default function MyNotesPage() {
   const [editContent, setEditContent] = useState('');
   const [editTags, setEditTags] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
   useEffect(() => {
     loadMyNotes();
   }, []);
+
+  // Handle responsive design
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+      if (window.innerWidth >= 640) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   const loadMyNotes = async () => {
     try {
@@ -113,31 +135,542 @@ export default function MyNotesPage() {
     return acc;
   }, {} as NotesBySubject);
 
-  if (loading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: darkTheme.colors.bgPrimary,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <LoadingSpinner message="Loading your notes..." size="lg" />
-      </div>
-    );
-  }
-
   return (
     <div style={{
       minHeight: '100vh',
       background: darkTheme.colors.bgPrimary,
-      padding: '24px'
+      color: darkTheme.colors.textPrimary
     }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto'
+      {/* Navigation Bar */}
+      <nav style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        background: 'rgba(0, 0, 0, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
+        padding: isMobile ? '12px 16px' : '16px 40px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        zIndex: 1000,
+        gap: '12px',
+        minHeight: isMobile ? '64px' : '76px'
       }}>
-        <h1 style={{
+        {/* Mobile: Hamburger Button */}
+        {isMobile && (
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: darkTheme.colors.textPrimary,
+              cursor: 'pointer',
+              fontSize: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '8px',
+              transition: darkTheme.transitions.default
+            }}
+            onMouseOver={(e) => e.currentTarget.style.opacity = '0.7'}
+            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            <i className="fas fa-bars"></i>
+          </button>
+        )}
+
+        {/* Logo */}
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            transition: darkTheme.transitions.default,
+            padding: 0
+          }}
+          onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
+          onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+        >
+          <img
+            src="/notarium-logo.jpg"
+            alt="Notarium"
+            style={{ height: isMobile ? '44px' : '48px', width: 'auto' }}
+          />
+        </button>
+
+        {/* Search bar spacer - keeping layout consistent */}
+        <div style={{
+          flex: isMobile ? 1 : undefined,
+          width: isMobile ? 'auto' : '280px'
+        }}></div>
+
+        {/* Desktop Navigation Buttons */}
+        {!isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => navigate('/')}
+              style={{
+                padding: '10px 18px',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-book"></i>Subjects
+            </button>
+
+            <button
+              onClick={() => navigate('/')}
+              style={{
+                padding: '10px 18px',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-comments"></i>Chat
+            </button>
+
+            <button
+              onClick={() => navigate('/')}
+              style={{
+                padding: '10px 18px',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-trophy"></i>Leaderboard
+            </button>
+
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => navigate('/')}
+                style={{
+                  padding: '10px 18px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  transition: darkTheme.transitions.default,
+                  borderRadius: darkTheme.borderRadius.md
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <i style={{ marginRight: '6px' }} className="fas fa-cog"></i>Admin
+              </button>
+            )}
+
+            <button
+              style={{
+                padding: '10px 18px',
+                background: darkTheme.colors.accent,
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md
+              }}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-book"></i>My Notes
+            </button>
+
+            <button
+              onClick={logout}
+              style={{
+                padding: '10px 18px',
+                background: 'transparent',
+                border: `1px solid ${darkTheme.colors.borderColor}`,
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: darkTheme.transitions.default,
+                borderRadius: darkTheme.borderRadius.md
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
+              }}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-sign-out-alt"></i>Logout
+            </button>
+          </div>
+        )}
+
+        {/* Account Avatar - Desktop only */}
+        {!isMobile && (
+          <button
+            onClick={() => setShowProfileEditor(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              background: 'transparent',
+              border: 'none',
+              color: darkTheme.colors.textPrimary,
+              cursor: 'pointer',
+              transition: darkTheme.transitions.default,
+              padding: '8px 10px',
+              borderRadius: darkTheme.borderRadius.md
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <div style={{
+              width: '40px',
+              height: '40px',
+              background: user?.photo_url
+                ? `url('${user.photo_url}') center/cover`
+                : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              flexShrink: 0
+            }}>
+              {!user?.photo_url && user?.name?.charAt(0).toUpperCase()}
+            </div>
+            <span style={{ fontSize: '13px', fontWeight: '500' }}>{user?.name}</span>
+          </button>
+        )}
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div style={{
+          position: 'fixed',
+          top: isMobile ? '64px' : '76px',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 999,
+          animation: 'fadeIn 0.2s ease-out'
+        }}
+        onClick={closeMobileMenu}
+        >
+          <div
+            style={{
+              width: '280px',
+              height: '100%',
+              background: darkTheme.colors.bgSecondary,
+              borderRight: `1px solid ${darkTheme.colors.borderColor}`,
+              animation: 'slideInLeft 0.3s ease-out',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Profile Section */}
+            <div style={{
+              padding: '24px 16px',
+              borderBottom: `2px solid ${darkTheme.colors.borderColor}`,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+              background: `linear-gradient(135deg, ${darkTheme.colors.bgPrimary}, ${darkTheme.colors.bgSecondary})`
+            }}>
+              <div style={{
+                width: '72px',
+                height: '72px',
+                background: user?.photo_url
+                  ? `url('${user.photo_url}') center/cover`
+                  : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '28px',
+                border: `3px solid ${darkTheme.colors.accent}`,
+                boxShadow: darkTheme.shadows.default
+              }}>
+                {!user?.photo_url && user?.name?.charAt(0).toUpperCase()}
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <h3 style={{
+                  margin: '0 0 4px 0',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: darkTheme.colors.textPrimary
+                }}>
+                  {user?.name}
+                </h3>
+                <p style={{
+                  margin: 0,
+                  fontSize: '12px',
+                  color: darkTheme.colors.textSecondary
+                }}>
+                  {user?.email}
+                </p>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: 'rgba(255, 215, 0, 0.15)',
+                borderRadius: darkTheme.borderRadius.full,
+                border: '1px solid rgba(255, 215, 0, 0.3)'
+              }}>
+                <span style={{ fontSize: '18px' }}>🪙</span>
+                <span style={{
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: '#FFD700'
+                }}>
+                  {user?.points || 0}
+                </span>
+              </div>
+            </div>
+
+            {/* Menu Items */}
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+              <button
+                onClick={() => { navigate('/'); closeMobileMenu(); }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  transition: darkTheme.transitions.default,
+                  borderRadius: darkTheme.borderRadius.md,
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <i className="fas fa-book" style={{ width: '20px' }}></i>Subjects
+              </button>
+
+              <button
+                onClick={() => { navigate('/'); closeMobileMenu(); }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  transition: darkTheme.transitions.default,
+                  borderRadius: darkTheme.borderRadius.md,
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <i className="fas fa-comments" style={{ width: '20px' }}></i>Chat
+              </button>
+
+              <button
+                onClick={() => { navigate('/'); closeMobileMenu(); }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  transition: darkTheme.transitions.default,
+                  borderRadius: darkTheme.borderRadius.md,
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <i className="fas fa-trophy" style={{ width: '20px' }}></i>Leaderboard
+              </button>
+
+              {user?.role === 'admin' && (
+                <button
+                  onClick={() => { navigate('/'); closeMobileMenu(); }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    transition: darkTheme.transitions.default,
+                    borderRadius: darkTheme.borderRadius.md,
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <i className="fas fa-cog" style={{ width: '20px' }}></i>Admin
+                </button>
+              )}
+
+              {/* Divider */}
+              <div style={{
+                height: '1px',
+                background: darkTheme.colors.borderColor,
+                margin: '8px 0'
+              }}></div>
+
+              {/* My Notes Button - Highlighted */}
+              <button
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: darkTheme.colors.accent,
+                  border: 'none',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  transition: darkTheme.transitions.default,
+                  borderRadius: darkTheme.borderRadius.md,
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+              >
+                <i className="fas fa-book" style={{ width: '20px' }}></i>My Notes
+              </button>
+
+              {/* Logout Button */}
+              <button
+                onClick={() => { closeMobileMenu(); logout(); }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: darkTheme.colors.danger,
+                  border: 'none',
+                  color: 'white',
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: 'pointer',
+                  transition: darkTheme.transitions.default,
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = darkTheme.colors.dangerHover}
+                onMouseOut={(e) => e.currentTarget.style.background = darkTheme.colors.danger}
+              >
+                <i className="fas fa-sign-out-alt" style={{ width: '20px' }}></i>Logout
+              </button>
+            </div>
+
+            {/* Notarium.Site Footer */}
+            <div style={{
+              padding: '16px',
+              borderTop: `2px solid ${darkTheme.colors.borderColor}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              cursor: 'pointer',
+              transition: darkTheme.transitions.default,
+              marginTop: 'auto'
+            }}
+            onClick={() => { navigate('/'); closeMobileMenu(); }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <img
+                src="/notarium-logo.jpg"
+                alt="Notarium"
+                style={{ height: '40px', width: 'auto' }}
+              />
+              <div>
+                <h4 style={{ margin: '0', fontSize: '14px', fontWeight: 'bold' }}>
+                  Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
+                </h4>
+                <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: darkTheme.colors.textSecondary }}>Share Your Notes</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div style={{
+        marginTop: isMobile ? '78px' : '92px',
+        padding: isMobile ? '16px' : '24px'
+      }}>
+        {loading ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '60vh'
+          }}>
+            <LoadingSpinner message="Loading your notes..." size="lg" />
+          </div>
+        ) : (
+          <div style={{
+            maxWidth: '1200px',
+            margin: '0 auto'
+          }}>
+            <h1 style={{
           fontSize: '32px',
           fontWeight: 'bold',
           marginBottom: '8px',
@@ -460,6 +993,15 @@ export default function MyNotesPage() {
           </div>
         </div>
       )}
+
+        </div>
+      )}
+
+      {/* Profile Editor Modal */}
+      {showProfileEditor && (
+        <ProfileEditor onClose={() => setShowProfileEditor(false)} />
+      )}
+      </div>
     </div>
   );
 }
