@@ -187,7 +187,12 @@ async function initializeDatabase(env: Env) {
       // Column already exists
     }
     try {
-      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN status TEXT DEFAULT 'published' CHECK(status IN ('draft', 'published'))`).run();
+      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN author_class TEXT`).run();
+    } catch (e) {
+      // Column already exists
+    }
+    try {
+      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN status TEXT DEFAULT 'published'`).run();
     } catch (e) {
       // Column already exists
     }
@@ -1368,7 +1373,7 @@ async function getMyNotes(request: Request, env: Env) {
       SELECT
         n.id,
         n.title,
-        n.subject,
+        n.subject_id as subject,
         s.name as subject_name,
         n.extracted_text,
         n.summary,
