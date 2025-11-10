@@ -36,6 +36,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [currentPage, setCurrentPage] = useState(0);
   const [ocrCompleted, setOcrCompleted] = useState(false);
   const [viewMode, setViewMode] = useState<'image' | 'text'>('image'); // Toggle between image and text view
+  const [saveAsDraft, setSaveAsDraft] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Track window resize for responsive design
@@ -215,7 +217,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         extracted_text: extractedText || 'No extracted text',
         image_path: uploadImages[0], // Use first image as primary
         quick_summary: quickSummary,
-        tags: finalTags
+        tags: finalTags,
+        status: saveAsDraft ? 'draft' : 'published',
+        scheduled_publish_at: saveAsDraft && scheduledDate ? scheduledDate : null
       };
 
       const response = await api.request('/api/notes', {
@@ -224,7 +228,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       });
 
       if (response.note) {
-        alert('Note uploaded successfully!');
+        const message = saveAsDraft
+          ? (scheduledDate ? `Note saved as draft and scheduled for ${new Date(scheduledDate).toLocaleString()}!` : 'Note saved as draft!')
+          : 'Note uploaded successfully!';
+        alert(message);
         onSuccess?.();
         onClose();
       }
@@ -966,6 +973,75 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         )}
 
+        {/* Draft and Scheduling Options */}
+        <div style={{
+          background: darkTheme.colors.bgSecondary,
+          padding: '16px',
+          borderRadius: '12px',
+          marginTop: '16px'
+        }}>
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            marginBottom: saveAsDraft ? '12px' : '0'
+          }}>
+            <input
+              type="checkbox"
+              checked={saveAsDraft}
+              onChange={(e) => setSaveAsDraft(e.target.checked)}
+              style={{
+                width: '18px',
+                height: '18px',
+                cursor: 'pointer'
+              }}
+            />
+            <span style={{
+              color: darkTheme.colors.textPrimary,
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+              Save as draft (don't publish yet)
+            </span>
+          </label>
+
+          {saveAsDraft && (
+            <div style={{ marginTop: '12px' }}>
+              <label style={{
+                display: 'block',
+                color: darkTheme.colors.textSecondary,
+                fontSize: '13px',
+                marginBottom: '8px'
+              }}>
+                Schedule for later (optional):
+              </label>
+              <input
+                type="datetime-local"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  background: darkTheme.colors.bgTertiary,
+                  border: `1px solid ${darkTheme.colors.borderColor}`,
+                  borderRadius: '8px',
+                  color: darkTheme.colors.textPrimary,
+                  fontSize: '14px'
+                }}
+              />
+              <p style={{
+                fontSize: '11px',
+                color: darkTheme.colors.textSecondary,
+                marginTop: '6px',
+                fontStyle: 'italic'
+              }}>
+                Leave empty to save as draft without scheduling
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Submit Button */}
         <button
           onClick={handleSubmit}
@@ -973,7 +1049,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           style={{
             width: '100%',
             padding: isMobile ? '10px 16px' : '12px 24px',
-            background: canSubmit ? darkTheme.colors.accent : `${darkTheme.colors.accent}80`,
+            background: canSubmit ? (saveAsDraft ? '#6366f1' : darkTheme.colors.accent) : `${darkTheme.colors.accent}80`,
             color: 'white',
             border: 'none',
             borderRadius: '12px',
@@ -982,10 +1058,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
             fontWeight: '500',
             transition: 'all 0.3s',
             opacity: canSubmit ? 1 : 0.5,
-            marginTop: isMobile ? '8px' : '0'
+            marginTop: '16px'
           }}
         >
-          {isProcessingOCR ? 'Processing OCR...' : isSubmitting ? 'Uploading...' : 'Upload Note'}
+          {isProcessingOCR ? 'Processing OCR...' : isSubmitting ? (saveAsDraft ? 'Saving Draft...' : 'Uploading...') : (saveAsDraft ? 'Save Draft' : 'Upload Note')}
         </button>
       </div>
 

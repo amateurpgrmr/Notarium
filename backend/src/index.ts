@@ -186,6 +186,16 @@ async function initializeDatabase(env: Env) {
     } catch (e) {
       // Column already exists
     }
+    try {
+      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN status TEXT DEFAULT 'published' CHECK(status IN ('draft', 'published'))`).run();
+    } catch (e) {
+      // Column already exists
+    }
+    try {
+      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN scheduled_publish_at DATETIME`).run();
+    } catch (e) {
+      // Column already exists
+    }
 
     // Create activity log table for admin actions
     await env.DB.prepare(`
@@ -900,16 +910,18 @@ async function getSubjects(request: Request, env: Env) {
 // Get notes by subject
 async function getNotesBySubject(subjectId: string, request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
-  
-  // Only show notes from the same class
+
+  // Only show published notes from the same class (not drafts)
   const { results } = await env.DB.prepare(`
-    SELECT 
+    SELECT
       n.*,
       u.display_name as author_name,
       u.photo_url as author_photo
     FROM notes n
     JOIN users u ON n.author_id = u.id
-    WHERE n.subject_id = ? AND (u.class = ? OR u.class IS NULL OR ? IS NULL)
+    WHERE n.subject_id = ?
+      AND (u.class = ? OR u.class IS NULL OR ? IS NULL)
+      AND (n.status = 'published' OR n.status IS NULL)
     ORDER BY n.created_at DESC
   `).bind(subjectId, user.class, user.class).all();
 
@@ -919,10 +931,10 @@ async function getNotesBySubject(subjectId: string, request: Request, env: Env) 
 // Search notes
 async function searchNotes(query: string, request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
-  
-  // Search in title, description, and extracted_text, filtered by class
+
+  // Search in title, description, and extracted_text, filtered by class, only published notes
   const { results } = await env.DB.prepare(`
-    SELECT 
+    SELECT
       n.*,
       u.display_name as author_name,
       u.photo_url as author_photo,
@@ -932,6 +944,7 @@ async function searchNotes(query: string, request: Request, env: Env) {
     JOIN subjects s ON n.subject_id = s.id
     WHERE (n.title LIKE ? OR n.description LIKE ? OR n.extracted_text LIKE ?)
       AND (u.class = ? OR u.class IS NULL OR ? IS NULL)
+      AND (n.status = 'published' OR n.status IS NULL)
     ORDER BY n.created_at DESC
     LIMIT 50
   `).bind(`%${query}%`, `%${query}%`, `%${query}%`, user.class, user.class).all();
@@ -972,10 +985,14 @@ async function createNote(request: Request, env: Env) {
     const userData = await env.DB.prepare('SELECT class FROM users WHERE id = ?').bind(user.id).first() as any;
     const userClass = userData?.class || null;
 
+    // Determine note status (draft or published)
+    const noteStatus = body.status || 'published'; // Default to published for backward compatibility
+    const scheduledPublishAt = body.scheduled_publish_at || null;
+
     // Create note
     const note = await env.DB.prepare(`
-      INSERT INTO notes (title, description, subject_id, author_id, author_class, extracted_text, image_path, content, tags, summary)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO notes (title, description, subject_id, author_id, author_class, extracted_text, image_path, content, tags, summary, status, scheduled_publish_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING *
     `).bind(
       body.title,
@@ -987,7 +1004,9 @@ async function createNote(request: Request, env: Env) {
       body.image_path || '',
       body.content || body.description || '',
       tagsJson,
-      body.quick_summary || body.description || ''
+      body.quick_summary || body.description || '',
+      noteStatus,
+      scheduledPublishAt
     ).first();
 
     if (!note) {
@@ -997,16 +1016,20 @@ async function createNote(request: Request, env: Env) {
 
     console.log('[CREATE NOTE] Note created:', (note as any).id);
 
-    // Update user stats and subject count
-    try {
-      await env.DB.batch([
-        env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded + 1 WHERE id = ?').bind(user.id),
-        env.DB.prepare('UPDATE subjects SET note_count = note_count + 1 WHERE id = ?').bind(body.subject_id)
-      ]);
-      console.log('[CREATE NOTE] Stats updated successfully');
-    } catch (updateError) {
-      console.error('[CREATE NOTE] Failed to update stats:', updateError);
-      // Note was created, so don't fail - just log the error
+    // Update user stats and subject count (only for published notes, not drafts)
+    if (noteStatus === 'published') {
+      try {
+        await env.DB.batch([
+          env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded + 1 WHERE id = ?').bind(user.id),
+          env.DB.prepare('UPDATE subjects SET note_count = note_count + 1 WHERE id = ?').bind(body.subject_id)
+        ]);
+        console.log('[CREATE NOTE] Stats updated successfully');
+      } catch (updateError) {
+        console.error('[CREATE NOTE] Failed to update stats:', updateError);
+        // Note was created, so don't fail - just log the error
+      }
+    } else {
+      console.log('[CREATE NOTE] Draft note created, stats not updated');
     }
 
     return jsonResponse({ note, success: true });
@@ -1338,7 +1361,11 @@ async function getMyNotes(request: Request, env: Env) {
   try {
     const user = await getOrCreateUser(request, env);
 
-    const { results: notes } = await env.DB.prepare(`
+    // Check if filtering by status
+    const url = new URL(request.url);
+    const statusFilter = url.searchParams.get('status'); // 'draft', 'published', or null for all
+
+    let query = `
       SELECT
         n.id,
         n.title,
@@ -1350,17 +1377,74 @@ async function getMyNotes(request: Request, env: Env) {
         n.likes,
         n.admin_upvotes,
         n.created_at,
-        n.image_path
+        n.image_path,
+        n.status,
+        n.scheduled_publish_at,
+        n.subject_id
       FROM notes n
-      LEFT JOIN subjects s ON n.subject = s.id
+      LEFT JOIN subjects s ON n.subject_id = s.id
       WHERE n.author_id = ?
-      ORDER BY s.name, n.created_at DESC
-    `).bind(user.id).all();
+    `;
+
+    const bindings = [user.id];
+
+    if (statusFilter === 'draft') {
+      query += ` AND n.status = 'draft'`;
+    } else if (statusFilter === 'published') {
+      query += ` AND (n.status = 'published' OR n.status IS NULL)`;
+    }
+
+    query += ` ORDER BY s.name, n.created_at DESC`;
+
+    const { results: notes } = await env.DB.prepare(query).bind(...bindings).all();
 
     return jsonResponse({ notes });
   } catch (error: any) {
     console.error('Error getting user notes:', error);
     return jsonResponse({ error: 'Failed to get notes' }, 500);
+  }
+}
+
+// Publish a draft note
+async function publishDraftNote(noteId: string, request: Request, env: Env) {
+  try {
+    const user = await getOrCreateUser(request, env);
+
+    // Get the note and verify ownership
+    const note = await env.DB.prepare('SELECT author_id, subject_id, status FROM notes WHERE id = ?').bind(noteId).first() as any;
+
+    if (!note) {
+      return jsonResponse({ error: 'Note not found' }, 404);
+    }
+
+    if (note.author_id !== user.id) {
+      return jsonResponse({ error: 'Unauthorized - You can only publish your own notes' }, 403);
+    }
+
+    if (note.status !== 'draft') {
+      return jsonResponse({ error: 'Note is already published' }, 400);
+    }
+
+    // Update note status to published
+    await env.DB.prepare(`
+      UPDATE notes
+      SET status = 'published', scheduled_publish_at = NULL, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(noteId).run();
+
+    // Update user stats and subject count (since it's being published now)
+    await env.DB.batch([
+      env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded + 1 WHERE id = ?').bind(user.id),
+      env.DB.prepare('UPDATE subjects SET note_count = note_count + 1 WHERE id = ?').bind(note.subject_id)
+    ]);
+
+    // Get updated note
+    const updatedNote = await env.DB.prepare('SELECT * FROM notes WHERE id = ?').bind(noteId).first();
+
+    return jsonResponse({ success: true, note: updatedNote });
+  } catch (error: any) {
+    console.error('Error publishing note:', error);
+    return jsonResponse({ error: 'Failed to publish note' }, 500);
   }
 }
 
@@ -2635,6 +2719,11 @@ export default {
       // My Notes routes
       if (path === '/api/notes/my-notes' && request.method === 'GET') {
         return await getMyNotes(request, env);
+      }
+
+      if (path.match(/^\/api\/notes\/\d+\/publish$/) && request.method === 'POST') {
+        const noteId = path.split('/')[3];
+        return await publishDraftNote(noteId, request, env);
       }
 
       if (path.match(/^\/api\/notes\/\d+$/) && request.method === 'DELETE') {

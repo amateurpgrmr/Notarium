@@ -5,12 +5,14 @@ import { useAuth } from '../App';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ProfileEditor from '../components/ProfileEditor';
+import UploadNoteModal from '../components/UploadNoteModal';
 
 interface Note {
   id: number;
   title: string;
   subject: string;
   subject_name: string;
+  subject_id: number;
   extracted_text?: string;
   summary?: string;
   tags?: string;
@@ -18,6 +20,15 @@ interface Note {
   admin_upvotes: number;
   created_at: string;
   image_path?: string;
+  status?: string;
+  scheduled_publish_at?: string;
+}
+
+interface Subject {
+  id: number;
+  name: string;
+  icon: string;
+  note_count: number;
 }
 
 interface NotesBySubject {
@@ -28,19 +39,24 @@ export default function MyNotesPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'published' | 'draft'>('published');
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editTags, setEditTags] = useState('');
+  const [editScheduledDate, setEditScheduledDate] = useState('');
   const [saving, setSaving] = useState(false);
   const [showProfileEditor, setShowProfileEditor] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
   useEffect(() => {
+    loadSubjects();
     loadMyNotes();
-  }, []);
+  }, [activeTab]);
 
   // Handle responsive design
   useEffect(() => {
@@ -58,15 +74,45 @@ export default function MyNotesPage() {
     setIsMobileMenuOpen(false);
   };
 
+  const loadSubjects = async () => {
+    try {
+      const response = await api.request('/api/subjects');
+      setSubjects(response.subjects || []);
+    } catch (error) {
+      console.error('Failed to load subjects:', error);
+    }
+  };
+
   const loadMyNotes = async () => {
     try {
       setLoading(true);
-      const response = await api.request('/api/notes/my-notes');
+      const response = await api.request(`/api/notes/my-notes?status=${activeTab}`);
       setNotes(response.notes || []);
     } catch (error) {
       console.error('Failed to load notes:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUploadSuccess = () => {
+    loadMyNotes();
+    setShowUploadModal(false);
+  };
+
+  const handlePublishNote = async (noteId: number) => {
+    try {
+      setSaving(true);
+      await api.request(`/api/notes/${noteId}/publish`, {
+        method: 'POST'
+      });
+      loadMyNotes(); // Reload to refresh the list
+      alert('Note published successfully!');
+    } catch (error) {
+      console.error('Failed to publish note:', error);
+      alert('Failed to publish note');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -670,21 +716,100 @@ export default function MyNotesPage() {
             maxWidth: '1200px',
             margin: '0 auto'
           }}>
-            <h1 style={{
-          fontSize: '32px',
-          fontWeight: 'bold',
-          marginBottom: '8px',
-          color: darkTheme.colors.textPrimary
-        }}>
-          <i className="fas fa-book" style={{ marginRight: '12px', color: darkTheme.colors.accent }}></i>
-          My Notes
-        </h1>
-        <p style={{
-          color: darkTheme.colors.textSecondary,
-          marginBottom: '32px'
-        }}>
-          {notes.length} notes uploaded
-        </p>
+            {/* Header with Upload Button */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '24px',
+              flexWrap: 'wrap',
+              gap: '16px'
+            }}>
+              <div>
+                <h1 style={{
+                  fontSize: '32px',
+                  fontWeight: 'bold',
+                  marginBottom: '8px',
+                  color: darkTheme.colors.textPrimary
+                }}>
+                  <i className="fas fa-book" style={{ marginRight: '12px', color: darkTheme.colors.accent }}></i>
+                  My Notes
+                </h1>
+                <p style={{
+                  color: darkTheme.colors.textSecondary,
+                  marginBottom: 0
+                }}>
+                  {notes.length} {activeTab} notes
+                </p>
+              </div>
+              <button
+                onClick={() => setShowUploadModal(true)}
+                style={{
+                  padding: '12px 24px',
+                  background: darkTheme.colors.accent,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: darkTheme.transitions.default
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <i className="fas fa-plus"></i>
+                Upload Note
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              marginBottom: '24px',
+              borderBottom: `2px solid ${darkTheme.colors.borderColor}`
+            }}>
+              <button
+                onClick={() => setActiveTab('published')}
+                style={{
+                  padding: '12px 24px',
+                  background: activeTab === 'published' ? darkTheme.colors.bgSecondary : 'transparent',
+                  color: activeTab === 'published' ? darkTheme.colors.accent : darkTheme.colors.textSecondary,
+                  border: 'none',
+                  borderBottom: activeTab === 'published' ? `3px solid ${darkTheme.colors.accent}` : 'none',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  transition: darkTheme.transitions.default,
+                  borderRadius: `${darkTheme.borderRadius.md} ${darkTheme.borderRadius.md} 0 0`
+                }}
+              >
+                <i className="fas fa-check-circle" style={{ marginRight: '8px' }}></i>
+                Published
+              </button>
+              <button
+                onClick={() => setActiveTab('draft')}
+                style={{
+                  padding: '12px 24px',
+                  background: activeTab === 'draft' ? darkTheme.colors.bgSecondary : 'transparent',
+                  color: activeTab === 'draft' ? darkTheme.colors.accent : darkTheme.colors.textSecondary,
+                  border: 'none',
+                  borderBottom: activeTab === 'draft' ? `3px solid ${darkTheme.colors.accent}` : 'none',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  transition: darkTheme.transitions.default,
+                  borderRadius: `${darkTheme.borderRadius.md} ${darkTheme.borderRadius.md} 0 0`
+                }}
+              >
+                <i className="fas fa-file-alt" style={{ marginRight: '8px' }}></i>
+                Drafts
+              </button>
+            </div>
 
         {notes.length === 0 ? (
           <div style={{
@@ -779,8 +904,30 @@ export default function MyNotesPage() {
 
                     <div style={{
                       display: 'flex',
-                      gap: '8px'
+                      gap: '8px',
+                      flexWrap: 'wrap'
                     }}>
+                      {activeTab === 'draft' && (
+                        <button
+                          onClick={() => handlePublishNote(note.id)}
+                          disabled={saving}
+                          style={{
+                            flex: 1,
+                            padding: '8px 12px',
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: darkTheme.borderRadius.sm,
+                            cursor: saving ? 'not-allowed' : 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            opacity: saving ? 0.6 : 1
+                          }}
+                        >
+                          <i className="fas fa-paper-plane" style={{ marginRight: '4px' }}></i>
+                          Publish
+                        </button>
+                      )}
                       <button
                         onClick={() => handleEdit(note)}
                         style={{
@@ -994,6 +1141,15 @@ export default function MyNotesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Upload Note Modal */}
+      {showUploadModal && (
+        <UploadNoteModal
+          onClose={() => setShowUploadModal(false)}
+          subjects={subjects}
+          onSuccess={handleUploadSuccess}
+        />
       )}
 
       {/* Profile Editor Modal */}
