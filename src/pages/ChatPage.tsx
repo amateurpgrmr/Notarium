@@ -488,10 +488,10 @@ export default function ChatPage() {
             <div style={{
               flex: 1,
               overflowY: 'auto',
-              padding: '20px',
+              padding: '24px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '14px'
+              gap: '20px'
             }}>
               {messages.length === 0 && (
                 <div style={{
@@ -518,8 +518,8 @@ export default function ChatPage() {
                 >
                   {msg.role === 'assistant' && (
                     <div style={{
-                      width: '36px',
-                      height: '36px',
+                      width: '40px',
+                      height: '40px',
                       borderRadius: '50%',
                       background: darkTheme.colors.accent,
                       display: 'flex',
@@ -527,48 +527,60 @@ export default function ChatPage() {
                       justifyContent: 'center',
                       color: 'white',
                       flexShrink: 0,
-                      fontSize: '18px'
+                      fontSize: '20px',
+                      boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
+                      alignSelf: 'flex-start',
+                      marginTop: '4px'
                     }}>
                       🤖
                     </div>
                   )}
                   <div style={{
                     maxWidth: '75%',
-                    padding: '14px 18px',
-                    borderRadius: darkTheme.borderRadius.md,
+                    padding: msg.role === 'user' ? '16px 20px' : '18px 22px',
+                    borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
                     background: msg.role === 'user'
                       ? darkTheme.colors.accent
                       : darkTheme.colors.bgSecondary,
                     color: msg.role === 'user' ? '#fff' : darkTheme.colors.textPrimary,
                     wordWrap: 'break-word',
-                    lineHeight: '1.6',
-                    fontSize: '15px'
+                    lineHeight: '1.7',
+                    fontSize: '15px',
+                    boxShadow: msg.role === 'user'
+                      ? '0 2px 12px rgba(139, 92, 246, 0.25)'
+                      : '0 1px 4px rgba(0, 0, 0, 0.1)',
+                    border: msg.role === 'user' ? 'none' : `1px solid ${darkTheme.colors.borderColor}`
                   }}>
                     {msg.role === 'assistant' ? (
                       <ReactMarkdown
                         components={{
-                          p: ({ children }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
-                          ul: ({ children }) => <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>{children}</ul>,
-                          ol: ({ children }) => <ol style={{ margin: '8px 0', paddingLeft: '20px' }}>{children}</ol>,
-                          li: ({ children }) => <li style={{ margin: '4px 0' }}>{children}</li>,
-                          strong: ({ children }) => <strong style={{ fontWeight: '700', color: msg.role === 'user' ? '#fff' : darkTheme.colors.accent }}>{children}</strong>,
-                          em: ({ children }) => <em style={{ fontStyle: 'italic' }}>{children}</em>,
+                          p: ({ children }) => <p style={{ margin: '0 0 12px 0', lineHeight: '1.7' }}>{children}</p>,
+                          ul: ({ children }) => <ul style={{ margin: '12px 0', paddingLeft: '24px', lineHeight: '1.8' }}>{children}</ul>,
+                          ol: ({ children }) => <ol style={{ margin: '12px 0', paddingLeft: '24px', lineHeight: '1.8' }}>{children}</ol>,
+                          li: ({ children }) => <li style={{ margin: '6px 0', paddingLeft: '4px' }}>{children}</li>,
+                          strong: ({ children }) => <strong style={{ fontWeight: '700', color: darkTheme.colors.accent }}>{children}</strong>,
+                          em: ({ children }) => <em style={{ fontStyle: 'italic', opacity: 0.95 }}>{children}</em>,
                           code: ({ children }) => <code style={{
-                            background: 'rgba(0, 0, 0, 0.2)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            fontSize: '13px',
-                            fontFamily: 'monospace'
+                            background: 'rgba(0, 0, 0, 0.25)',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '13.5px',
+                            fontFamily: 'monospace',
+                            border: '1px solid rgba(139, 92, 246, 0.2)'
                           }}>{children}</code>,
-                          h1: ({ children }) => <h1 style={{ fontSize: '20px', fontWeight: '700', margin: '12px 0 8px 0' }}>{children}</h1>,
-                          h2: ({ children }) => <h2 style={{ fontSize: '18px', fontWeight: '700', margin: '12px 0 8px 0' }}>{children}</h2>,
-                          h3: ({ children }) => <h3 style={{ fontSize: '16px', fontWeight: '600', margin: '10px 0 6px 0' }}>{children}</h3>,
+                          h1: ({ children }) => <h1 style={{ fontSize: '22px', fontWeight: '700', margin: '16px 0 10px 0', lineHeight: '1.3' }}>{children}</h1>,
+                          h2: ({ children }) => <h2 style={{ fontSize: '19px', fontWeight: '700', margin: '14px 0 8px 0', lineHeight: '1.3' }}>{children}</h2>,
+                          h3: ({ children }) => <h3 style={{ fontSize: '17px', fontWeight: '600', margin: '12px 0 6px 0', lineHeight: '1.4' }}>{children}</h3>,
                           blockquote: ({ children }) => <blockquote style={{
-                            borderLeft: `3px solid ${darkTheme.colors.accent}`,
-                            paddingLeft: '12px',
-                            margin: '8px 0',
+                            borderLeft: `4px solid ${darkTheme.colors.accent}`,
+                            paddingLeft: '16px',
+                            margin: '12px 0',
                             fontStyle: 'italic',
-                            opacity: 0.9
+                            opacity: 0.9,
+                            background: 'rgba(139, 92, 246, 0.05)',
+                            paddingTop: '8px',
+                            paddingBottom: '8px',
+                            borderRadius: '0 8px 8px 0'
                           }}>{children}</blockquote>
                         }}
                       >
@@ -587,8 +599,8 @@ export default function ChatPage() {
                   gap: '12px'
                 }}>
                   <div style={{
-                    width: '36px',
-                    height: '36px',
+                    width: '40px',
+                    height: '40px',
                     borderRadius: '50%',
                     background: darkTheme.colors.accent,
                     display: 'flex',
@@ -596,19 +608,24 @@ export default function ChatPage() {
                     justifyContent: 'center',
                     color: 'white',
                     flexShrink: 0,
-                    fontSize: '18px'
+                    fontSize: '20px',
+                    boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
+                    alignSelf: 'flex-start',
+                    marginTop: '4px'
                   }}>
                     🤖
                   </div>
                   <div style={{
-                    padding: '14px 18px',
-                    borderRadius: darkTheme.borderRadius.md,
+                    padding: '16px 20px',
+                    borderRadius: '20px 20px 20px 4px',
                     background: darkTheme.colors.bgSecondary,
                     color: darkTheme.colors.textSecondary,
-                    fontSize: '14px',
+                    fontSize: '15px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '10px',
+                    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                    border: `1px solid ${darkTheme.colors.borderColor}`
                   }}>
                     <i className="fas fa-circle-notch" style={{ animation: 'spin 1s linear infinite' }}></i>
                     Generating response...
@@ -620,11 +637,12 @@ export default function ChatPage() {
 
             {/* Input Area - Large and Easy */}
             <div style={{
-              padding: '20px',
+              padding: '20px 24px',
               borderTop: `1px solid ${darkTheme.colors.borderColor}`,
               background: darkTheme.colors.bgSecondary,
               display: 'flex',
-              gap: '12px'
+              gap: '12px',
+              boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)'
             }}>
               <input
                 type="text"
@@ -636,9 +654,10 @@ export default function ChatPage() {
                 style={{
                   ...inputStyle,
                   flex: 1,
-                  padding: '14px 16px',
+                  padding: '16px 20px',
                   fontSize: '15px',
-                  opacity: sending ? 0.6 : 1
+                  opacity: sending ? 0.6 : 1,
+                  borderRadius: '16px'
                 } as React.CSSProperties}
               />
               <button
@@ -646,10 +665,12 @@ export default function ChatPage() {
                 disabled={sending || !inputValue.trim()}
                 style={{
                   ...buttonPrimaryStyle,
-                  padding: '14px 28px',
-                  fontSize: '15px',
+                  padding: '16px 32px',
+                  fontSize: '16px',
                   fontWeight: '600',
-                  opacity: sending || !inputValue.trim() ? 0.6 : 1
+                  opacity: sending || !inputValue.trim() ? 0.6 : 1,
+                  borderRadius: '16px',
+                  boxShadow: sending || !inputValue.trim() ? 'none' : '0 2px 12px rgba(139, 92, 246, 0.3)'
                 } as React.CSSProperties}
               >
                 <i className="fas fa-paper-plane"></i>
