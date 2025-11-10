@@ -596,7 +596,7 @@ function HomePage() {
               <span>{user?.points || 0} Points</span>
             </div>
 
-            {/* Badges - Dynamic based on diamonds */}
+            {/* Badges - Dynamic based on points */}
             <div style={{
               display: 'flex',
               justifyContent: 'center',
@@ -604,7 +604,7 @@ function HomePage() {
               marginTop: '12px',
               flexWrap: 'wrap'
             }}>
-              {/* Bronze Badge (100+ diamonds) */}
+              {/* Bronze Badge (100+ notes) */}
               {(user?.points || 0) >= 100 && (
                 <div
                   title="Bronze Badge - 100+ Points"
@@ -626,7 +626,7 @@ function HomePage() {
                 </div>
               )}
 
-              {/* Silver Badge (250+ diamonds) */}
+              {/* Silver Badge (250+ notes) */}
               {(user?.points || 0) >= 250 && (
                 <div
                   title="Silver Badge - 250+ Points"
@@ -648,7 +648,7 @@ function HomePage() {
                 </div>
               )}
 
-              {/* Gold Badge (500+ diamonds) */}
+              {/* Gold Badge (500+ notes) */}
               {(user?.points || 0) >= 500 && (
                 <div
                   title="Gold Badge - 500+ Points"
@@ -670,7 +670,7 @@ function HomePage() {
                 </div>
               )}
 
-              {/* Platinum Badge (1000+ diamonds) */}
+              {/* Platinum Badge (1000+ notes) */}
               {(user?.points || 0) >= 1000 && (
                 <div
                   title="Platinum Badge - 1000+ Points"

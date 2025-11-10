@@ -352,7 +352,7 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                 flexShrink: 0,
                 lineHeight: 1
               }}>
-                💎
+                📚
               </div>
               <div style={{
                 display: 'flex',
@@ -365,7 +365,7 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                   fontWeight: 'bold',
                   lineHeight: 1.1
                 }}>
-                  {user?.diamonds || 0}
+                  {user?.notes_count || 0}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '10px' : '12px',
@@ -373,7 +373,7 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                   fontWeight: '500',
                   lineHeight: 1
                 }}>
-                  Diamonds
+                  Notes Uploaded
                 </div>
               </div>
             </div>

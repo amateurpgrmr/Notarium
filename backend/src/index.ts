@@ -895,19 +895,18 @@ async function updateUserClass(request: Request, env: Env) {
 async function getSubjects(request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
 
-  // Get subjects with accurate note counts filtered by user's class
+  // Get subjects with accurate note counts (all published notes)
   const { results } = await env.DB.prepare(`
     SELECT
       s.*,
       (SELECT COUNT(*)
        FROM notes n
-       JOIN users u ON n.author_id = u.id
        WHERE n.subject_id = s.id
-       AND (u.class = ? OR u.class IS NULL OR ? IS NULL)
+       AND (n.status = 'published' OR n.status IS NULL)
       ) as note_count
     FROM subjects s
     ORDER BY s.name
-  `).bind(user.class, user.class).all();
+  `).all();
 
   return jsonResponse({ subjects: results });
 }
@@ -916,19 +915,19 @@ async function getSubjects(request: Request, env: Env) {
 async function getNotesBySubject(subjectId: string, request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
 
-  // Only show published notes from the same class (not drafts)
+  // Show all published notes regardless of class
   const { results } = await env.DB.prepare(`
     SELECT
       n.*,
       u.display_name as author_name,
-      u.photo_url as author_photo
+      u.photo_url as author_photo,
+      u.class as author_class
     FROM notes n
     JOIN users u ON n.author_id = u.id
     WHERE n.subject_id = ?
-      AND (u.class = ? OR u.class IS NULL OR ? IS NULL)
       AND (n.status = 'published' OR n.status IS NULL)
     ORDER BY n.created_at DESC
-  `).bind(subjectId, user.class, user.class).all();
+  `).bind(subjectId).all();
 
   return jsonResponse({ notes: results });
 }
@@ -937,22 +936,22 @@ async function getNotesBySubject(subjectId: string, request: Request, env: Env) 
 async function searchNotes(query: string, request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
 
-  // Search in title, description, and extracted_text, filtered by class, only published notes
+  // Search in title, description, and extracted_text, only published notes
   const { results } = await env.DB.prepare(`
     SELECT
       n.*,
       u.display_name as author_name,
       u.photo_url as author_photo,
+      u.class as author_class,
       s.name as subject_name
     FROM notes n
     JOIN users u ON n.author_id = u.id
     JOIN subjects s ON n.subject_id = s.id
     WHERE (n.title LIKE ? OR n.description LIKE ? OR n.extracted_text LIKE ?)
-      AND (u.class = ? OR u.class IS NULL OR ? IS NULL)
       AND (n.status = 'published' OR n.status IS NULL)
     ORDER BY n.created_at DESC
     LIMIT 50
-  `).bind(`%${query}%`, `%${query}%`, `%${query}%`, user.class, user.class).all();
+  `).bind(`%${query}%`, `%${query}%`, `%${query}%`).all();
 
   return jsonResponse({ notes: results });
 }
@@ -1107,10 +1106,10 @@ async function getLeaderboard(env: Env) {
       notes_uploaded,
       total_likes,
       total_admin_upvotes,
-      (total_likes + total_admin_upvotes * 5) as points
+      notes_uploaded as points
     FROM users
     WHERE role != 'admin'
-    ORDER BY points DESC, notes_uploaded DESC
+    ORDER BY notes_uploaded DESC, total_likes DESC
   `).all();
 
   return jsonResponse({ leaderboard: results });
@@ -1275,8 +1274,8 @@ async function deleteNote(noteId: string, request: Request, env: Env) {
       env.DB.prepare('DELETE FROM notes WHERE id = ?').bind(noteId),
       // Update note count in subjects table (ensure it doesn't go below 0)
       env.DB.prepare('UPDATE subjects SET note_count = MAX(0, note_count - 1) WHERE id = ?').bind(note.subject_id),
-      // Update notes_uploaded count and diamonds for the author (ensure they don't go below 0)
-      env.DB.prepare('UPDATE users SET notes_uploaded = MAX(0, notes_uploaded - 1), diamonds = MAX(0, diamonds - 1) WHERE id = ?').bind(note.author_id)
+      // Update notes_uploaded count for the author (ensure it doesn't go below 0)
+      env.DB.prepare('UPDATE users SET notes_uploaded = MAX(0, notes_uploaded - 1) WHERE id = ?').bind(note.author_id)
     ]);
 
     // Log activity

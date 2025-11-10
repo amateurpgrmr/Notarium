@@ -146,7 +146,7 @@ export default function AdminNoteEditModal({ note, onClose, onSave, onAdminLike,
                   fontWeight: '600',
                   opacity: isLiking ? 0.6 : 1
                 }}
-                title="Admin Like (+5 diamonds)"
+                title="Admin Appreciation"
               >
                 {isLiking ? '...' : note.admin_liked ? '⭐ Liked' : '⭐ Admin Like'}
               </button>
