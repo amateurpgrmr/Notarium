@@ -582,19 +582,21 @@ function HomePage() {
               </p>
             )}
 
-            {/* Points Display */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              margin: '8px 0',
-              fontSize: '14px',
-              fontWeight: '600'
-            }}>
-              <span style={{ color: '#4ecdc4' }}>🪙</span>
-              <span>{user?.points || 0} Points</span>
-            </div>
+            {/* Points Display - Only show when user has uploaded notes */}
+            {(user?.points || 0) > 0 && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                margin: '8px 0',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}>
+                <span style={{ fontSize: '16px' }}>🪙</span>
+                <span>{Math.max(0, user?.points || 0)} Points</span>
+              </div>
+            )}
 
             {/* Badges - Dynamic based on points */}
             <div style={{

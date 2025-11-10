@@ -125,14 +125,22 @@ export default function LeaderboardPage({
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{
-                  margin: 0,
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  color: darkTheme.colors.accent
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  justifyContent: 'flex-end'
                 }}>
-                  {entry.score || entry.total_likes || entry.points || 0}
-                </p>
+                  <span style={{ fontSize: '18px' }}>🪙</span>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    color: darkTheme.colors.accent
+                  }}>
+                    {Math.max(0, entry.score || entry.total_likes || entry.points || 0)}
+                  </p>
+                </div>
                 <p style={{
                   margin: '4px 0 0 0',
                   fontSize: '12px',

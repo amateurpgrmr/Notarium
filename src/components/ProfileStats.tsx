@@ -326,7 +326,7 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
             <div style={{ fontSize: '48px' }}>🪙</div>
             <div>
               <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '4px' }}>
-                {user?.points || 0}
+                {Math.max(0, user?.points || 0)}
               </div>
               <div style={{ fontSize: '13px', opacity: 0.95, fontWeight: '500' }}>Points</div>
             </div>
@@ -390,7 +390,7 @@ export default function ProfileStats({ onClose, onEditProfile }: ProfileStatsPro
               color: 'white'
             }}>
               <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '8px' }}>
-                {user?.points || 0}
+                {Math.max(0, user?.points || 0)}
               </div>
               <div style={{ fontSize: '12px', opacity: 0.9 }}>Points</div>
             </div>
