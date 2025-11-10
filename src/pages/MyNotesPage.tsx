@@ -820,6 +820,8 @@ export default function MyNotesPage() {
             </div>
           ))
         )}
+          </div>
+        )}
       </div>
 
       {/* Edit Modal */}
@@ -994,14 +996,10 @@ export default function MyNotesPage() {
         </div>
       )}
 
-        </div>
-      )}
-
       {/* Profile Editor Modal */}
       {showProfileEditor && (
         <ProfileEditor onClose={() => setShowProfileEditor(false)} />
       )}
-      </div>
     </div>
   );
 }
