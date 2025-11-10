@@ -1106,7 +1106,6 @@ async function getLeaderboard(env: Env) {
     FROM users
     WHERE role != 'admin'
     ORDER BY points DESC, notes_uploaded DESC
-    LIMIT 100
   `).all();
 
   return jsonResponse({ leaderboard: results });
