@@ -207,6 +207,25 @@ async function initializeDatabase(env: Env) {
       // Column already exists
     }
 
+    // Data migration: Fix any notes with NULL or empty status/visibility
+    try {
+      await env.DB.prepare(`
+        UPDATE notes
+        SET status = 'published'
+        WHERE status IS NULL OR status = '' OR status = 'undefined'
+      `).run();
+
+      await env.DB.prepare(`
+        UPDATE notes
+        SET visibility = 'everyone'
+        WHERE visibility IS NULL OR visibility = '' OR visibility = 'undefined'
+      `).run();
+
+      console.log('[DB_MIGRATION] Fixed status and visibility for existing notes');
+    } catch (e) {
+      console.error('[DB_MIGRATION] Failed to fix notes:', e);
+    }
+
     // Create activity log table for admin actions
     await env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS admin_activity_log (
@@ -953,6 +972,8 @@ async function getSubjects(request: Request, env: Env) {
 async function getNotesBySubject(subjectId: string, request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
 
+  console.log(`[GET_NOTES] User ${user.id} (class: ${user.class}) requesting notes for subject ${subjectId}`);
+
   // Show published notes based on visibility setting
   // - Show if visibility is 'everyone' or NULL (old notes)
   // - Show if visibility is 'class' and viewer's class matches author's class
@@ -977,6 +998,13 @@ async function getNotesBySubject(subjectId: string, request: Request, env: Env) 
       )
     ORDER BY n.created_at DESC
   `).bind(user.id, user.id, subjectId, user.class || '').all();
+
+  console.log(`[GET_NOTES] Found ${results.length} notes for subject ${subjectId}`);
+
+  // Log each note's status and visibility for debugging
+  results.forEach((note: any) => {
+    console.log(`[NOTE_DEBUG] ID: ${note.id}, Title: ${note.title}, Status: ${note.status}, Visibility: ${note.visibility}, Author Class: ${note.author_class}`);
+  });
 
   return jsonResponse({ notes: results });
 }
@@ -1770,8 +1798,11 @@ async function getAllNotes(request: Request, env: Env) {
         n.admin_upvotes,
         n.subject_id,
         n.author_id,
+        n.status,
+        n.visibility,
         n.created_at,
         u.display_name as author_name,
+        u.class as author_class,
         s.name as subject_name,
         s.name as subject,
         (SELECT COUNT(*) FROM admin_note_likes WHERE note_id = n.id AND admin_id = ?) as admin_liked
@@ -1780,6 +1811,11 @@ async function getAllNotes(request: Request, env: Env) {
       LEFT JOIN subjects s ON n.subject_id = s.id
       ORDER BY n.created_at DESC
     `).bind(adminUser.id).all();
+
+    console.log(`[ADMIN_GET_NOTES] Found ${results.length} total notes`);
+    results.forEach((note: any) => {
+      console.log(`[ADMIN_NOTE_DEBUG] ID: ${note.id}, Title: ${note.title}, Status: '${note.status}', Visibility: '${note.visibility}', Author Class: '${note.author_class}'`);
+    });
 
     return jsonResponse({ notes: results });
   } catch (error: any) {
