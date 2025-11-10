@@ -929,23 +929,27 @@ async function getNotesBySubject(subjectId: string, request: Request, env: Env) 
   // Show published notes based on visibility setting
   // - Show if visibility is 'everyone' or NULL (old notes)
   // - Show if visibility is 'class' and viewer's class matches author's class
+  // - Also show notes where class info is missing (NULL) to avoid hiding old notes
   const { results } = await env.DB.prepare(`
     SELECT
       n.*,
       u.display_name as author_name,
       u.photo_url as author_photo,
-      u.class as author_class
+      u.class as author_class,
+      (SELECT COUNT(*) FROM note_likes WHERE note_id = n.id AND user_id = ?) as liked_by_me,
+      (SELECT COUNT(*) FROM admin_note_likes WHERE note_id = n.id AND admin_id = ?) as upvoted_by_me
     FROM notes n
-    JOIN users u ON n.author_id = u.id
+    LEFT JOIN users u ON n.author_id = u.id
     WHERE n.subject_id = ?
-      AND (n.status = 'published' OR n.status IS NULL)
+      AND (n.status = 'published' OR n.status IS NULL OR n.status = '')
       AND (
         n.visibility = 'everyone'
         OR n.visibility IS NULL
-        OR (n.visibility = 'class' AND u.class = ?)
+        OR n.visibility = ''
+        OR (n.visibility = 'class' AND (u.class = ? OR u.class IS NULL OR u.class = ''))
       )
     ORDER BY n.created_at DESC
-  `).bind(subjectId, user.class).all();
+  `).bind(user.id, user.id, subjectId, user.class || '').all();
 
   return jsonResponse({ notes: results });
 }
@@ -1013,9 +1017,11 @@ async function createNote(request: Request, env: Env) {
     const userClass = userData?.class || null;
 
     // Determine note status (draft or published)
-    const noteStatus = body.status || 'published'; // Default to published for backward compatibility
+    // ALWAYS default to 'published' unless explicitly set to 'draft'
+    const noteStatus = (body.status === 'draft') ? 'draft' : 'published';
     const scheduledPublishAt = body.scheduled_publish_at || null;
-    const visibility = body.visibility || 'everyone'; // Default to everyone for backward compatibility
+    // ALWAYS default to 'everyone' to ensure notes are visible
+    const visibility = body.visibility && body.visibility !== '' ? body.visibility : 'everyone';
 
     // Create note
     const note = await env.DB.prepare(`
@@ -1043,7 +1049,7 @@ async function createNote(request: Request, env: Env) {
       return jsonResponse({ error: 'Failed to create note' }, 500);
     }
 
-    console.log('[CREATE NOTE] Note created:', (note as any).id);
+    console.log('[CREATE NOTE] Note created:', (note as any).id, 'Status:', noteStatus, 'Visibility:', visibility);
 
     // Update user stats and subject count (only for published notes, not drafts)
     if (noteStatus === 'published') {
