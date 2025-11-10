@@ -208,17 +208,23 @@ export default function CameraCapture({
     setCrop({ x: 10, y: 10, width: 80, height: 80 }); // Reset crop
   };
 
-  const handleMouseDown = (corner: 'tl' | 'tr' | 'bl' | 'br', e: React.MouseEvent) => {
+  const handleMouseDown = (corner: 'tl' | 'tr' | 'bl' | 'br', e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(corner);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     if (!isDragging || !previewContainerRef.current) return;
 
     const rect = previewContainerRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    // Handle both mouse and touch events
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
 
     setCrop(prevCrop => {
       let newCrop = { ...prevCrop };
@@ -474,6 +480,8 @@ export default function CameraCapture({
               ref={previewContainerRef}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
+              onTouchMove={handleMouseMove}
+              onTouchEnd={handleMouseUp}
               style={{
                 position: 'relative',
                 width: `${imageWidth}px`,
@@ -481,7 +489,8 @@ export default function CameraCapture({
                 margin: '0 auto',
                 cursor: isDragging ? 'crosshair' : 'default',
                 userSelect: 'none',
-                flexShrink: 0
+                flexShrink: 0,
+                touchAction: 'none'
               }}
             >
               <img
@@ -610,12 +619,13 @@ export default function CameraCapture({
                   <div
                     key={corner}
                     onMouseDown={(e) => handleMouseDown(corner as any, e)}
+                    onTouchStart={(e) => handleMouseDown(corner as any, e)}
                     style={{
                       position: 'absolute',
                       left: isTopLeft || isBottomLeft ? `${crop.x}%` : `${crop.x + crop.width}%`,
                       top: isTopLeft || isTopRight ? `${crop.y}%` : `${crop.y + crop.height}%`,
-                      width: '24px',
-                      height: '24px',
+                      width: isMobile ? '32px' : '24px',
+                      height: isMobile ? '32px' : '24px',
                       background: '#22c55e',
                       border: '3px solid white',
                       borderRadius: '50%',
@@ -623,7 +633,8 @@ export default function CameraCapture({
                       cursor: `${corner === 'tl' || corner === 'br' ? 'nwse' : 'nesw'}-resize`,
                       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                       zIndex: 10,
-                      transition: isDragging === corner ? 'none' : 'all 0.2s'
+                      transition: isDragging === corner ? 'none' : 'all 0.2s',
+                      touchAction: 'none'
                     }}
                   />
                 );

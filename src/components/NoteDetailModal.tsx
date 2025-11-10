@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Note } from '../pages/SubjectNotesPage';
 import { User } from '../lib/api';
 import api from '../lib/api';
@@ -23,6 +23,16 @@ export default function NoteDetailModal({
   const [likeCount, setLikeCount] = useState(note.likes);
   const [summary, setSummary] = useState<string | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleLike = () => {
     const newLikedState = !isLiked;
@@ -255,7 +265,7 @@ export default function NoteDetailModal({
             </h3>
             <p
               style={{
-                fontSize: '15px',
+                fontSize: isMobile ? '13px' : '15px',
                 lineHeight: '1.6',
                 color: darkTheme.colors.textPrimary,
                 margin: 0
@@ -284,7 +294,7 @@ export default function NoteDetailModal({
                   border: `1px solid ${darkTheme.colors.borderColor}`,
                   borderRadius: '12px',
                   padding: '16px',
-                  fontSize: '14px',
+                  fontSize: isMobile ? '12px' : '14px',
                   lineHeight: '1.6',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
@@ -410,7 +420,7 @@ export default function NoteDetailModal({
                 padding: '16px',
                 marginBottom: '12px',
                 color: darkTheme.colors.textPrimary,
-                fontSize: '14px',
+                fontSize: isMobile ? '12px' : '14px',
                 lineHeight: '1.6'
               }}
             >
