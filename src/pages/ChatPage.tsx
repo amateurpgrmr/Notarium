@@ -191,12 +191,31 @@ export default function ChatPage() {
     }
   };
 
+  // Detect mobile for responsive sizing
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <div style={{
+      position: 'fixed',
+      top: isMobile ? '64px' : '76px',
+      left: 0,
+      right: 0,
+      bottom: 0,
       display: 'flex',
       flexDirection: 'column',
-      height: 'calc(100vh - 168px)',
-      gap: '16px'
+      background: darkTheme.colors.bgPrimary,
+      gap: '16px',
+      padding: isMobile ? '12px' : '16px',
+      zIndex: 10
     }}>
       {/* Session Tabs - Top */}
       <div style={{
