@@ -21,6 +21,9 @@ export default function CameraCapture({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 10, y: 10, width: 80, height: 80 }); // percentage-based crop
+  const [isDragging, setIsDragging] = useState<'tl' | 'tr' | 'bl' | 'br' | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Ensure video element is mounted before starting camera
@@ -138,23 +141,134 @@ export default function CameraCapture({
     }
   };
 
+  const applyCrop = (imageBase64: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        // Calculate crop dimensions in pixels
+        const cropX = (crop.x / 100) * img.width;
+        const cropY = (crop.y / 100) * img.height;
+        const cropWidth = (crop.width / 100) * img.width;
+        const cropHeight = (crop.height / 100) * img.height;
+
+        // Set canvas to crop dimensions
+        canvas.width = cropWidth;
+        canvas.height = cropHeight;
+
+        // Draw cropped portion
+        ctx.drawImage(
+          img,
+          cropX, cropY, cropWidth, cropHeight, // source rectangle
+          0, 0, cropWidth, cropHeight // destination rectangle
+        );
+
+        resolve(canvas.toDataURL('image/jpeg', 0.95));
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = imageBase64;
+    });
+  };
+
   const handleConfirm = async () => {
     if (preview) {
-      await onCapture(preview);
-      handleClose();
+      try {
+        const croppedImage = await applyCrop(preview);
+        await onCapture(croppedImage);
+        handleClose();
+      } catch (error) {
+        console.error('Failed to crop image:', error);
+        setError('Failed to crop image');
+      }
     }
   };
 
   const handleConfirmAndContinue = async () => {
     if (preview) {
-      await onCapture(preview);
-      setPreview(null); // Reset to camera view for another photo
+      try {
+        const croppedImage = await applyCrop(preview);
+        await onCapture(croppedImage);
+        setPreview(null); // Reset to camera view for another photo
+        setCrop({ x: 10, y: 10, width: 80, height: 80 }); // Reset crop
+      } catch (error) {
+        console.error('Failed to crop image:', error);
+        setError('Failed to crop image');
+      }
     }
   };
 
   const handleRetake = () => {
     setPreview(null);
+    setCrop({ x: 10, y: 10, width: 80, height: 80 }); // Reset crop
   };
+
+  const handleMouseDown = (corner: 'tl' | 'tr' | 'bl' | 'br', e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(corner);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !previewContainerRef.current) return;
+
+    const rect = previewContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    setCrop(prevCrop => {
+      let newCrop = { ...prevCrop };
+
+      switch (isDragging) {
+        case 'tl': // Top-left
+          newCrop.width = Math.max(20, prevCrop.width + (prevCrop.x - x));
+          newCrop.height = Math.max(20, prevCrop.height + (prevCrop.y - y));
+          newCrop.x = Math.max(0, Math.min(x, prevCrop.x + prevCrop.width - 20));
+          newCrop.y = Math.max(0, Math.min(y, prevCrop.y + prevCrop.height - 20));
+          break;
+        case 'tr': // Top-right
+          newCrop.width = Math.max(20, x - prevCrop.x);
+          newCrop.height = Math.max(20, prevCrop.height + (prevCrop.y - y));
+          newCrop.y = Math.max(0, Math.min(y, prevCrop.y + prevCrop.height - 20));
+          break;
+        case 'bl': // Bottom-left
+          newCrop.width = Math.max(20, prevCrop.width + (prevCrop.x - x));
+          newCrop.height = Math.max(20, y - prevCrop.y);
+          newCrop.x = Math.max(0, Math.min(x, prevCrop.x + prevCrop.width - 20));
+          break;
+        case 'br': // Bottom-right
+          newCrop.width = Math.max(20, x - prevCrop.x);
+          newCrop.height = Math.max(20, y - prevCrop.y);
+          break;
+      }
+
+      // Ensure crop stays within bounds
+      if (newCrop.x + newCrop.width > 100) newCrop.width = 100 - newCrop.x;
+      if (newCrop.y + newCrop.height > 100) newCrop.height = 100 - newCrop.y;
+
+      return newCrop;
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(null);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      const handleGlobalMouseUp = () => setIsDragging(null);
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+      window.addEventListener('touchend', handleGlobalMouseUp);
+      return () => {
+        window.removeEventListener('mouseup', handleGlobalMouseUp);
+        window.removeEventListener('touchend', handleGlobalMouseUp);
+      };
+    }
+  }, [isDragging]);
 
   const handleClose = () => {
     if (cameraStream) {
@@ -356,19 +470,185 @@ export default function CameraCapture({
         {/* Preview mode - replaces video */}
         {preview && (
           <>
-            <img
-              src={preview}
-              alt="Captured"
+            <div
+              ref={previewContainerRef}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
               style={{
+                position: 'relative',
                 width: `${imageWidth}px`,
                 height: `${imageHeight}px`,
-                borderRadius: darkTheme.borderRadius.md,
-                objectFit: 'contain',
-                background: 'black',
-                flexShrink: 0,
-                margin: '0 auto'
+                margin: '0 auto',
+                cursor: isDragging ? 'crosshair' : 'default',
+                userSelect: 'none',
+                flexShrink: 0
               }}
-            />
+            >
+              <img
+                src={preview}
+                alt="Captured"
+                draggable={false}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: darkTheme.borderRadius.md,
+                  objectFit: 'contain',
+                  background: 'black',
+                  display: 'block',
+                  pointerEvents: 'none'
+                }}
+              />
+
+              {/* Dark overlay for non-cropped areas */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  pointerEvents: 'none'
+                }}
+              >
+                {/* Top overlay */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: `${crop.y}%`,
+                  background: 'rgba(0, 0, 0, 0.5)'
+                }} />
+
+                {/* Bottom overlay */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: `${100 - crop.y - crop.height}%`,
+                  background: 'rgba(0, 0, 0, 0.5)'
+                }} />
+
+                {/* Left overlay */}
+                <div style={{
+                  position: 'absolute',
+                  top: `${crop.y}%`,
+                  left: 0,
+                  width: `${crop.x}%`,
+                  height: `${crop.height}%`,
+                  background: 'rgba(0, 0, 0, 0.5)'
+                }} />
+
+                {/* Right overlay */}
+                <div style={{
+                  position: 'absolute',
+                  top: `${crop.y}%`,
+                  right: 0,
+                  width: `${100 - crop.x - crop.width}%`,
+                  height: `${crop.height}%`,
+                  background: 'rgba(0, 0, 0, 0.5)'
+                }} />
+              </div>
+
+              {/* Crop box border */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${crop.x}%`,
+                  top: `${crop.y}%`,
+                  width: `${crop.width}%`,
+                  height: `${crop.height}%`,
+                  border: '2px solid #22c55e',
+                  boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0)',
+                  pointerEvents: 'none'
+                }}
+              >
+                {/* Grid lines for rule of thirds */}
+                <div style={{
+                  position: 'absolute',
+                  top: '33.33%',
+                  left: 0,
+                  right: 0,
+                  height: '1px',
+                  background: 'rgba(34, 197, 94, 0.3)'
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  top: '66.66%',
+                  left: 0,
+                  right: 0,
+                  height: '1px',
+                  background: 'rgba(34, 197, 94, 0.3)'
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: '33.33%',
+                  width: '1px',
+                  background: 'rgba(34, 197, 94, 0.3)'
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: '66.66%',
+                  width: '1px',
+                  background: 'rgba(34, 197, 94, 0.3)'
+                }} />
+              </div>
+
+              {/* Corner handles */}
+              {['tl', 'tr', 'bl', 'br'].map((corner) => {
+                const isTopLeft = corner === 'tl';
+                const isTopRight = corner === 'tr';
+                const isBottomLeft = corner === 'bl';
+                const isBottomRight = corner === 'br';
+
+                return (
+                  <div
+                    key={corner}
+                    onMouseDown={(e) => handleMouseDown(corner as any, e)}
+                    style={{
+                      position: 'absolute',
+                      left: isTopLeft || isBottomLeft ? `${crop.x}%` : `${crop.x + crop.width}%`,
+                      top: isTopLeft || isTopRight ? `${crop.y}%` : `${crop.y + crop.height}%`,
+                      width: '24px',
+                      height: '24px',
+                      background: '#22c55e',
+                      border: '3px solid white',
+                      borderRadius: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      cursor: `${corner === 'tl' || corner === 'br' ? 'nwse' : 'nesw'}-resize`,
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                      zIndex: 10,
+                      transition: isDragging === corner ? 'none' : 'all 0.2s'
+                    }}
+                  />
+                );
+              })}
+
+              {/* Instruction text */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '10px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  color: 'white',
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  pointerEvents: 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Drag corners to adjust crop area
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexDirection: isMobile ? 'column' : 'row' }}>
               <button
                 onClick={handleRetake}

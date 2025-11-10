@@ -588,15 +588,12 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
 
 export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [notes, setNotes] = useState<AdminNote[]>([]);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [suspendingUser, setSuspendingUser] = useState<AdminUser | null>(null);
   const [warningUser, setWarningUser] = useState<AdminUser | null>(null);
-  const [editingNote, setEditingNote] = useState<AdminNote | null>(null);
-  const [groupBySubject, setGroupBySubject] = useState(true);
   const [showActivityLog, setShowActivityLog] = useState(false);
 
   useEffect(() => {
@@ -606,13 +603,11 @@ export default function AdminPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersData, notesData, logsData] = await Promise.all([
+      const [usersData, logsData] = await Promise.all([
         api.admin.getUsers(),
-        api.admin.getNotes(),
         loadActivityLogs()
       ]);
       setUsers(usersData.users || []);
-      setNotes(notesData.notes || []);
       setActivityLogs(logsData);
     } catch (error) {
       console.error('Failed to load admin data:', error);
@@ -631,47 +626,6 @@ export default function AdminPage() {
       console.error('Failed to load activity logs:', error);
       return [];
     }
-  };
-
-  const handleAuthorClick = (authorId: number) => {
-    const author = users.find(u => u.id === authorId);
-    if (author) {
-      setSelectedUser(author);
-    }
-  };
-
-  const handleAdminLike = async (noteId: number) => {
-    try {
-      setActionLoading(noteId);
-      await api.request(`/api/admin/notes/${noteId}/like`, {
-        method: 'POST'
-      });
-      // Reload to get updated data
-      await loadData();
-    } catch (error) {
-      console.error('Failed to admin like:', error);
-      alert('Failed to like note');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleSaveNote = async (noteId: number, updates: { title?: string; description?: string; tags?: string[]; content?: string }) => {
-    try {
-      await api.request(`/api/admin/notes/${noteId}`, {
-        method: 'PUT',
-        body: updates
-      });
-      // Reload to get updated data
-      await loadData();
-    } catch (error) {
-      console.error('Failed to update note:', error);
-      throw error;
-    }
-  };
-
-  const handleModalAdminLike = async (noteId: number) => {
-    await handleAdminLike(noteId);
   };
 
   const handleDeleteUser = async (userId: number) => {
@@ -733,16 +687,6 @@ export default function AdminPage() {
       setActionLoading(null);
     }
   };
-
-  // Group notes by subject
-  const notesBySubject = notes.reduce((acc, note) => {
-    const subject = note.subject_name || note.subject || 'Unknown';
-    if (!acc[subject]) {
-      acc[subject] = [];
-    }
-    acc[subject].push(note);
-    return acc;
-  }, {} as Record<string, AdminNote[]>);
 
   return (
     <div>
@@ -941,239 +885,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Notes Section */}
-          <div style={{ marginBottom: '48px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: darkTheme.colors.textPrimary }}>
-                <i className="fas fa-file" style={{ marginRight: '8px', color: darkTheme.colors.accent }}></i>
-                Notes ({notes.length})
-              </h3>
-              <button
-                onClick={() => setGroupBySubject(!groupBySubject)}
-                style={{
-                  padding: '8px 16px',
-                  background: groupBySubject ? darkTheme.colors.accent : darkTheme.colors.bgSecondary,
-                  border: 'none',
-                  color: '#fff',
-                  borderRadius: darkTheme.borderRadius.md,
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: '500'
-                }}
-              >
-                {groupBySubject ? '📚 Grouped by Subject' : '📄 List View'}
-              </button>
-            </div>
-
-            {notes.length === 0 ? (
-              <div style={{
-                ...cardStyle,
-                padding: '40px',
-                textAlign: 'center',
-                color: darkTheme.colors.textSecondary
-              }}>
-                No notes found
-              </div>
-            ) : groupBySubject ? (
-              /* Grouped by Subject */
-              <div>
-                {Object.entries(notesBySubject).map(([subject, subjectNotes]) => (
-                  <div key={subject} style={{ marginBottom: '32px' }}>
-                    <h4 style={{
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      marginBottom: '12px',
-                      color: darkTheme.colors.accent,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <span>{subject}</span>
-                      <span style={{ fontSize: '12px', fontWeight: '400', color: darkTheme.colors.textSecondary }}>
-                        ({subjectNotes.length} notes)
-                      </span>
-                    </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                      {subjectNotes.map((note) => (
-                        <div
-                          key={note.id}
-                          onClick={() => setEditingNote(note)}
-                          style={{
-                            padding: '16px',
-                            background: darkTheme.colors.bgSecondary,
-                            borderRadius: darkTheme.borderRadius.md,
-                            border: `1px solid ${darkTheme.colors.borderColor}`,
-                            cursor: 'pointer',
-                            transition: darkTheme.transitions.default
-                          }}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = darkTheme.shadows.lg;
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                        >
-                          <div style={{ fontWeight: '600', fontSize: '14px', marginBottom: '8px', color: darkTheme.colors.textPrimary }}>
-                            {note.title}
-                          </div>
-                          <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginBottom: '8px' }}>
-                            by{' '}
-                            <span
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAuthorClick(note.author_id);
-                              }}
-                              style={{
-                                color: darkTheme.colors.accent,
-                                cursor: 'pointer',
-                                textDecoration: 'underline'
-                              }}
-                              onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
-                              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-                            >
-                              {note.author_name}
-                            </span>
-                          </div>
-                          {note.description && (
-                            <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginBottom: '12px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                              {note.description}
-                            </div>
-                          )}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-                            <div style={{ display: 'flex', gap: '12px', fontSize: '12px' }}>
-                              <span style={{ color: darkTheme.colors.textSecondary }}>
-                                <i className="fas fa-heart" style={{ marginRight: '4px' }}></i>
-                                {note.likes}
-                              </span>
-                              <span style={{ color: darkTheme.colors.accent }}>
-                                <i className="fas fa-star" style={{ marginRight: '4px' }}></i>
-                                {note.admin_upvotes}
-                              </span>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAdminLike(note.id);
-                              }}
-                              disabled={actionLoading === note.id}
-                              style={{
-                                padding: '6px 12px',
-                                background: note.admin_liked ? `${darkTheme.colors.accent}40` : `${darkTheme.colors.accent}20`,
-                                border: `1px solid ${darkTheme.colors.accent}`,
-                                color: darkTheme.colors.accent,
-                                borderRadius: darkTheme.borderRadius.sm,
-                                cursor: actionLoading === note.id ? 'not-allowed' : 'pointer',
-                                fontSize: '11px',
-                                fontWeight: '600',
-                                opacity: actionLoading === note.id ? 0.6 : 1
-                              }}
-                              title="Admin Like (+5 points)"
-                            >
-                              {actionLoading === note.id ? '...' : note.admin_liked ? '⭐ Liked' : '⭐ Admin Like'}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              /* List View */
-              <div style={{
-                ...cardStyle,
-                padding: 0,
-                overflow: 'auto',
-                maxHeight: '600px'
-              } as React.CSSProperties}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead style={{
-                    background: darkTheme.colors.bgSecondary,
-                    position: 'sticky',
-                    top: 0
-                  }}>
-                    <tr>
-                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: `1px solid ${darkTheme.colors.borderColor}`, fontWeight: '600', fontSize: '13px' }}>Title</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: `1px solid ${darkTheme.colors.borderColor}`, fontWeight: '600', fontSize: '13px' }}>Author</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: `1px solid ${darkTheme.colors.borderColor}`, fontWeight: '600', fontSize: '13px' }}>Subject</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'left', borderBottom: `1px solid ${darkTheme.colors.borderColor}`, fontWeight: '600', fontSize: '13px' }}>Likes</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'right', borderBottom: `1px solid ${darkTheme.colors.borderColor}`, fontWeight: '600', fontSize: '13px' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {notes.map((note) => (
-                      <tr
-                        key={note.id}
-                        onClick={() => setEditingNote(note)}
-                        style={{
-                          borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
-                          cursor: 'pointer',
-                          transition: darkTheme.transitions.default
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.background = darkTheme.colors.bgSecondary}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                      >
-                        <td style={{ padding: '12px 16px', fontSize: '14px' }}>{note.title}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '14px' }}>
-                          <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAuthorClick(note.author_id);
-                            }}
-                            style={{
-                              color: darkTheme.colors.accent,
-                              cursor: 'pointer',
-                              textDecoration: 'underline'
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
-                            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-                          >
-                            {note.author_name}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 16px', fontSize: '14px' }}>{note.subject_name || note.subject}</td>
-                        <td style={{ padding: '12px 16px', fontSize: '14px' }}>
-                          <span style={{ marginRight: '12px' }}>
-                            <i className="fas fa-heart" style={{ marginRight: '4px', color: darkTheme.colors.textSecondary }}></i>
-                            {note.likes}
-                          </span>
-                          <span style={{ color: darkTheme.colors.accent }}>
-                            <i className="fas fa-star" style={{ marginRight: '4px' }}></i>
-                            {note.admin_upvotes}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAdminLike(note.id);
-                            }}
-                            disabled={actionLoading === note.id}
-                            style={{
-                              padding: '6px 12px',
-                              background: `${darkTheme.colors.accent}20`,
-                              border: `1px solid ${darkTheme.colors.accent}`,
-                              color: darkTheme.colors.accent,
-                              borderRadius: darkTheme.borderRadius.sm,
-                              cursor: 'pointer',
-                              fontSize: '11px',
-                              fontWeight: '600'
-                            }}
-                            title="Admin Like (+5 points)"
-                          >
-                            ⭐ Admin Like
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
           {/* Activity Log Section */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -1289,15 +1000,6 @@ export default function AdminPage() {
           user={suspendingUser}
           onClose={() => setSuspendingUser(null)}
           onSuspend={handleSuspendUser}
-        />
-      )}
-      {editingNote && (
-        <AdminNoteEditModal
-          note={editingNote}
-          onClose={() => setEditingNote(null)}
-          onSave={handleSaveNote}
-          onAdminLike={handleModalAdminLike}
-          isLiking={actionLoading === editingNote.id}
         />
       )}
     </div>

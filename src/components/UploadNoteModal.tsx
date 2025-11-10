@@ -21,7 +21,7 @@ interface UploadNoteModalProps {
 
 export default function UploadNoteModal({ onClose, subjects, onSuccess, preselectedSubject }: UploadNoteModalProps) {
   const { user } = useAuth();
-  const [uploadMode, setUploadMode] = useState<'scan' | 'photo'>('scan');
+  const uploadMode = 'scan'; // Always use scan mode
   const [uploadImages, setUploadImages] = useState<string[]>([]);
   const [showCamera, setShowCamera] = useState(false);
   const [extractedText, setExtractedText] = useState('');
@@ -330,108 +330,74 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </button>
         </div>
 
-        {/* Mode Selection */}
-        <div style={{ display: 'flex', gap: isMobile ? '8px' : '16px', marginBottom: isMobile ? '12px' : '24px' }}>
-          <div
-            onClick={() => {
-              if (!isProcessingOCR && uploadImages.length === 0) {
-                setUploadMode('scan');
-                setExtractedText('');
-                setOcrCompleted(false);
-              }
-            }}
-            style={{
-              flex: 1,
-              padding: '16px',
-              borderRadius: '12px',
-              border: `2px dashed ${uploadMode === 'scan' ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
-              background: uploadMode === 'scan' ? `${darkTheme.colors.accent}15` : 'transparent',
-              cursor: (isProcessingOCR || uploadImages.length > 0) ? 'not-allowed' : 'pointer',
-              textAlign: 'center',
-              transition: 'all 0.3s',
-              opacity: (isProcessingOCR || uploadImages.length > 0) && uploadMode !== 'scan' ? 0.5 : 1
-            }}
-          >
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>
-              <i className="fas fa-text-height"></i>
-            </div>
-            <div style={{ color: darkTheme.colors.textSecondary }}>Scan with AI OCR</div>
-          </div>
-          <div
-            onClick={() => {
-              if (!isProcessingOCR && uploadImages.length === 0) {
-                setUploadMode('photo');
-                setOcrCompleted(false);
-              }
-            }}
-            style={{
-              flex: 1,
-              padding: '16px',
-              borderRadius: '12px',
-              border: `2px dashed ${uploadMode === 'photo' ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
-              background: uploadMode === 'photo' ? `${darkTheme.colors.accent}15` : 'transparent',
-              cursor: (isProcessingOCR || uploadImages.length > 0) ? 'not-allowed' : 'pointer',
-              textAlign: 'center',
-              transition: 'all 0.3s',
-              opacity: (isProcessingOCR || uploadImages.length > 0) && uploadMode !== 'photo' ? 0.5 : 1
-            }}
-          >
-            <div style={{ fontSize: '32px', marginBottom: '8px' }}>
-              <i className="fas fa-camera"></i>
-            </div>
-            <div style={{ color: darkTheme.colors.textSecondary }}>Photo Only</div>
-          </div>
-        </div>
-
         {/* Upload Buttons */}
         {uploadImages.length === 0 ? (
           <div style={{ marginBottom: isMobile ? '12px' : '24px' }}>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button
-                onClick={() => setShowCamera(true)}
-                style={{
-                  flex: 1,
-                  padding: isMobile ? '16px' : '20px',
-                  background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, ${darkTheme.colors.accentHover} 100%)`,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontSize: isMobile ? '14px' : '16px',
-                  fontWeight: '600',
-                  transition: 'all 0.3s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <i className="fas fa-camera" style={{ fontSize: isMobile ? '24px' : '32px' }}></i>
-                <span>Take Photo</span>
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  flex: 1,
-                  padding: isMobile ? '16px' : '20px',
-                  background: `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, ${darkTheme.colors.accentHover} 100%)`,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontSize: isMobile ? '14px' : '16px',
-                  fontWeight: '600',
-                  transition: 'all 0.3s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <i className="fas fa-upload" style={{ fontSize: isMobile ? '24px' : '32px' }}></i>
-                <span>Upload File</span>
-              </button>
+            <button
+              onClick={() => setShowCamera(true)}
+              style={{
+                width: '100%',
+                padding: isMobile ? '20px' : '24px',
+                background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '16px',
+                cursor: 'pointer',
+                fontSize: isMobile ? '16px' : '18px',
+                fontWeight: '700',
+                transition: 'all 0.3s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                marginBottom: '12px'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(34, 197, 94, 0.4)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.3)';
+              }}
+            >
+              <i className="fas fa-qrcode" style={{ fontSize: isMobile ? '24px' : '28px' }}></i>
+              <span>Scan</span>
+            </button>
+            <div style={{ textAlign: 'center', color: darkTheme.colors.textSecondary, fontSize: isMobile ? '11px' : '12px', marginBottom: '8px' }}>
+              or
             </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: '100%',
+                padding: isMobile ? '12px' : '14px',
+                background: darkTheme.colors.bgSecondary,
+                color: darkTheme.colors.textPrimary,
+                border: `1px solid ${darkTheme.colors.borderColor}`,
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontSize: isMobile ? '13px' : '14px',
+                fontWeight: '500',
+                transition: 'all 0.3s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = darkTheme.colors.bgTertiary;
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = darkTheme.colors.bgSecondary;
+              }}
+            >
+              <i className="fas fa-upload" style={{ fontSize: isMobile ? '14px' : '16px' }}></i>
+              <span>Upload from Device</span>
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -951,12 +917,22 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '11px' : '14px', fontWeight: '500', color: darkTheme.colors.textSecondary }}>
               <i className="fas fa-lightbulb" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
-              AI Suggestions (leave tags empty to use these):
+              AI Suggestions (click to use):
             </label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {suggestedTags.map((tag, idx) => (
                 <span
                   key={idx}
+                  onClick={() => {
+                    // Add tag to manual tags
+                    setManualTags(prev => {
+                      const currentTags = prev ? prev.split(',').map(t => t.trim()).filter(t => t) : [];
+                      if (!currentTags.includes(tag)) {
+                        return [...currentTags, tag].join(', ');
+                      }
+                      return prev;
+                    });
+                  }}
                   style={{
                     background: `${darkTheme.colors.accent}15`,
                     border: `1px dashed ${darkTheme.colors.accent}60`,
@@ -965,7 +941,16 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                     borderRadius: '16px',
                     fontSize: '11px',
                     fontWeight: '500',
-                    opacity: 0.8
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = `${darkTheme.colors.accent}30`;
+                    e.currentTarget.style.borderColor = darkTheme.colors.accent;
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = `${darkTheme.colors.accent}15`;
+                    e.currentTarget.style.borderColor = `${darkTheme.colors.accent}60`;
                   }}
                 >
                   {tag}

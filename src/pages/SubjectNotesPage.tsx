@@ -121,17 +121,30 @@ export default function SubjectNotesPage({
       return 0;
     });
 
-  const toggleLike = (noteId: number) => {
-    setNotes(notes.map(note => {
-      if (note.id === noteId) {
-        return {
-          ...note,
-          liked_by_me: !note.liked_by_me,
-          likes: note.liked_by_me ? note.likes - 1 : note.likes + 1
-        };
+  const toggleLike = async (noteId: number) => {
+    try {
+      const response = await api.likeNote(noteId);
+      if (response.success) {
+        // Reload notes to get updated like counts
+        await loadNotes();
       }
-      return note;
-    }));
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+    }
+  };
+
+  const handleAdminLike = async (noteId: number) => {
+    try {
+      setIsLoading(true);
+      await api.admin.likeNote(noteId);
+      // Reload notes to get updated admin like counts
+      await loadNotes();
+    } catch (error) {
+      console.error('Failed to admin like:', error);
+      alert('Failed to admin like note');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDeleteNote = async (noteId: number) => {
@@ -476,36 +489,72 @@ export default function SubjectNotesPage({
                   gap: '8px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {/* Like Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleLike(note.id);
-                      }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: note.liked_by_me ? darkTheme.colors.accent : darkTheme.colors.textSecondary,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        transition: darkTheme.transitions.default,
-                        padding: '6px 12px',
-                        borderRadius: '20px',
-                        fontSize: '13px',
-                        fontWeight: '500'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = note.liked_by_me ? `${darkTheme.colors.accent}10` : `rgba(255,255,255,0.1)`;
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'none';
-                      }}
-                    >
-                      <i className={`fas fa-heart${note.liked_by_me ? '' : '-o'}`}></i>
-                      {note.likes}
-                    </button>
+                    {/* Admin Like Button (Orange with Crown) - Only for Admins */}
+                    {(currentUser?.role === 'admin' || currentUser?.email?.endsWith('@notarium.site')) ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAdminLike(note.id);
+                        }}
+                        style={{
+                          background: note.upvoted_by_me ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.15)',
+                          border: `2px solid ${note.upvoted_by_me ? 'rgba(245, 158, 11, 1)' : 'rgba(245, 158, 11, 0.5)'}`,
+                          color: '#f59e0b',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: darkTheme.transitions.default,
+                          padding: '8px 14px',
+                          borderRadius: '20px',
+                          fontSize: '13px',
+                          fontWeight: '600'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = 'rgba(245, 158, 11, 0.35)';
+                          e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 1)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = note.upvoted_by_me ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.15)';
+                          e.currentTarget.style.borderColor = note.upvoted_by_me ? 'rgba(245, 158, 11, 1)' : 'rgba(245, 158, 11, 0.5)';
+                        }}
+                        title="Admin Like (+5 points)"
+                      >
+                        <i className="fas fa-crown"></i>
+                        {note.admin_upvotes}
+                      </button>
+                    ) : (
+                      /* Regular Like Button - For Students */
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLike(note.id);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: note.liked_by_me ? darkTheme.colors.accent : darkTheme.colors.textSecondary,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: darkTheme.transitions.default,
+                          padding: '6px 12px',
+                          borderRadius: '20px',
+                          fontSize: '13px',
+                          fontWeight: '500'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = note.liked_by_me ? `${darkTheme.colors.accent}10` : `rgba(255,255,255,0.1)`;
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'none';
+                        }}
+                      >
+                        <i className={`fas fa-heart${note.liked_by_me ? '' : '-o'}`}></i>
+                        {note.likes}
+                      </button>
+                    )}
 
                     {/* Admin Delete Button */}
                     {(currentUser?.role === 'admin' || currentUser?.email?.endsWith('@notarium.site')) && (
