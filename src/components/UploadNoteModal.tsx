@@ -51,7 +51,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Compress image to reduce database size (D1 has 1MB row limit)
+  // Compress image aggressively to reduce database size (D1 has 1MB row limit)
   const compressImage = (base64Image: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -59,9 +59,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        // Set max dimensions (reduce if still too large)
-        const MAX_WIDTH = 1200;
-        const MAX_HEIGHT = 1600;
+        // More aggressive max dimensions for better compression
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 1200;
 
         let width = img.width;
         let height = img.height;
@@ -79,8 +79,16 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         // Draw and compress
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Use JPEG with 0.7 quality for better compression
-        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        // Use JPEG with 0.5 quality for aggressive compression (still readable)
+        let compressed = canvas.toDataURL('image/jpeg', 0.5);
+
+        // If still too large (>150KB per image), compress even more
+        const sizeInBytes = compressed.length * 0.75; // Approximate base64 to bytes
+        if (sizeInBytes > 150000) {
+          compressed = canvas.toDataURL('image/jpeg', 0.4);
+        }
+
+        console.log('[COMPRESS] Original size estimate:', Math.round(base64Image.length * 0.75 / 1024), 'KB → Compressed:', Math.round(compressed.length * 0.75 / 1024), 'KB');
         resolve(compressed);
       };
       img.src = base64Image;
