@@ -40,6 +40,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [scheduledDate, setScheduledDate] = useState('');
   const [visibility, setVisibility] = useState<'everyone' | 'class'>('everyone');
   const [selectedSubject, setSelectedSubject] = useState<number | undefined>(preselectedSubject);
+  const [enhanceContrast, setEnhanceContrast] = useState(true); // Toggle for B&W + high contrast (ON by default)
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Track window resize for responsive design
@@ -51,7 +52,56 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Compress image aggressively to reduce database size (D1 has 1MB row limit)
+  // Apply B&W + high contrast enhancement for better note readability
+  const applyContrastEnhancement = (base64Image: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(base64Image);
+          return;
+        }
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        // Get image data
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        // Convert to grayscale and apply high contrast
+        for (let i = 0; i < data.length; i += 4) {
+          // Convert to grayscale using luminance formula
+          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+
+          // Apply high contrast (increase separation between darks and lights)
+          const contrast = 1.5; // Contrast multiplier
+          const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+          const enhanced = factor * (gray - 128) + 128;
+
+          // Clamp values between 0-255
+          const final = Math.max(0, Math.min(255, enhanced));
+
+          // Set RGB to same value (grayscale) with high contrast
+          data[i] = final;     // R
+          data[i + 1] = final; // G
+          data[i + 2] = final; // B
+          // Alpha stays the same
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        const enhanced = canvas.toDataURL('image/jpeg', 0.95);
+        console.log('[CONTRAST] Applied B&W + high contrast enhancement');
+        resolve(enhanced);
+      };
+      img.src = base64Image;
+    });
+  };
+
+  // Compress image with better quality (0.8) to maintain readability
   const compressImage = (base64Image: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -79,14 +129,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         // Draw and compress
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Use JPEG with 0.5 quality for aggressive compression (still readable)
-        let compressed = canvas.toDataURL('image/jpeg', 0.5);
-
-        // If still too large (>150KB per image), compress even more
-        const sizeInBytes = compressed.length * 0.75; // Approximate base64 to bytes
-        if (sizeInBytes > 150000) {
-          compressed = canvas.toDataURL('image/jpeg', 0.4);
-        }
+        // Use JPEG with 0.8 quality for better readability
+        const compressed = canvas.toDataURL('image/jpeg', 0.8);
 
         console.log('[COMPRESS] Original size estimate:', Math.round(base64Image.length * 0.75 / 1024), 'KB → Compressed:', Math.round(compressed.length * 0.75 / 1024), 'KB');
         resolve(compressed);
@@ -107,8 +151,12 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       const reader = new FileReader();
       reader.onloadend = async () => {
         if (typeof reader.result === 'string') {
-          // Compress image before adding
-          const compressed = await compressImage(reader.result);
+          // Apply contrast enhancement if enabled, then compress
+          let processed = reader.result;
+          if (enhanceContrast) {
+            processed = await applyContrastEnhancement(processed);
+          }
+          const compressed = await compressImage(processed);
           newImages.push(compressed);
           processedCount++;
 
@@ -134,8 +182,12 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
   const handlePhotoCapture = async (photoBase64: string) => {
     setShowCamera(false);
-    // Compress camera photo before adding
-    const compressed = await compressImage(photoBase64);
+    // Apply contrast enhancement if enabled, then compress camera photo
+    let processed = photoBase64;
+    if (enhanceContrast) {
+      processed = await applyContrastEnhancement(processed);
+    }
+    const compressed = await compressImage(processed);
     setUploadImages(prev => {
       const newImages = [...prev, compressed];
       // Auto-process OCR if in scan mode
@@ -253,10 +305,6 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
     setIsSubmitting(true);
     try {
-      const IMAGES_PER_NOTE = 5; // Max 5 images per note to stay under size limit
-      const totalImages = uploadImages.length;
-      const numberOfNotes = Math.ceil(totalImages / IMAGES_PER_NOTE);
-
       // Use extracted text for summary if not already generated
       const contentForSummary = extractedText;
       let quickSummary = generatedSummary;
@@ -278,18 +326,40 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       const manualTagList = manualTags.split(',').map(t => t.trim()).filter(t => t);
       const finalTags = manualTagList.length > 0 ? manualTagList : autoTags;
 
-      // Split images into chunks and create multiple notes if needed
+      // Size-based auto-split: Group images into chunks that fit under size limit
+      const MAX_SIZE_PER_NOTE = 900000; // 900KB (1MB with buffer)
+      const imageChunks: string[][] = [];
+      let currentChunk: string[] = [];
+      let currentSize = 0;
+
+      for (const image of uploadImages) {
+        const imageSize = image.length * 0.75; // Approximate base64 to bytes
+
+        // If adding this image would exceed limit, start new chunk
+        if (currentChunk.length > 0 && (currentSize + imageSize) > MAX_SIZE_PER_NOTE) {
+          imageChunks.push([...currentChunk]);
+          currentChunk = [image];
+          currentSize = imageSize;
+        } else {
+          currentChunk.push(image);
+          currentSize += imageSize;
+        }
+      }
+
+      // Add final chunk if not empty
+      if (currentChunk.length > 0) {
+        imageChunks.push(currentChunk);
+      }
+
+      const numberOfNotes = imageChunks.length;
+
+      // Create notes from chunks (same title for all)
       const createdNotes = [];
       for (let i = 0; i < numberOfNotes; i++) {
-        const startIdx = i * IMAGES_PER_NOTE;
-        const endIdx = Math.min(startIdx + IMAGES_PER_NOTE, totalImages);
-        const imageChunk = uploadImages.slice(startIdx, endIdx);
-
-        // Create title with part number if multiple notes
-        const partTitle = numberOfNotes > 1 ? `${noteTitle} (${i + 1})` : noteTitle;
+        const imageChunk = imageChunks[i];
 
         const noteData = {
-          title: partTitle,
+          title: noteTitle, // Same title for all parts
           description: quickSummary || 'No description available',
           subject_id: selectedSubject,
           extracted_text: extractedText || 'No extracted text',
@@ -313,7 +383,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
       if (createdNotes.length > 0) {
         const message = numberOfNotes > 1
-          ? `Successfully created ${numberOfNotes} notes! (Split due to ${totalImages} images)`
+          ? `Successfully created ${numberOfNotes} notes! (Auto-split due to size)`
           : saveAsDraft
             ? (scheduledDate ? `Note saved as draft and scheduled for ${new Date(scheduledDate).toLocaleString()}!` : 'Note saved as draft!')
             : 'Note uploaded successfully!';
@@ -490,6 +560,78 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               onChange={handleImageUpload}
               style={{ display: 'none' }}
             />
+
+            {/* Contrast Enhancement Toggle */}
+            <div style={{
+              marginTop: '16px',
+              padding: isMobile ? '12px' : '14px',
+              background: darkTheme.colors.bgTertiary,
+              border: `1px solid ${darkTheme.colors.borderColor}`,
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px'
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: isMobile ? '13px' : '14px',
+                  fontWeight: '600',
+                  color: darkTheme.colors.textPrimary,
+                  marginBottom: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <i className="fas fa-adjust"></i>
+                  Enhance Contrast
+                </div>
+                <div style={{
+                  fontSize: isMobile ? '11px' : '12px',
+                  color: darkTheme.colors.textSecondary
+                }}>
+                  Convert to B&W with high contrast for better readability (Recommended)
+                </div>
+              </div>
+              <label style={{
+                position: 'relative',
+                display: 'inline-block',
+                width: '50px',
+                height: '26px',
+                flexShrink: 0,
+                cursor: 'pointer'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={enhanceContrast}
+                  onChange={(e) => setEnhanceContrast(e.target.checked)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: 'absolute',
+                  cursor: 'pointer',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: enhanceContrast ? darkTheme.colors.accent : darkTheme.colors.borderColor,
+                  transition: '0.3s',
+                  borderRadius: '26px'
+                }}>
+                  <span style={{
+                    position: 'absolute',
+                    content: '""',
+                    height: '20px',
+                    width: '20px',
+                    left: enhanceContrast ? '27px' : '3px',
+                    bottom: '3px',
+                    backgroundColor: 'white',
+                    transition: '0.3s',
+                    borderRadius: '50%'
+                  }}></span>
+                </span>
+              </label>
+            </div>
           </div>
         ) : (
           <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
