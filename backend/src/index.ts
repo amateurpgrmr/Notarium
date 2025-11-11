@@ -2809,17 +2809,11 @@ export default {
             return jsonResponse({ error: 'User not found' }, 404);
           }
 
-          // Hash password using built-in crypto
-          const encoder = new TextEncoder();
-          const data = encoder.encode(newPassword);
-          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          const hashedPassword = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
+          // Store password as plain text (matching existing login system)
           // Update password in database
           await env.DB.prepare(`
             UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?
-          `).bind(hashedPassword, user.id).run();
+          `).bind(newPassword, user.id).run();
 
           console.log('[PASSWORD_RESET] Password reset successfully for user:', email);
           return jsonResponse({ success: true, message: 'Password reset successfully' });
@@ -2873,27 +2867,16 @@ export default {
             return jsonResponse({ error: 'User not found' }, 404);
           }
 
-          // Verify current password
-          const encoder = new TextEncoder();
-          const data = encoder.encode(currentPassword);
-          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          const currentPasswordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-          if (currentPasswordHash !== user.password_hash) {
+          // Verify current password (plain text comparison - matching existing login system)
+          if (currentPassword !== user.password_hash) {
             return jsonResponse({ error: 'Current password is incorrect' }, 401);
           }
 
-          // Hash new password
-          const newData = encoder.encode(newPassword);
-          const newHashBuffer = await crypto.subtle.digest('SHA-256', newData);
-          const newHashArray = Array.from(new Uint8Array(newHashBuffer));
-          const newPasswordHash = newHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
+          // Store new password as plain text (matching existing login system)
           // Update password in database
           await env.DB.prepare(`
             UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?
-          `).bind(newPasswordHash, userId).run();
+          `).bind(newPassword, userId).run();
 
           console.log('[PASSWORD_CHANGE] Password changed successfully for user ID:', userId);
           return jsonResponse({ success: true, message: 'Password changed successfully' });
