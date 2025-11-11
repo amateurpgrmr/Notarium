@@ -131,6 +131,12 @@ async function initializeDatabase(env: Env) {
         extracted_text TEXT,
         image_path TEXT,
         summary TEXT,
+        content TEXT,
+        tags TEXT,
+        author_class TEXT,
+        status TEXT DEFAULT 'published',
+        visibility TEXT DEFAULT 'everyone',
+        scheduled_publish_at DATETIME,
         likes INTEGER DEFAULT 0,
         admin_upvotes INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -1624,6 +1630,21 @@ async function updateNote(noteId: string, request: Request, env: Env) {
       updates.push('tags = ?');
       values.push(JSON.stringify(body.tags));
       changedFields.push('tags');
+    }
+    if (body.extracted_text !== undefined) {
+      updates.push('extracted_text = ?');
+      values.push(body.extracted_text);
+      changedFields.push('extracted_text');
+    }
+    if (body.summary !== undefined) {
+      updates.push('summary = ?');
+      values.push(body.summary);
+      changedFields.push('summary');
+    }
+    if (body.image_path !== undefined) {
+      updates.push('image_path = ?');
+      values.push(body.image_path);
+      changedFields.push('image_path');
     }
 
     if (updates.length === 0) {
