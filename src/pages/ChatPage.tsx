@@ -29,7 +29,9 @@ export default function ChatPage() {
   const [keyConcepts, setKeyConcepts] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadSessions();
@@ -201,6 +203,31 @@ export default function ChatPage() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Fullscreen functionality
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (error) {
+      console.error('Fullscreen error:', error);
+    }
+  };
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   return (
@@ -403,34 +430,65 @@ export default function ChatPage() {
                   🤖 AI Study Tutor
                 </p>
               </div>
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 16px',
-                background: darkTheme.colors.accent,
-                borderRadius: darkTheme.borderRadius.md,
-                cursor: uploading ? 'not-allowed' : 'pointer',
-                opacity: uploading ? 0.6 : 1,
-                transition: darkTheme.transitions.default,
-                fontSize: '14px',
-                fontWeight: '600',
-                color: 'white',
-                whiteSpace: 'nowrap'
-              } as React.CSSProperties}
-              onMouseOver={(e) => !uploading && (e.currentTarget.style.opacity = '0.9')}
-              onMouseOut={(e) => !uploading && (e.currentTarget.style.opacity = '1')}
-              >
-                <i className="fas fa-upload"></i>
-                {uploading ? 'Uploading...' : 'Upload Document'}
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
-                  onChange={handleDocumentUpload}
-                  disabled={uploading}
-                  style={{ display: 'none' }}
-                />
-              </label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button
+                  onClick={toggleFullscreen}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '10px',
+                    background: darkTheme.colors.bgTertiary,
+                    border: `1px solid ${darkTheme.colors.borderColor}`,
+                    borderRadius: darkTheme.borderRadius.md,
+                    cursor: 'pointer',
+                    transition: darkTheme.transitions.default,
+                    fontSize: '16px',
+                    color: darkTheme.colors.textPrimary,
+                    width: '40px',
+                    height: '40px'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = darkTheme.colors.accent;
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = darkTheme.colors.bgTertiary;
+                    e.currentTarget.style.color = darkTheme.colors.textPrimary;
+                  }}
+                  title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                >
+                  <i className={`fas fa-${isFullscreen ? 'compress' : 'expand'}`}></i>
+                </button>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  background: darkTheme.colors.accent,
+                  borderRadius: darkTheme.borderRadius.md,
+                  cursor: uploading ? 'not-allowed' : 'pointer',
+                  opacity: uploading ? 0.6 : 1,
+                  transition: darkTheme.transitions.default,
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: 'white',
+                  whiteSpace: 'nowrap'
+                } as React.CSSProperties}
+                onMouseOver={(e) => !uploading && (e.currentTarget.style.opacity = '0.9')}
+                onMouseOut={(e) => !uploading && (e.currentTarget.style.opacity = '1')}
+                >
+                  <i className="fas fa-upload"></i>
+                  {uploading ? 'Uploading...' : 'Upload Document'}
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
+                    onChange={handleDocumentUpload}
+                    disabled={uploading}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
             </div>
 
             {/* Info Section - Uploaded Documents and Key Concepts */}

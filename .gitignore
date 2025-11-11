@@ -47,4 +47,6 @@ temp/
 # Node version
 .node-version
 
+# Deployment
 .vercel
+.wrangler
