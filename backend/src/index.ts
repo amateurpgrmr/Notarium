@@ -1192,10 +1192,10 @@ async function getLeaderboard(env: Env) {
       notes_uploaded,
       total_likes,
       total_admin_upvotes,
-      notes_uploaded as points
+      (notes_uploaded + total_likes + total_admin_upvotes) as points
     FROM users
     WHERE role != 'admin'
-    ORDER BY notes_uploaded DESC, total_likes DESC
+    ORDER BY (notes_uploaded + total_likes + total_admin_upvotes) DESC, notes_uploaded DESC, total_likes DESC
   `).all();
 
   return jsonResponse({ leaderboard: results });
@@ -1753,7 +1753,7 @@ async function getAllUsers(request: Request, env: Env) {
         total_likes,
         total_admin_upvotes,
         COALESCE(diamonds, 0) as diamonds,
-        (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 4.5) as points,
+        (notes_uploaded + total_likes + total_admin_upvotes) as points,
         suspended,
         suspension_end_date,
         suspension_reason,
@@ -2051,8 +2051,8 @@ async function signupEndpoint(request: Request, env: Env) {
     // Create a simple token (in production, use proper JWT)
     const token = Buffer.from(JSON.stringify({ id: (user as any).id, email: (user as any).email })).toString('base64');
 
-    // Calculate points
-    const points = ((user as any).notes_uploaded || 0) * 10 + ((user as any).total_likes || 0) * 4 + ((user as any).total_admin_upvotes || 0) * 4.5;
+    // Calculate points (1 point per note upload, 1 point per like, 1 point per admin like)
+    const points = ((user as any).notes_uploaded || 0) + ((user as any).total_likes || 0) + ((user as any).total_admin_upvotes || 0);
 
     return jsonResponse({
       token,
@@ -2213,8 +2213,8 @@ async function loginEndpoint(request: Request, env: Env) {
       role: (user as any).role || 'student'
     })).toString('base64');
 
-    // Calculate points
-    const points = (user as any).notes_uploaded * 10 + (user as any).total_likes * 4 + (user as any).total_admin_upvotes * 4.5;
+    // Calculate points (1 point per note upload, 1 point per like, 1 point per admin like)
+    const points = ((user as any).notes_uploaded || 0) + ((user as any).total_likes || 0) + ((user as any).total_admin_upvotes || 0);
 
     console.log('[LOGIN] Login successful for user:', (user as any).id);
 
@@ -2306,7 +2306,7 @@ async function meEndpoint(request: Request, env: Env) {
             warning_message,
             warning_first_viewed,
             warning_view_count,
-            (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 6) as points
+            (notes_uploaded + total_likes + total_admin_upvotes) as points
           FROM users WHERE id = ?
         `).bind(userId).first() as any;
       } catch (e) {
@@ -2330,7 +2330,7 @@ async function meEndpoint(request: Request, env: Env) {
             warning_message,
             warning_first_viewed,
             warning_view_count,
-            (notes_uploaded * 10 + total_likes * 4 + total_admin_upvotes * 6) as points
+            (notes_uploaded + total_likes + total_admin_upvotes) as points
           FROM users WHERE id = ?
         `).bind(userId).first() as any;
         if (userData) {
