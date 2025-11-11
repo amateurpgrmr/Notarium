@@ -1022,27 +1022,80 @@ async function getNotesBySubject(subjectId: string, request: Request, env: Env) 
 async function searchNotes(query: string, request: Request, env: Env) {
   const user = await getOrCreateUser(request, env);
 
-  // Search in title, description, and extracted_text, only published notes with visibility check
+  if (!query || query.trim().length === 0) {
+    return jsonResponse({ notes: [] });
+  }
+
+  // Smart search: Split query into words for better matching
+  const searchWords = query.toLowerCase().trim().split(/\s+/).filter((w: string) => w.length > 0);
+
+  // Build LIKE conditions for each word
+  const buildLikeConditions = (field: string) => {
+    return searchWords.map(() => `LOWER(${field}) LIKE ?`).join(' OR ');
+  };
+
+  // Create parameters for binding (each word with wildcards)
+  const wordParams = searchWords.map((word: string) => `%${word}%`);
+
+  // Smart search with relevance scoring
   const { results } = await env.DB.prepare(`
     SELECT
       n.*,
       u.display_name as author_name,
       u.photo_url as author_photo,
       u.class as author_class,
-      s.name as subject_name
+      s.name as subject_name,
+      u.email as author_email,
+      (
+        /* Title match - highest priority (10 points per word) */
+        CASE WHEN ${buildLikeConditions('n.title')} THEN ${searchWords.length * 10} ELSE 0 END +
+        /* Author name match - high priority (8 points per word) */
+        CASE WHEN ${buildLikeConditions('u.display_name')} THEN ${searchWords.length * 8} ELSE 0 END +
+        /* Tags match - medium-high priority (6 points per word) */
+        CASE WHEN ${buildLikeConditions('n.tags')} THEN ${searchWords.length * 6} ELSE 0 END +
+        /* Subject match - medium priority (5 points per word) */
+        CASE WHEN ${buildLikeConditions('s.name')} THEN ${searchWords.length * 5} ELSE 0 END +
+        /* Description match - medium priority (4 points per word) */
+        CASE WHEN ${buildLikeConditions('n.description')} THEN ${searchWords.length * 4} ELSE 0 END +
+        /* Content match - lower priority (2 points per word) */
+        CASE WHEN ${buildLikeConditions('n.extracted_text')} THEN ${searchWords.length * 2} ELSE 0 END
+      ) as relevance_score
     FROM notes n
     JOIN users u ON n.author_id = u.id
     JOIN subjects s ON n.subject_id = s.id
-    WHERE (n.title LIKE ? OR n.description LIKE ? OR n.extracted_text LIKE ?)
+    WHERE (
+        ${buildLikeConditions('n.title')}
+        OR ${buildLikeConditions('n.description')}
+        OR ${buildLikeConditions('n.extracted_text')}
+        OR ${buildLikeConditions('u.display_name')}
+        OR ${buildLikeConditions('n.tags')}
+        OR ${buildLikeConditions('s.name')}
+      )
       AND (n.status = 'published' OR n.status IS NULL)
       AND (
         n.visibility = 'everyone'
         OR n.visibility IS NULL
         OR (n.visibility = 'class' AND u.class = ?)
       )
-    ORDER BY n.created_at DESC
+    ORDER BY relevance_score DESC, n.created_at DESC
     LIMIT 50
-  `).bind(`%${query}%`, `%${query}%`, `%${query}%`, user.class).all();
+  `).bind(
+    ...wordParams, // title params (score)
+    ...wordParams, // author_name params (score)
+    ...wordParams, // tags params (score)
+    ...wordParams, // subject params (score)
+    ...wordParams, // description params (score)
+    ...wordParams, // extracted_text params (score)
+    ...wordParams, // WHERE title params
+    ...wordParams, // WHERE description params
+    ...wordParams, // WHERE extracted_text params
+    ...wordParams, // WHERE author_name params
+    ...wordParams, // WHERE tags params
+    ...wordParams, // WHERE subject params
+    user.class     // visibility check
+  ).all();
+
+  console.log('[SEARCH] Query:', query, 'Words:', searchWords, 'Results:', results.length);
 
   return jsonResponse({ notes: results });
 }
