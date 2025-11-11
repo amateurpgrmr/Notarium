@@ -2899,6 +2899,72 @@ export default {
         return await updateUserClass(request, env);
       }
 
+      // Emergency admin password fix endpoint
+      if (path === '/api/admin/emergency-password-fix' && request.method === 'POST') {
+        if (!env.DB) {
+          return jsonResponse({ error: 'Database not available' }, 503);
+        }
+        try {
+          // Check admin authentication
+          const auth = request.headers.get('Authorization');
+          const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
+
+          if (!token) {
+            return jsonResponse({ error: 'Unauthorized - Admin access required' }, 401);
+          }
+
+          // Decode token and verify admin role
+          let decoded;
+          try {
+            const decodedStr = Buffer.from(token, 'base64').toString();
+            decoded = JSON.parse(decodedStr);
+          } catch (tokenError) {
+            return jsonResponse({ error: 'Invalid token format' }, 401);
+          }
+
+          // Verify admin role
+          if (decoded.role !== 'admin') {
+            return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
+          }
+
+          const body = await request.json() as any;
+          const { email, newPassword } = body;
+
+          if (!email || !newPassword) {
+            return jsonResponse({ error: 'Email and new password are required' }, 400);
+          }
+
+          // Find user by email
+          const user = await env.DB.prepare(`
+            SELECT id, email, display_name FROM users WHERE email = ?
+          `).bind(email).first() as any;
+
+          if (!user) {
+            return jsonResponse({ error: 'User not found' }, 404);
+          }
+
+          // Update password directly (plain text to match login system)
+          await env.DB.prepare(`
+            UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?
+          `).bind(newPassword, user.id).run();
+
+          console.log('[EMERGENCY_PASSWORD_FIX] Admin', decoded.email, 'reset password for user:', email);
+
+          return jsonResponse({
+            success: true,
+            message: 'Password reset successfully',
+            user: {
+              id: user.id,
+              email: user.email,
+              display_name: user.display_name
+            }
+          });
+        } catch (error: any) {
+          console.error('[EMERGENCY_PASSWORD_FIX] Error:', error);
+          return jsonResponse({ error: error.message || 'Failed to reset password' }, 500);
+        }
+      }
+
       // Subject routes - use mock data as fallback
       if (path === '/api/subjects' && request.method === 'GET') {
         if (!env.DB) {
