@@ -176,20 +176,6 @@ export default function CameraCapture({
     });
   };
 
-  // AI-powered crop suggestions
-  const cropSuggestions = [
-    { name: 'Full Image', icon: '🖼️', crop: { x: 0, y: 0, width: 100, height: 100 } },
-    { name: 'Center', icon: '🎯', crop: { x: 15, y: 15, width: 70, height: 70 } },
-    { name: 'Top Half', icon: '⬆️', crop: { x: 5, y: 5, width: 90, height: 45 } },
-    { name: 'Bottom Half', icon: '⬇️', crop: { x: 5, y: 50, width: 90, height: 45 } },
-    { name: 'Left Half', icon: '⬅️', crop: { x: 5, y: 5, width: 45, height: 90 } },
-    { name: 'Right Half', icon: '➡️', crop: { x: 50, y: 5, width: 45, height: 90 } },
-    { name: 'Document Fit', icon: '📄', crop: { x: 8, y: 8, width: 84, height: 84 } }
-  ];
-
-  const applySuggestion = (suggestedCrop: { x: number; y: number; width: number; height: number }) => {
-    setCrop(suggestedCrop);
-  };
 
   const handleConfirm = async () => {
     if (preview) {
@@ -583,7 +569,7 @@ export default function CameraCapture({
                   top: `${crop.y}%`,
                   width: `${crop.width}%`,
                   height: `${crop.height}%`,
-                  border: '2px solid #22c55e',
+                  border: '2px dotted #9ca3af',
                   boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0)',
                   pointerEvents: 'none'
                 }}
@@ -595,7 +581,7 @@ export default function CameraCapture({
                   left: 0,
                   right: 0,
                   height: '1px',
-                  background: 'rgba(34, 197, 94, 0.3)'
+                  background: 'rgba(156, 163, 175, 0.3)'
                 }} />
                 <div style={{
                   position: 'absolute',
@@ -603,7 +589,7 @@ export default function CameraCapture({
                   left: 0,
                   right: 0,
                   height: '1px',
-                  background: 'rgba(34, 197, 94, 0.3)'
+                  background: 'rgba(156, 163, 175, 0.3)'
                 }} />
                 <div style={{
                   position: 'absolute',
@@ -611,7 +597,7 @@ export default function CameraCapture({
                   bottom: 0,
                   left: '33.33%',
                   width: '1px',
-                  background: 'rgba(34, 197, 94, 0.3)'
+                  background: 'rgba(156, 163, 175, 0.3)'
                 }} />
                 <div style={{
                   position: 'absolute',
@@ -619,7 +605,7 @@ export default function CameraCapture({
                   bottom: 0,
                   left: '66.66%',
                   width: '1px',
-                  background: 'rgba(34, 197, 94, 0.3)'
+                  background: 'rgba(156, 163, 175, 0.3)'
                 }} />
               </div>
 
@@ -641,7 +627,7 @@ export default function CameraCapture({
                       top: isTopLeft || isTopRight ? `${crop.y}%` : `${crop.y + crop.height}%`,
                       width: isMobile ? '32px' : '24px',
                       height: isMobile ? '32px' : '24px',
-                      background: '#22c55e',
+                      background: '#9ca3af',
                       border: '3px solid white',
                       borderRadius: '50%',
                       transform: 'translate(-50%, -50%)',
@@ -676,69 +662,7 @@ export default function CameraCapture({
               </div>
             </div>
 
-            {/* AI Crop Suggestions */}
-            <div style={{
-              marginTop: '12px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px'
-            }}>
-              <div style={{
-                fontSize: isMobile ? '11px' : '12px',
-                fontWeight: '600',
-                color: darkTheme.colors.accent,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                <i className="fas fa-magic"></i>
-                AI Crop Suggestions - Click to apply:
-              </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-                gap: '8px'
-              }}>
-                {cropSuggestions.map((suggestion, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => applySuggestion(suggestion.crop)}
-                    style={{
-                      padding: isMobile ? '8px 10px' : '10px 12px',
-                      background: 'rgba(139, 92, 246, 0.15)',
-                      border: '1px solid rgba(139, 92, 246, 0.3)',
-                      borderRadius: darkTheme.borderRadius.md,
-                      color: darkTheme.colors.accent,
-                      cursor: 'pointer',
-                      fontSize: isMobile ? '11px' : '12px',
-                      fontWeight: '600',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      flexDirection: isMobile ? 'column' : 'row'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = 'rgba(139, 92, 246, 0.3)';
-                      e.currentTarget.style.borderColor = darkTheme.colors.accent;
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
-                      e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
-                    <span style={{ fontSize: isMobile ? '14px' : '16px' }}>{suggestion.icon}</span>
-                    <span>{suggestion.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexDirection: isMobile ? 'column' : 'row' }}>
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexDirection: isMobile ? 'column' : 'row', marginTop: '16px' }}>
               <button
                 onClick={handleRetake}
                 style={{
