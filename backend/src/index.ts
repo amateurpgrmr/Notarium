@@ -136,7 +136,7 @@ async function initializeDatabase(env: Env) {
         author_class TEXT,
         status TEXT DEFAULT 'published',
         visibility TEXT DEFAULT 'everyone',
-        scheduled_publish_at DATETIME,
+        scheduled_publish_at TEXT,
         likes INTEGER DEFAULT 0,
         admin_upvotes INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -203,9 +203,10 @@ async function initializeDatabase(env: Env) {
       // Column already exists
     }
     try {
-      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN scheduled_publish_at DATETIME`).run();
+      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN scheduled_publish_at TEXT`).run();
+      console.log('[DB_MIGRATION] Added scheduled_publish_at column');
     } catch (e) {
-      // Column already exists
+      console.log('[DB_MIGRATION] scheduled_publish_at column exists or failed to add:', e);
     }
     try {
       await env.DB.prepare(`ALTER TABLE notes ADD COLUMN visibility TEXT DEFAULT 'everyone'`).run();
