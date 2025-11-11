@@ -8,6 +8,8 @@ interface Env {
   DB: D1Database;
   GEMINI_API_KEY?: string;
   JWT_SECRET?: string;
+  DEEPSEEK_API_KEY?: string;
+  GOOGLE_CLOUD_VISION_API_KEY?: string;
 }
 
 interface User {
@@ -3062,7 +3064,7 @@ Tags:`
           }
 
           const tagsText = data.choices[0].message.content.trim();
-          const tags = tagsText.split(',').map(t => t.trim()).filter(t => t && t.length > 0).slice(0, 5);
+          const tags = tagsText.split(',').map((t: string) => t.trim()).filter((t: string) => t && t.length > 0).slice(0, 5);
 
           return jsonResponse({ success: true, tags: tags.length > 0 ? tags : ['study', 'notes'] });
         } catch (error: any) {
