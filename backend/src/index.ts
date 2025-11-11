@@ -1799,18 +1799,34 @@ async function removeUser(userId: string, request: Request, env: Env) {
   }
 
   try {
+    console.log(`[DELETE USER] Starting deletion of user ${userId}`);
+
     // Delete user and all related data in the correct order to avoid foreign key constraints
-    // 1. Delete all notes authored by this user (this will cascade delete note_likes)
-    await env.DB.prepare('DELETE FROM notes WHERE author_id = ?').bind(userId).run();
 
-    // 2. Delete all admin upvotes given by this user (if they're an admin)
-    await env.DB.prepare('DELETE FROM admin_note_likes WHERE admin_id = ?').bind(userId).run();
+    // 1. Delete all likes given BY this user (on other people's notes)
+    const likesResult = await env.DB.prepare('DELETE FROM note_likes WHERE user_id = ?').bind(userId).run();
+    console.log(`[DELETE USER] Deleted ${likesResult.meta.changes} note_likes`);
 
-    // 3. The following will be auto-deleted via ON DELETE CASCADE:
-    //    - note_likes (user's likes)
-    //    - chat_sessions and their messages
+    // 2. Delete all admin upvotes given BY this user
+    const adminUpvotesResult = await env.DB.prepare('DELETE FROM admin_note_likes WHERE admin_id = ?').bind(userId).run();
+    console.log(`[DELETE USER] Deleted ${adminUpvotesResult.meta.changes} admin_note_likes`);
 
-    // 4. Finally, delete the user
+    // 3. Delete admin activity log entries for this user
+    const activityResult = await env.DB.prepare('DELETE FROM admin_activity_log WHERE admin_id = ?').bind(userId).run();
+    console.log(`[DELETE USER] Deleted ${activityResult.meta.changes} admin_activity_log entries`);
+
+    // 4. Delete all notes authored BY this user
+    // This will CASCADE delete:
+    //   - note_likes on these notes (via ON DELETE CASCADE on note_id)
+    //   - admin_note_likes on these notes (via ON DELETE CASCADE on note_id)
+    const notesResult = await env.DB.prepare('DELETE FROM notes WHERE author_id = ?').bind(userId).run();
+    console.log(`[DELETE USER] Deleted ${notesResult.meta.changes} notes`);
+
+    // 5. The following are auto-deleted via ON DELETE CASCADE:
+    //    - chat_sessions (user_id references users with CASCADE)
+    //    - chat_messages (session_id references chat_sessions with CASCADE)
+
+    // 6. Finally, delete the user
     await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
 
     console.log(`[DELETE USER] Successfully deleted user ${userId} and all related data`);
