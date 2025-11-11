@@ -45,6 +45,7 @@ export default function SubjectNotesPage({
   const [sortBy, setSortBy] = useState<'newest' | 'popular'>('newest');
   const [filterTag, setFilterTag] = useState<string>('all');
   const [allTags, setAllTags] = useState<string[]>([]);
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
 
   // Debug logging
   console.log('SubjectNotesPage - Current User:', currentUser);
@@ -362,6 +363,12 @@ export default function SubjectNotesPage({
             >
               {/* Image Section */}
               <div
+                onClick={(e) => {
+                  if (note.image && note.image.startsWith('data:')) {
+                    e.stopPropagation();
+                    setFullScreenImage(note.image);
+                  }
+                }}
                 style={{
                   height: 'clamp(140px, 30vw, 200px)',
                   background: note.image && note.image.startsWith('data:')
@@ -373,11 +380,45 @@ export default function SubjectNotesPage({
                   fontSize: note.image && note.image.startsWith('data:') ? '0' : 'clamp(48px, 10vw, 64px)',
                   color: darkTheme.colors.accent,
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  cursor: note.image && note.image.startsWith('data:') ? 'zoom-in' : 'pointer'
+                }}
+                onMouseOver={(e) => {
+                  if (note.image && note.image.startsWith('data:')) {
+                    e.currentTarget.style.opacity = '0.8';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (note.image && note.image.startsWith('data:')) {
+                    e.currentTarget.style.opacity = '1';
+                  }
                 }}
               >
                 {/* Show emoji only if no actual image */}
                 {note.image && !note.image.startsWith('data:') && note.image}
+                {/* Fullscreen hint */}
+                {note.image && note.image.startsWith('data:') && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    color: 'white',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    pointerEvents: 'none',
+                    opacity: 0,
+                    transition: 'opacity 0.3s'
+                  }}
+                  className="fullscreen-hint">
+                    <i className="fas fa-expand"></i>
+                  </div>
+                )}
                 <div
                   style={{
                     position: 'absolute',
@@ -624,6 +665,94 @@ export default function SubjectNotesPage({
           onLike={toggleLike}
           currentUser={currentUser}
         />
+      )}
+
+      {/* Fullscreen Image Overlay */}
+      {fullScreenImage && (
+        <div
+          onClick={() => setFullScreenImage(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.95)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            cursor: 'zoom-out'
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setFullScreenImage(null)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255,255,255,0.2)',
+              backdropFilter: 'blur(4px)',
+              border: 'none',
+              color: 'white',
+              fontSize: '32px',
+              width: '50px',
+              height: '50px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.3s',
+              zIndex: 2001
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            ×
+          </button>
+
+          {/* Full size image */}
+          <img
+            src={fullScreenImage}
+            alt="Full screen view"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              borderRadius: '8px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+            }}
+          />
+
+          {/* Help text */}
+          <div style={{
+            position: 'absolute',
+            bottom: '30px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '24px',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            pointerEvents: 'none'
+          }}>
+            <i className="fas fa-info-circle"></i>
+            Click anywhere to close
+          </div>
+        </div>
       )}
     </div>
   );

@@ -24,6 +24,7 @@ export default function NoteDetailModal({
   const [summary, setSummary] = useState<string | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -143,6 +144,7 @@ export default function NoteDetailModal({
         {/* Note Image Header */}
         {note.image && (
           <div
+            onClick={() => note.image.startsWith('data:') && setIsFullScreen(true)}
             style={{
               height: note.image.startsWith('data:') ? '400px' : '240px',
               background: note.image.startsWith('data:')
@@ -152,11 +154,44 @@ export default function NoteDetailModal({
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: note.image.startsWith('data:') ? '0' : '96px',
-              borderBottom: `1px solid ${darkTheme.colors.borderColor}`
+              borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
+              cursor: note.image.startsWith('data:') ? 'zoom-in' : 'default',
+              position: 'relative'
+            }}
+            onMouseOver={(e) => {
+              if (note.image.startsWith('data:')) {
+                e.currentTarget.style.opacity = '0.9';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (note.image.startsWith('data:')) {
+                e.currentTarget.style.opacity = '1';
+              }
             }}
           >
             {/* Show emoji only if no actual image */}
             {!note.image.startsWith('data:') && note.image}
+            {/* Fullscreen hint icon */}
+            {note.image.startsWith('data:') && (
+              <div style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'rgba(0,0,0,0.6)',
+                backdropFilter: 'blur(4px)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                color: 'white',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                pointerEvents: 'none'
+              }}>
+                <i className="fas fa-expand"></i>
+                <span style={{ fontSize: '12px' }}>Click to expand</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -466,6 +501,94 @@ export default function NoteDetailModal({
           </button>
         </div>
       </div>
+
+      {/* Fullscreen Image Overlay */}
+      {isFullScreen && note.image && note.image.startsWith('data:') && (
+        <div
+          onClick={() => setIsFullScreen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.95)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            cursor: 'zoom-out'
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setIsFullScreen(false)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255,255,255,0.2)',
+              backdropFilter: 'blur(4px)',
+              border: 'none',
+              color: 'white',
+              fontSize: '32px',
+              width: '50px',
+              height: '50px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.3s',
+              zIndex: 2001
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            ×
+          </button>
+
+          {/* Full size image */}
+          <img
+            src={note.image}
+            alt={note.title}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              borderRadius: '8px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+            }}
+          />
+
+          {/* Help text */}
+          <div style={{
+            position: 'absolute',
+            bottom: '30px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '24px',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            pointerEvents: 'none'
+          }}>
+            <i className="fas fa-info-circle"></i>
+            Click anywhere to close
+          </div>
+        </div>
+      )}
     </div>
   );
 }
