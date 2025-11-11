@@ -928,50 +928,61 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           )}
         </div>
 
-        {/* AI-Suggested Tags - shown only if no manual tags */}
-        {suggestedTags.length > 0 && !manualTags && (
+        {/* AI-Suggested Tags - always shown when available */}
+        {suggestedTags.length > 0 && (
           <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '11px' : '14px', fontWeight: '500', color: darkTheme.colors.textSecondary }}>
               <i className="fas fa-lightbulb" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
-              AI Suggestions (click to use):
+              AI Suggestions (click to add):
             </label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {suggestedTags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  onClick={() => {
-                    // Add tag to manual tags
-                    setManualTags(prev => {
-                      const currentTags = prev ? prev.split(',').map(t => t.trim()).filter(t => t) : [];
-                      if (!currentTags.includes(tag)) {
-                        return [...currentTags, tag].join(', ');
+              {suggestedTags.map((tag, idx) => {
+                const currentTags = manualTags ? manualTags.split(',').map(t => t.trim()).filter(t => t) : [];
+                const isSelected = currentTags.includes(tag);
+
+                return (
+                  <span
+                    key={idx}
+                    onClick={() => {
+                      // Add tag to manual tags
+                      setManualTags(prev => {
+                        const currentTags = prev ? prev.split(',').map(t => t.trim()).filter(t => t) : [];
+                        if (!currentTags.includes(tag)) {
+                          return [...currentTags, tag].join(', ');
+                        }
+                        return prev;
+                      });
+                    }}
+                    style={{
+                      background: isSelected ? `${darkTheme.colors.accent}30` : `${darkTheme.colors.accent}15`,
+                      border: isSelected ? `1px solid ${darkTheme.colors.accent}` : `1px dashed ${darkTheme.colors.accent}60`,
+                      color: darkTheme.colors.accent,
+                      padding: '4px 12px',
+                      borderRadius: '16px',
+                      fontSize: '11px',
+                      fontWeight: '500',
+                      cursor: isSelected ? 'default' : 'pointer',
+                      transition: 'all 0.2s',
+                      opacity: isSelected ? 0.6 : 1
+                    }}
+                    onMouseOver={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = `${darkTheme.colors.accent}30`;
+                        e.currentTarget.style.borderColor = darkTheme.colors.accent;
                       }
-                      return prev;
-                    });
-                  }}
-                  style={{
-                    background: `${darkTheme.colors.accent}15`,
-                    border: `1px dashed ${darkTheme.colors.accent}60`,
-                    color: darkTheme.colors.accent,
-                    padding: '4px 12px',
-                    borderRadius: '16px',
-                    fontSize: '11px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = `${darkTheme.colors.accent}30`;
-                    e.currentTarget.style.borderColor = darkTheme.colors.accent;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = `${darkTheme.colors.accent}15`;
-                    e.currentTarget.style.borderColor = `${darkTheme.colors.accent}60`;
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
+                    }}
+                    onMouseOut={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = `${darkTheme.colors.accent}15`;
+                        e.currentTarget.style.borderColor = `${darkTheme.colors.accent}60`;
+                      }
+                    }}
+                  >
+                    {isSelected && <i className="fas fa-check" style={{ marginRight: '4px' }}></i>}
+                    {tag}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
