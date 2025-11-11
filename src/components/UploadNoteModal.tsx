@@ -408,9 +408,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           </div>
         ) : (
           <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
-            {/* Add Another Page Button - Opens camera, available during OCR */}
+            {/* Add Another Page Button - Upload from device, available during OCR */}
             <button
-              onClick={() => setShowCamera(true)}
+              onClick={() => fileInputRef.current?.click()}
               style={{
                 width: '100%',
                 padding: isMobile ? '12px' : '14px',
@@ -434,8 +434,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 e.currentTarget.style.background = darkTheme.colors.accent;
               }}
             >
-              <i className="fas fa-camera"></i>
-              Add Another Page
+              <i className="fas fa-image"></i>
+              Upload Photo
             </button>
 
             <input
@@ -659,9 +659,9 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                 Delete
               </button>
 
-              {/* Add Page Button - Opens camera, works during OCR */}
+              {/* Add Page Button - Upload from device, works during OCR */}
               <button
-                onClick={() => setShowCamera(true)}
+                onClick={() => fileInputRef.current?.click()}
                 style={{
                   flex: 1,
                   padding: '6px 12px',
@@ -681,8 +681,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                   e.currentTarget.style.background = darkTheme.colors.accent;
                 }}
               >
-                <i className="fas fa-camera" style={{ marginRight: '6px' }}></i>
-                Add Page
+                <i className="fas fa-image" style={{ marginRight: '6px' }}></i>
+                Upload Photo
               </button>
             </div>
           </div>
