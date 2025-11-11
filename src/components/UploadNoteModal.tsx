@@ -51,24 +51,38 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   }, []);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        const newImage = reader.result;
-        setUploadImages(prev => {
-          const newImages = [...prev, newImage];
-          // Auto-process OCR if in scan mode
-          if (uploadMode === 'scan') {
-            setTimeout(() => processImagesOCR(newImages), 100);
+    const fileArray = Array.from(files);
+    const newImages: string[] = [];
+    let processedCount = 0;
+
+    fileArray.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          newImages.push(reader.result);
+          processedCount++;
+
+          // When all files are processed, update state
+          if (processedCount === fileArray.length) {
+            setUploadImages(prev => {
+              const allImages = [...prev, ...newImages];
+              // Auto-process OCR if in scan mode
+              if (uploadMode === 'scan') {
+                setTimeout(() => processImagesOCR(allImages), 100);
+              }
+              return allImages;
+            });
           }
-          return newImages;
-        });
-      }
-    };
-    reader.readAsDataURL(file);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset the file input so the same files can be selected again
+    event.target.value = '';
   };
 
   const handlePhotoCapture = async (photoBase64: string) => {
@@ -402,6 +416,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               onChange={handleImageUpload}
               style={{ display: 'none' }}
             />
@@ -442,6 +457,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
               ref={fileInputRef}
               type="file"
               accept="image/*"
+              multiple
               onChange={handleImageUpload}
               style={{ display: 'none' }}
             />
