@@ -757,9 +757,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         {/* Subject Picker - only show if no preselected subject */}
         {!preselectedSubject && (
           <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
-              <i className="fas fa-book" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
-              Select Subject
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500', color: darkTheme.colors.textPrimary }}>
+              Subject
             </label>
             <div style={{
               display: 'grid',
@@ -772,35 +771,31 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
                   type="button"
                   onClick={() => setSelectedSubject(subject.id)}
                   style={{
-                    padding: isMobile ? '12px 8px' : '14px 12px',
-                    background: selectedSubject === subject.id ? darkTheme.colors.accent : darkTheme.colors.bgSecondary,
-                    color: selectedSubject === subject.id ? 'white' : darkTheme.colors.textPrimary,
-                    border: `1px solid ${selectedSubject === subject.id ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
-                    borderRadius: '12px',
+                    padding: isMobile ? '10px' : '12px',
+                    background: selectedSubject === subject.id
+                      ? `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`
+                      : darkTheme.colors.bgSecondary,
+                    color: selectedSubject === subject.id ? '#fff' : darkTheme.colors.textSecondary,
+                    border: 'none',
+                    borderRadius: darkTheme.borderRadius.md,
                     cursor: 'pointer',
-                    fontSize: isMobile ? '12px' : '13px',
-                    fontWeight: '500',
+                    fontSize: isMobile ? '13px' : '14px',
+                    fontWeight: '600',
                     transition: 'all 0.2s',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '6px'
+                    boxShadow: selectedSubject === subject.id ? darkTheme.shadows.default : 'none'
                   }}
                   onMouseOver={(e) => {
                     if (selectedSubject !== subject.id) {
-                      e.currentTarget.style.background = darkTheme.colors.bgTertiary;
-                      e.currentTarget.style.borderColor = darkTheme.colors.accent;
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                     }
                   }}
                   onMouseOut={(e) => {
                     if (selectedSubject !== subject.id) {
                       e.currentTarget.style.background = darkTheme.colors.bgSecondary;
-                      e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
                     }
                   }}
                 >
-                  <span style={{ fontSize: isMobile ? '20px' : '24px' }}>{subject.icon}</span>
-                  <span style={{ textAlign: 'center', lineHeight: '1.2' }}>{subject.name}</span>
+                  {subject.name}
                 </button>
               ))}
             </div>
