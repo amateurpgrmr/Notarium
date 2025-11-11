@@ -58,6 +58,16 @@
   font-size: 0.875rem;
 }
 
+.login-success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid #10b981;
+  color: #6ee7b7;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;

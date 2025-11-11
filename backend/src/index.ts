@@ -2785,6 +2785,122 @@ export default {
         }
       }
 
+      // Admin password reset (no auth required, uses secret code on frontend)
+      if (path === '/api/auth/admin-reset-password' && request.method === 'POST') {
+        if (!env.DB) {
+          return jsonResponse({ error: 'Database not available' }, 503);
+        }
+        try {
+          const body = await request.json() as any;
+          const { email, newPassword } = body;
+
+          if (!email || !newPassword) {
+            return jsonResponse({ error: 'Email and new password are required' }, 400);
+          }
+
+          // Find user by email
+          const user = await env.DB.prepare(`
+            SELECT id, email FROM users WHERE email = ?
+          `).bind(email).first() as any;
+
+          if (!user) {
+            return jsonResponse({ error: 'User not found' }, 404);
+          }
+
+          // Hash password using built-in crypto
+          const encoder = new TextEncoder();
+          const data = encoder.encode(newPassword);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          const hashedPassword = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+          // Update password in database
+          await env.DB.prepare(`
+            UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?
+          `).bind(hashedPassword, user.id).run();
+
+          console.log('[PASSWORD_RESET] Password reset successfully for user:', email);
+          return jsonResponse({ success: true, message: 'Password reset successfully' });
+        } catch (error: any) {
+          console.error('[PASSWORD_RESET] Error:', error);
+          return jsonResponse({ error: error.message || 'Failed to reset password' }, 500);
+        }
+      }
+
+      // Change password (for logged-in users)
+      if (path === '/api/auth/change-password' && request.method === 'POST') {
+        if (!env.DB) {
+          return jsonResponse({ error: 'Database not available' }, 503);
+        }
+        try {
+          const auth = request.headers.get('Authorization');
+          const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
+
+          if (!token) {
+            return jsonResponse({ error: 'Unauthorized - No token provided' }, 401);
+          }
+
+          // Decode token
+          let decoded;
+          try {
+            const decodedStr = Buffer.from(token, 'base64').toString();
+            decoded = JSON.parse(decodedStr);
+          } catch (tokenError) {
+            return jsonResponse({ error: 'Invalid token format' }, 401);
+          }
+
+          if (!decoded.id) {
+            return jsonResponse({ error: 'Invalid token - missing user ID' }, 401);
+          }
+
+          const userId = decoded.id;
+
+          const body = await request.json() as any;
+          const { currentPassword, newPassword } = body;
+
+          if (!currentPassword || !newPassword) {
+            return jsonResponse({ error: 'Current password and new password are required' }, 400);
+          }
+
+          // Get user from database
+          const user = await env.DB.prepare(`
+            SELECT id, email, password_hash FROM users WHERE id = ?
+          `).bind(userId).first() as any;
+
+          if (!user) {
+            return jsonResponse({ error: 'User not found' }, 404);
+          }
+
+          // Verify current password
+          const encoder = new TextEncoder();
+          const data = encoder.encode(currentPassword);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          const currentPasswordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+          if (currentPasswordHash !== user.password_hash) {
+            return jsonResponse({ error: 'Current password is incorrect' }, 401);
+          }
+
+          // Hash new password
+          const newData = encoder.encode(newPassword);
+          const newHashBuffer = await crypto.subtle.digest('SHA-256', newData);
+          const newHashArray = Array.from(new Uint8Array(newHashBuffer));
+          const newPasswordHash = newHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+          // Update password in database
+          await env.DB.prepare(`
+            UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?
+          `).bind(newPasswordHash, userId).run();
+
+          console.log('[PASSWORD_CHANGE] Password changed successfully for user ID:', userId);
+          return jsonResponse({ success: true, message: 'Password changed successfully' });
+        } catch (error: any) {
+          console.error('[PASSWORD_CHANGE] Error:', error);
+          return jsonResponse({ error: error.message || 'Failed to change password' }, 500);
+        }
+      }
+
       // User routes (only if database available)
       if (env.DB && path === '/api/user/update' && request.method === 'POST') {
         return await updateUserInfo(request, env);

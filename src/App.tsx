@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import AdminLogin from './pages/AdminLogin'
 import Signup from './pages/Signup'
 import Suspended from './pages/Suspended'
+import PasswordResetPage from './pages/PasswordResetPage'
 import SubjectsPage from './pages/SubjectsPage'
 import SubjectNotesPage from './pages/SubjectNotesPage'
 import LeaderboardPage from './pages/LeaderboardPage'
@@ -1030,6 +1031,7 @@ function App() {
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/suspended" element={<Suspended />} />
+          <Route path="/pwd-reset" element={<PasswordResetPage />} />
           <Route
             path="/my-notes"
             element={

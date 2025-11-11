@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import '../styles/login.css';
 
 export default function Login() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
 
   // Auto-redirect if already authenticated or auto-login if token exists
   useEffect(() => {
@@ -34,6 +37,20 @@ export default function Login() {
     if (savedEmail) setEmail(savedEmail);
     if (savedPassword) setPassword(savedPassword);
   }, []);
+
+  // Handle autofill from password reset
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.email) {
+      setEmail(state.email);
+    }
+    if (state?.password) {
+      setPassword(state.password);
+    }
+    if (state?.message) {
+      setSuccessMessage(state.message);
+    }
+  }, [location.state]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +98,7 @@ export default function Login() {
           <p className="login-subtitle">Sign in to access your study materials</p>
 
           {error && <div className="login-error">{error}</div>}
+          {successMessage && <div className="login-success">{successMessage}</div>}
 
           <form onSubmit={handleEmailLogin} className="login-form">
             <div className="form-group">

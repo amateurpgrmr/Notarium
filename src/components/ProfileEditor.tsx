@@ -22,6 +22,15 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(user?.photo_url || null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
 
+  // Password change states
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,6 +121,46 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
       setError(err.message || 'Failed to update profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('Please fill in all password fields');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    try {
+      setPasswordLoading(true);
+      await api.request('/api/auth/change-password', {
+        method: 'POST',
+        body: {
+          currentPassword,
+          newPassword
+        }
+      });
+
+      setPasswordSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+
+      setTimeout(() => {
+        setPasswordSuccess(false);
+        setShowPasswordChange(false);
+      }, 2000);
+    } catch (err: any) {
+      setPasswordError(err.message || 'Failed to change password');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -507,6 +556,176 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                 </div>
               </div>
             )}
+
+            {/* Password Change Section */}
+            <div style={{
+              marginTop: '24px',
+              padding: '16px',
+              background: darkTheme.colors.bgTertiary,
+              borderRadius: darkTheme.borderRadius.md,
+              border: `1px solid ${darkTheme.colors.borderColor}`
+            }}>
+              <button
+                type="button"
+                onClick={() => setShowPasswordChange(!showPasswordChange)}
+                style={{
+                  width: '100%',
+                  padding: isMobile ? '10px' : '12px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: darkTheme.colors.textPrimary,
+                  fontSize: isMobile ? '13px' : '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  transition: darkTheme.transitions.default
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = darkTheme.colors.accent}
+                onMouseOut={(e) => e.currentTarget.style.color = darkTheme.colors.textPrimary}
+              >
+                <span>
+                  <i className="fas fa-lock" style={{ marginRight: '8px' }}></i>
+                  Change Password
+                </span>
+                <i className={`fas fa-chevron-${showPasswordChange ? 'up' : 'down'}`}></i>
+              </button>
+
+              {showPasswordChange && (
+                <div style={{ marginTop: '16px' }}>
+                  {/* Current Password */}
+                  <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
+                    <label style={{
+                      display: 'block',
+                      marginBottom: '6px',
+                      fontSize: isMobile ? '12px' : '13px',
+                      fontWeight: '500',
+                      color: darkTheme.colors.textSecondary
+                    }}>
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter current password"
+                      style={{
+                        ...inputStyle,
+                        fontSize: isMobile ? '13px' : '14px',
+                        padding: isMobile ? '10px 12px' : '12px 14px'
+                      } as React.CSSProperties}
+                    />
+                  </div>
+
+                  {/* New Password */}
+                  <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
+                    <label style={{
+                      display: 'block',
+                      marginBottom: '6px',
+                      fontSize: isMobile ? '12px' : '13px',
+                      fontWeight: '500',
+                      color: darkTheme.colors.textSecondary
+                    }}>
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      style={{
+                        ...inputStyle,
+                        fontSize: isMobile ? '13px' : '14px',
+                        padding: isMobile ? '10px 12px' : '12px 14px'
+                      } as React.CSSProperties}
+                    />
+                  </div>
+
+                  {/* Confirm New Password */}
+                  <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
+                    <label style={{
+                      display: 'block',
+                      marginBottom: '6px',
+                      fontSize: isMobile ? '12px' : '13px',
+                      fontWeight: '500',
+                      color: darkTheme.colors.textSecondary
+                    }}>
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      style={{
+                        ...inputStyle,
+                        fontSize: isMobile ? '13px' : '14px',
+                        padding: isMobile ? '10px 12px' : '12px 14px'
+                      } as React.CSSProperties}
+                    />
+                  </div>
+
+                  {/* Password Error/Success Messages */}
+                  {passwordError && (
+                    <div style={{
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.5)',
+                      color: '#fca5a5',
+                      padding: isMobile ? '8px 12px' : '10px 14px',
+                      borderRadius: darkTheme.borderRadius.md,
+                      fontSize: isMobile ? '12px' : '13px',
+                      marginBottom: '12px'
+                    }}>
+                      <i className="fas fa-exclamation-circle" style={{ marginRight: '6px' }}></i>
+                      {passwordError}
+                    </div>
+                  )}
+
+                  {passwordSuccess && (
+                    <div style={{
+                      background: 'rgba(34, 197, 94, 0.1)',
+                      border: '1px solid rgba(34, 197, 94, 0.5)',
+                      color: '#86efac',
+                      padding: isMobile ? '8px 12px' : '10px 14px',
+                      borderRadius: darkTheme.borderRadius.md,
+                      fontSize: isMobile ? '12px' : '13px',
+                      marginBottom: '12px'
+                    }}>
+                      <i className="fas fa-check-circle" style={{ marginRight: '6px' }}></i>
+                      Password changed successfully!
+                    </div>
+                  )}
+
+                  {/* Change Password Button */}
+                  <button
+                    onClick={handlePasswordChange}
+                    disabled={passwordLoading}
+                    style={{
+                      width: '100%',
+                      padding: isMobile ? '10px' : '12px',
+                      background: passwordLoading ? darkTheme.colors.accent + '80' : darkTheme.colors.accent,
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: darkTheme.borderRadius.md,
+                      fontSize: isMobile ? '13px' : '14px',
+                      fontWeight: '600',
+                      cursor: passwordLoading ? 'not-allowed' : 'pointer',
+                      transition: darkTheme.transitions.default,
+                      opacity: passwordLoading ? 0.6 : 1
+                    }}
+                    onMouseOver={(e) => {
+                      if (!passwordLoading) e.currentTarget.style.background = darkTheme.colors.accentHover;
+                    }}
+                    onMouseOut={(e) => {
+                      if (!passwordLoading) e.currentTarget.style.background = darkTheme.colors.accent;
+                    }}
+                  >
+                    {passwordLoading ? 'Changing...' : 'Change Password'}
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Error/Success Messages */}
             {error && (
