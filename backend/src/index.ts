@@ -1798,10 +1798,30 @@ async function removeUser(userId: string, request: Request, env: Env) {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
   }
 
-  // Delete user and all related data
-  await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+  try {
+    // Delete user and all related data in the correct order to avoid foreign key constraints
+    // 1. Delete all notes authored by this user (this will cascade delete note_likes)
+    await env.DB.prepare('DELETE FROM notes WHERE author_id = ?').bind(userId).run();
 
-  return jsonResponse({ success: true });
+    // 2. Delete all admin upvotes given by this user (if they're an admin)
+    await env.DB.prepare('DELETE FROM admin_note_likes WHERE admin_id = ?').bind(userId).run();
+
+    // 3. The following will be auto-deleted via ON DELETE CASCADE:
+    //    - note_likes (user's likes)
+    //    - chat_sessions and their messages
+
+    // 4. Finally, delete the user
+    await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+
+    console.log(`[DELETE USER] Successfully deleted user ${userId} and all related data`);
+    return jsonResponse({ success: true });
+  } catch (error: any) {
+    console.error('[DELETE USER] Error:', error);
+    return jsonResponse({
+      error: 'Failed to delete user: ' + error.message,
+      details: error.toString()
+    }, 500);
+  }
 }
 
 // Unsuspend user (admin only)
