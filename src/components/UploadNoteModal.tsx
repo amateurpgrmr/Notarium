@@ -39,6 +39,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
   const [saveAsDraft, setSaveAsDraft] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [visibility, setVisibility] = useState<'everyone' | 'class'>('everyone');
+  const [selectedSubject, setSelectedSubject] = useState<number | undefined>(preselectedSubject);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Track window resize for responsive design
@@ -197,8 +198,8 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       return;
     }
 
-    if (!preselectedSubject) {
-      alert('Subject not found. Please select a subject before uploading.');
+    if (!selectedSubject) {
+      alert('Please select a subject before uploading.');
       return;
     }
 
@@ -228,7 +229,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       const noteData = {
         title: noteTitle,
         description: quickSummary || 'No description available',
-        subject_id: preselectedSubject, // REQUIRED - must be provided
+        subject_id: selectedSubject, // REQUIRED - must be provided
         extracted_text: extractedText || 'No extracted text',
         image_path: uploadImages[0], // Use first image as primary
         quick_summary: quickSummary,
@@ -285,7 +286,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     generateAISuggestions();
   }, [noteTitle, extractedText]);
 
-  const canSubmit = noteTitle && uploadImages.length > 0 && !isProcessingOCR && !isSubmitting;
+  const canSubmit = noteTitle && uploadImages.length > 0 && selectedSubject && !isProcessingOCR && !isSubmitting;
 
   return (
     <div
@@ -753,6 +754,59 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
         )}
 
         {/* Form Fields */}
+        {/* Subject Picker - only show if no preselected subject */}
+        {!preselectedSubject && (
+          <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
+              <i className="fas fa-book" style={{ color: darkTheme.colors.accent, marginRight: '8px' }}></i>
+              Select Subject
+            </label>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+              gap: '8px'
+            }}>
+              {subjects.map((subject) => (
+                <button
+                  key={subject.id}
+                  type="button"
+                  onClick={() => setSelectedSubject(subject.id)}
+                  style={{
+                    padding: isMobile ? '12px 8px' : '14px 12px',
+                    background: selectedSubject === subject.id ? darkTheme.colors.accent : darkTheme.colors.bgSecondary,
+                    color: selectedSubject === subject.id ? 'white' : darkTheme.colors.textPrimary,
+                    border: `1px solid ${selectedSubject === subject.id ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    fontSize: isMobile ? '12px' : '13px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  onMouseOver={(e) => {
+                    if (selectedSubject !== subject.id) {
+                      e.currentTarget.style.background = darkTheme.colors.bgTertiary;
+                      e.currentTarget.style.borderColor = darkTheme.colors.accent;
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (selectedSubject !== subject.id) {
+                      e.currentTarget.style.background = darkTheme.colors.bgSecondary;
+                      e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
+                    }
+                  }}
+                >
+                  <span style={{ fontSize: isMobile ? '20px' : '24px' }}>{subject.icon}</span>
+                  <span style={{ textAlign: 'center', lineHeight: '1.2' }}>{subject.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div style={{ marginBottom: isMobile ? '8px' : '16px' }}>
           <label style={{ display: 'block', marginBottom: '6px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500' }}>
             Note Title
