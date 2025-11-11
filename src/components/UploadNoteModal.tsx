@@ -245,6 +245,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
     setIsSubmitting(true);
     try {
+      const IMAGES_PER_NOTE = 5; // Max 5 images per note to stay under size limit
+      const totalImages = uploadImages.length;
+      const numberOfNotes = Math.ceil(totalImages / IMAGES_PER_NOTE);
+
       // Use extracted text for summary if not already generated
       const contentForSummary = extractedText;
       let quickSummary = generatedSummary;
@@ -266,28 +270,45 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
       const manualTagList = manualTags.split(',').map(t => t.trim()).filter(t => t);
       const finalTags = manualTagList.length > 0 ? manualTagList : autoTags;
 
-      const noteData = {
-        title: noteTitle,
-        description: quickSummary || 'No description available',
-        subject_id: selectedSubject, // REQUIRED - must be provided
-        extracted_text: extractedText || 'No extracted text',
-        image_path: uploadImages[0], // Use first image as primary
-        quick_summary: quickSummary,
-        tags: finalTags,
-        status: saveAsDraft ? 'draft' : 'published',
-        scheduled_publish_at: saveAsDraft && scheduledDate ? scheduledDate : null,
-        visibility: visibility
-      };
+      // Split images into chunks and create multiple notes if needed
+      const createdNotes = [];
+      for (let i = 0; i < numberOfNotes; i++) {
+        const startIdx = i * IMAGES_PER_NOTE;
+        const endIdx = Math.min(startIdx + IMAGES_PER_NOTE, totalImages);
+        const imageChunk = uploadImages.slice(startIdx, endIdx);
 
-      const response = await api.request('/api/notes', {
-        method: 'POST',
-        body: noteData
-      });
+        // Create title with part number if multiple notes
+        const partTitle = numberOfNotes > 1 ? `${noteTitle} (${i + 1})` : noteTitle;
 
-      if (response.note) {
-        const message = saveAsDraft
-          ? (scheduledDate ? `Note saved as draft and scheduled for ${new Date(scheduledDate).toLocaleString()}!` : 'Note saved as draft!')
-          : 'Note uploaded successfully!';
+        const noteData = {
+          title: partTitle,
+          description: quickSummary || 'No description available',
+          subject_id: selectedSubject,
+          extracted_text: extractedText || 'No extracted text',
+          image_path: imageChunk[0], // Use first image of chunk as primary
+          quick_summary: quickSummary,
+          tags: finalTags,
+          status: saveAsDraft ? 'draft' : 'published',
+          scheduled_publish_at: saveAsDraft && scheduledDate ? scheduledDate : null,
+          visibility: visibility
+        };
+
+        const response = await api.request('/api/notes', {
+          method: 'POST',
+          body: noteData
+        });
+
+        if (response.note) {
+          createdNotes.push(response.note);
+        }
+      }
+
+      if (createdNotes.length > 0) {
+        const message = numberOfNotes > 1
+          ? `Successfully created ${numberOfNotes} notes! (Split due to ${totalImages} images)`
+          : saveAsDraft
+            ? (scheduledDate ? `Note saved as draft and scheduled for ${new Date(scheduledDate).toLocaleString()}!` : 'Note saved as draft!')
+            : 'Note uploaded successfully!';
         alert(message);
         onSuccess?.();
         onClose();
