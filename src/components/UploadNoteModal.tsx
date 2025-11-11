@@ -51,6 +51,42 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Compress image to reduce database size (D1 has 1MB row limit)
+  const compressImage = (base64Image: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set max dimensions (reduce if still too large)
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1600;
+
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+          width = width * ratio;
+          height = height * ratio;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Use JPEG with 0.7 quality for better compression
+        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(compressed);
+      };
+      img.src = base64Image;
+    });
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -61,9 +97,11 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
     fileArray.forEach((file) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         if (typeof reader.result === 'string') {
-          newImages.push(reader.result);
+          // Compress image before adding
+          const compressed = await compressImage(reader.result);
+          newImages.push(compressed);
           processedCount++;
 
           // When all files are processed, update state
@@ -88,8 +126,10 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
 
   const handlePhotoCapture = async (photoBase64: string) => {
     setShowCamera(false);
+    // Compress camera photo before adding
+    const compressed = await compressImage(photoBase64);
     setUploadImages(prev => {
-      const newImages = [...prev, photoBase64];
+      const newImages = [...prev, compressed];
       // Auto-process OCR if in scan mode
       if (uploadMode === 'scan') {
         setTimeout(() => processImagesOCR(newImages), 100);

@@ -1055,6 +1055,18 @@ async function createNote(request: Request, env: Env) {
 
     console.log('[CREATE NOTE] User:', user.id, 'Subject:', body.subject_id);
 
+    // Check total data size (D1 has 1MB row limit)
+    const dataSize = JSON.stringify(body).length;
+    const MAX_SIZE = 900000; // 900KB to leave some buffer
+    if (dataSize > MAX_SIZE) {
+      console.error('[CREATE NOTE] Data too large:', dataSize, 'bytes');
+      return jsonResponse({
+        error: 'Note data is too large. Please use fewer or smaller images.',
+        size: dataSize,
+        maxSize: MAX_SIZE
+      }, 413);
+    }
+
     // Validate required fields
     if (!body.subject_id) {
       console.error('[CREATE NOTE] Missing subject_id');
