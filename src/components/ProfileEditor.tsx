@@ -176,10 +176,10 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
       <div
         style={{
           ...modalContentStyle,
-          maxWidth: isMobile ? '95%' : '400px',
-          maxHeight: isMobile ? '85vh' : 'auto',
-          padding: isMobile ? '16px' : '24px',
-          overflowY: isMobile ? 'auto' : 'visible'
+          maxWidth: isMobile ? '95%' : '500px',
+          maxHeight: isMobile ? '85vh' : '90vh',
+          padding: isMobile ? '16px' : '32px',
+          overflowY: 'auto'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -215,20 +215,22 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
           </button>
         </div>
 
-        {/* Main Content - Responsive Layout */}
+        {/* Main Content - Vertical Layout for All Screens */}
         <div style={{
           display: 'flex',
-          gap: '32px',
-          alignItems: 'flex-start',
-          flexDirection: window.innerWidth < 768 ? 'column' : 'row'
+          gap: '24px',
+          alignItems: 'center',
+          flexDirection: 'column',
+          width: '100%'
         }}>
-          {/* Left Column - Profile Picture and Diamonds */}
+          {/* Profile Picture and Stats Section */}
           <div style={{
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: isMobile ? 'column' : 'row',
             alignItems: 'center',
             gap: '20px',
-            minWidth: window.innerWidth < 768 ? 'auto' : '140px'
+            width: '100%',
+            justifyContent: 'center'
           }}>
             {/* Profile Picture with Pen Icon Overlay */}
             <div style={{ cursor: 'pointer', position: 'relative', display: 'block' }}>
@@ -385,21 +387,21 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               style={{ display: 'none' }}
             />
 
-            {/* Diamonds Display - Landscape */}
+            {/* Notes Count Display */}
             <div style={{
               background: 'linear-gradient(135deg, #f39c12, #e74c3c, #9b59b6)',
-              borderRadius: '12px',
-              padding: '12px 16px',
+              borderRadius: '16px',
+              padding: isMobile ? '12px 20px' : '16px 28px',
               color: 'white',
-              width: '100%',
               boxShadow: '0 8px 24px rgba(243, 156, 18, 0.3)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-start',
-              gap: '12px'
+              justifyContent: 'center',
+              gap: '12px',
+              minWidth: isMobile ? '140px' : '180px'
             }}>
               <div style={{
-                fontSize: isMobile ? '28px' : '36px',
+                fontSize: isMobile ? '28px' : '40px',
                 flexShrink: 0,
                 lineHeight: 1
               }}>
@@ -408,35 +410,33 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
-                flex: 1
+                justifyContent: 'center'
               }}>
                 <div style={{
-                  fontSize: isMobile ? '18px' : '28px',
+                  fontSize: isMobile ? '24px' : '32px',
                   fontWeight: 'bold',
                   lineHeight: 1.1
                 }}>
                   {user?.notes_count || 0}
                 </div>
                 <div style={{
-                  fontSize: isMobile ? '10px' : '12px',
+                  fontSize: isMobile ? '11px' : '13px',
                   opacity: 0.9,
                   fontWeight: '500',
-                  lineHeight: 1
+                  lineHeight: 1.2
                 }}>
-                  Notes Uploaded
+                  Notes
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Form Fields */}
+          {/* Form Fields Section */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
-            flex: 1,
-            width: window.innerWidth < 768 ? '100%' : 'auto'
+            width: '100%'
           }}>
             {/* Username */}
             <div>
@@ -559,38 +559,39 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               </div>
             )}
 
-            {/* Theme Selection Section */}
+            {/* Theme Selection Section - Expanded Vertically */}
             <div style={{
               marginTop: '24px',
-              padding: '16px',
+              padding: isMobile ? '16px' : '20px',
               background: darkTheme.colors.bgTertiary,
               borderRadius: darkTheme.borderRadius.md,
               border: `1px solid ${darkTheme.colors.borderColor}`
             }}>
               <div style={{
-                marginBottom: '16px',
+                marginBottom: '20px',
                 color: darkTheme.colors.textPrimary,
-                fontSize: '14px',
+                fontSize: isMobile ? '14px' : '16px',
                 fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '10px',
+                justifyContent: 'center'
               }}>
                 <i className="fas fa-palette"></i>
                 Choose Your Theme
               </div>
 
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(3, 1fr)',
-                gap: '12px'
+                display: 'flex',
+                flexDirection: 'column',
+                gap: isMobile ? '12px' : '16px'
               }}>
                 {Object.values(themes).map((theme) => (
                   <div
                     key={theme.name}
                     onClick={() => changeTheme(theme.name)}
                     style={{
-                      padding: '16px',
+                      padding: isMobile ? '16px' : '20px',
                       borderRadius: darkTheme.borderRadius.md,
                       cursor: 'pointer',
                       border: `2px solid ${
@@ -603,70 +604,87 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                         : darkTheme.colors.bgSecondary,
                       transition: darkTheme.transitions.default,
                       position: 'relative' as const,
-                      overflow: 'hidden'
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: isMobile ? '12px' : '16px'
                     }}
                     onMouseOver={(e) => {
                       if (currentTheme.name !== theme.name) {
                         e.currentTarget.style.borderColor = theme.colors.accent;
-                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.transform = 'translateX(4px)';
                       }
                     }}
                     onMouseOut={(e) => {
                       if (currentTheme.name !== theme.name) {
                         e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
-                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.transform = 'translateX(0)';
                       }
                     }}
                   >
-                    {/* Theme Preview */}
+                    {/* Theme Preview - Left Side */}
                     <div style={{
-                      height: '60px',
+                      width: isMobile ? '80px' : '120px',
+                      height: isMobile ? '80px' : '100px',
                       borderRadius: darkTheme.borderRadius.sm,
-                      marginBottom: '12px',
                       background: theme.background?.image
                         ? `linear-gradient(${theme.background.overlay || 'rgba(0,0,0,0.3)'}, ${theme.background.overlay || 'rgba(0,0,0,0.3)'}), url(${theme.background.image}) center/cover`
                         : theme.background?.gradient || theme.colors.bgPrimary,
-                      border: `1px solid ${theme.colors.borderColor}`,
+                      border: `2px solid ${theme.colors.borderColor}`,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: darkTheme.shadows.default
                     }}>
                       <div style={{
-                        width: '30px',
-                        height: '30px',
+                        width: isMobile ? '32px' : '40px',
+                        height: isMobile ? '32px' : '40px',
                         borderRadius: '50%',
                         background: theme.colors.accent,
-                        boxShadow: `0 0 20px ${theme.colors.accent}50`
+                        boxShadow: `0 0 24px ${theme.colors.accent}70`
                       }} />
                     </div>
 
-                    {/* Theme Name */}
+                    {/* Theme Details - Right Side */}
                     <div style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: darkTheme.colors.textPrimary,
-                      marginBottom: '4px',
-                      textAlign: 'center'
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px'
                     }}>
-                      {theme.displayName}
+                      <div style={{
+                        fontSize: isMobile ? '16px' : '18px',
+                        fontWeight: '700',
+                        color: darkTheme.colors.textPrimary
+                      }}>
+                        {theme.displayName}
+                      </div>
+                      <div style={{
+                        fontSize: isMobile ? '12px' : '13px',
+                        color: darkTheme.colors.textSecondary,
+                        lineHeight: '1.4'
+                      }}>
+                        {theme.name === 'default' && 'Classic dark theme with green accents'}
+                        {theme.name === 'nature' && 'Natural forest-inspired background'}
+                        {theme.name === 'pink' && 'Modern purple-pink gradient theme'}
+                      </div>
                     </div>
 
                     {/* Selected Indicator */}
                     {currentTheme.name === theme.name && (
                       <div style={{
-                        position: 'absolute',
-                        top: '8px',
-                        right: '8px',
                         background: theme.colors.accent,
                         color: 'white',
                         borderRadius: '50%',
-                        width: '24px',
-                        height: '24px',
+                        width: isMobile ? '28px' : '32px',
+                        height: isMobile ? '28px' : '32px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '12px',
-                        boxShadow: `0 2px 8px ${theme.colors.accent}80`
+                        fontSize: isMobile ? '14px' : '16px',
+                        boxShadow: `0 2px 12px ${theme.colors.accent}80`,
+                        flexShrink: 0
                       }}>
                         <i className="fas fa-check"></i>
                       </div>
