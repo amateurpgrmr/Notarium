@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import api from '../lib/api';
 import { useAuth } from '../App';
-import { darkTheme, modalOverlayStyle, modalContentStyle, inputStyle, buttonPrimaryStyle, buttonSecondaryStyle, themes } from '../theme';
-import { useTheme } from '../hooks/useTheme';
+import { darkTheme, modalOverlayStyle, modalContentStyle, inputStyle, buttonPrimaryStyle, buttonSecondaryStyle } from '../theme';
 import CameraCapture from './CameraCapture';
 
 interface ProfileEditorProps {
@@ -11,7 +10,6 @@ interface ProfileEditorProps {
 
 export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   const { user, refreshUser } = useAuth();
-  const { currentTheme, changeTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -23,9 +21,6 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   const [description, setDescription] = useState(user?.description || '');
   const [photoPreview, setPhotoPreview] = useState<string | null>(user?.photo_url || null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
-
-  // Theme selection state (separate from saved theme)
-  const [selectedTheme, setSelectedTheme] = useState(currentTheme.name);
 
   // Password change states
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -121,19 +116,8 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
       await api.updateProfile(updateData);
       await refreshUser();
 
-      // Save theme change AFTER profile update
-      if (selectedTheme !== currentTheme.name) {
-        changeTheme(selectedTheme);
-        // Wait a moment for theme to apply
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
       setSuccess(true);
-      setTimeout(() => {
-        onClose();
-        // Force page refresh to apply all changes
-        window.location.reload();
-      }, 800);
+      setTimeout(() => onClose(), 1500);
     } catch (err: any) {
       setError(err.message || 'Failed to update profile');
     } finally {
@@ -574,174 +558,6 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               </div>
             )}
 
-            {/* Theme Selection Section - Expanded Vertically */}
-            <div style={{
-              marginTop: '24px',
-              padding: isMobile ? '16px' : '20px',
-              background: darkTheme.colors.bgTertiary,
-              borderRadius: darkTheme.borderRadius.md,
-              border: `1px solid ${darkTheme.colors.borderColor}`
-            }}>
-              <div style={{
-                marginBottom: '20px',
-                color: darkTheme.colors.textPrimary,
-                fontSize: isMobile ? '14px' : '16px',
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                justifyContent: 'center',
-                flexDirection: 'column'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <i className="fas fa-palette"></i>
-                  Choose Your Theme
-                </div>
-                {selectedTheme !== currentTheme.name && (
-                  <div style={{
-                    fontSize: '12px',
-                    color: darkTheme.colors.warning,
-                    fontWeight: '500',
-                    textAlign: 'center',
-                    background: `${darkTheme.colors.warning}15`,
-                    padding: '6px 12px',
-                    borderRadius: '12px'
-                  }}>
-                    Click "Save Changes" to apply
-                  </div>
-                )}
-              </div>
-
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: isMobile ? '12px' : '16px'
-              }}>
-                {Object.values(themes).map((theme) => (
-                  <div
-                    key={theme.name}
-                    onClick={() => setSelectedTheme(theme.name)}
-                    style={{
-                      padding: isMobile ? '16px' : '20px',
-                      borderRadius: darkTheme.borderRadius.md,
-                      cursor: 'pointer',
-                      border: `2px solid ${
-                        selectedTheme === theme.name
-                          ? theme.colors.accent
-                          : darkTheme.colors.borderColor
-                      }`,
-                      background: selectedTheme === theme.name
-                        ? `${theme.colors.accent}15`
-                        : darkTheme.colors.bgSecondary,
-                      transition: darkTheme.transitions.default,
-                      position: 'relative' as const,
-                      overflow: 'hidden',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: isMobile ? '12px' : '16px'
-                    }}
-                    onMouseOver={(e) => {
-                      if (selectedTheme !== theme.name) {
-                        e.currentTarget.style.borderColor = theme.colors.accent;
-                        e.currentTarget.style.transform = 'translateX(4px)';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (selectedTheme !== theme.name) {
-                        e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
-                        e.currentTarget.style.transform = 'translateX(0)';
-                      }
-                    }}
-                  >
-                    {/* Theme Preview - Left Side */}
-                    <div style={{
-                      width: isMobile ? '80px' : '120px',
-                      height: isMobile ? '80px' : '100px',
-                      borderRadius: darkTheme.borderRadius.sm,
-                      background: theme.background?.image
-                        ? `linear-gradient(${theme.background.overlay || 'rgba(0,0,0,0.3)'}, ${theme.background.overlay || 'rgba(0,0,0,0.3)'}), url(${theme.background.image}) center/cover`
-                        : theme.background?.gradient || theme.colors.bgPrimary,
-                      border: `2px solid ${theme.colors.borderColor}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      boxShadow: darkTheme.shadows.default
-                    }}>
-                      <div style={{
-                        width: isMobile ? '32px' : '40px',
-                        height: isMobile ? '32px' : '40px',
-                        borderRadius: '50%',
-                        background: theme.colors.accent,
-                        boxShadow: `0 0 24px ${theme.colors.accent}70`
-                      }} />
-                    </div>
-
-                    {/* Theme Details - Right Side */}
-                    <div style={{
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px'
-                    }}>
-                      <div style={{
-                        fontSize: isMobile ? '16px' : '18px',
-                        fontWeight: '700',
-                        color: darkTheme.colors.textPrimary
-                      }}>
-                        {theme.displayName}
-                      </div>
-                      <div style={{
-                        fontSize: isMobile ? '12px' : '13px',
-                        color: darkTheme.colors.textSecondary,
-                        lineHeight: '1.4'
-                      }}>
-                        {theme.name === 'default' && 'Classic deep blue theme with no background'}
-                        {theme.name === 'nature' && 'Nature background with green accents'}
-                      </div>
-                    </div>
-
-                    {/* Selected Indicator */}
-                    {selectedTheme === theme.name && (
-                      <div style={{
-                        background: theme.colors.accent,
-                        color: 'white',
-                        borderRadius: '50%',
-                        width: isMobile ? '28px' : '32px',
-                        height: isMobile ? '28px' : '32px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: isMobile ? '14px' : '16px',
-                        boxShadow: `0 2px 12px ${theme.colors.accent}80`,
-                        flexShrink: 0
-                      }}>
-                        <i className="fas fa-check"></i>
-                      </div>
-                    )}
-
-                    {/* Current Theme Badge */}
-                    {currentTheme.name === theme.name && selectedTheme !== theme.name && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '8px',
-                        right: '8px',
-                        background: darkTheme.colors.accent,
-                        color: 'white',
-                        fontSize: '10px',
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontWeight: '600',
-                        textTransform: 'uppercase'
-                      }}>
-                        Current
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Password Change Section */}
             <div style={{
               marginTop: '16px',
@@ -945,10 +761,7 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               marginTop: '8px'
             }}>
               <button
-                onClick={() => {
-                  setSelectedTheme(currentTheme.name); // Reset theme selection
-                  onClose();
-                }}
+                onClick={onClose}
                 style={{
                   ...buttonSecondaryStyle,
                   flex: 1

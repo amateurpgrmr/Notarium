@@ -39,10 +39,10 @@ export interface Theme {
   };
 }
 
-// Deep Blue theme (default - classic)
-const deepBlueTheme: Theme = {
+// Default theme with nature background
+const defaultTheme: Theme = {
   name: 'default',
-  displayName: 'Deep Blue',
+  displayName: 'Notarium',
   colors: {
     bgPrimary: '#0a0f1a',
     bgSecondary: '#111827',
@@ -73,62 +73,24 @@ const deepBlueTheme: Theme = {
     lg: '12px',
     xl: '16px',
   },
-};
-
-// Nature/Green theme
-const natureTheme: Theme = {
-  name: 'nature',
-  displayName: 'Nature',
-  colors: {
-    bgPrimary: '#0a1810',
-    bgSecondary: '#0f2318',
-    bgTertiary: '#1a3525',
-    textPrimary: '#e8f5e9',
-    textSecondary: '#a5d6a7',
-    borderColor: '#2d5a3d',
-    accent: '#4caf50',
-    accentHover: '#66bb6a',
-    success: '#81c784',
-    danger: '#ef5350',
-    dangerHover: '#e53935',
-    warning: '#ffb74d',
-  },
-  transitions: {
-    default: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    fast: 'all 0.15s ease',
-    slow: 'all 0.5s ease',
-  },
-  shadows: {
-    default: '0 4px 6px -1px rgba(0, 50, 0, 0.4)',
-    lg: '0 20px 25px -5px rgba(0, 50, 0, 0.6)',
-    md: '0 10px 15px -3px rgba(0, 50, 0, 0.3)',
-  },
-  borderRadius: {
-    sm: '4px',
-    md: '8px',
-    lg: '12px',
-    xl: '16px',
-  },
   background: {
     image: '/nature.jpg',
-    overlay: 'rgba(10, 24, 16, 0.85)',
+    overlay: 'rgba(10, 15, 26, 0.85)',
   },
 };
 
-// Export all themes
+// Export single theme
 export const themes: Record<string, Theme> = {
-  default: deepBlueTheme,
-  nature: natureTheme,
+  default: defaultTheme,
 };
 
-// Get current theme from localStorage or default
+// Always use the default theme
 export const getCurrentTheme = (): Theme => {
-  const savedTheme = localStorage.getItem('notarium_theme');
-  return themes[savedTheme || 'default'] || themes.default;
+  return themes.default;
 };
 
-// Export default theme for backward compatibility
-export const darkTheme = getCurrentTheme();
+// Export default theme
+export const darkTheme = themes.default;
 
 export const darkThemeStyles = `
   :root {
