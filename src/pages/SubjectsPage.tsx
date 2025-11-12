@@ -47,34 +47,14 @@ export default function SubjectsPage({
   }, [setIsLoading]);
 
   return (
-    <div style={{
-      position: 'relative',
-      minHeight: '100vh',
-      margin: '-32px',
-      padding: '32px',
-      backgroundImage: 'url(/nature.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
-      borderRadius: '16px',
-      overflow: 'hidden'
-    }}>
-      {/* Dark overlay for readability */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(135deg, rgba(10, 15, 13, 0.88) 0%, rgba(10, 15, 13, 0.82) 100%)',
-        zIndex: 0
-      }}></div>
-
+    <div>
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
+      <div>
         <h2 style={{
           fontSize: '28px',
           fontWeight: 'bold',
           marginBottom: '24px',
-          color: 'white',
-          textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+          color: darkTheme.colors.textPrimary
         }}>
           Subjects
         </h2>
@@ -126,10 +106,10 @@ export default function SubjectsPage({
                   color: darkTheme.colors.accent,
                   display: 'block'
                 }} className={`fas ${subject.icon}`}></i>
-                <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '12px', color: 'white' }}>
+                <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '12px', color: darkTheme.colors.textPrimary }}>
                   {subject.name}
                 </h3>
-                <p style={{ fontSize: '14px', color: darkTheme.colors.accent }}>
+                <p style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>
                   {subject.note_count} notes
                 </p>
               </div>
