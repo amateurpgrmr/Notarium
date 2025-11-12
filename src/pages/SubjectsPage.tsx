@@ -23,6 +23,18 @@ export default function SubjectsPage({
 }: SubjectsPageProps) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
 
+  // Background images for subjects
+  const backgroundImages = [
+    '/nature.jpg',
+    '/green.png',
+    '/pink.png'
+  ];
+
+  // Get background image for a subject (consistent based on subject id)
+  const getBackgroundImage = (subjectId: number) => {
+    return backgroundImages[subjectId % backgroundImages.length];
+  };
+
   useEffect(() => {
     const loadSubjects = async () => {
       try {
@@ -81,33 +93,68 @@ export default function SubjectsPage({
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: darkTheme.transitions.default,
-                border: `2px solid ${darkTheme.colors.accent}`
+                border: `2px solid ${darkTheme.colors.accent}`,
+                overflow: 'hidden',
+                backgroundImage: `url(${getBackgroundImage(subject.id)})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
               } as React.CSSProperties}
               onMouseOver={(e) => {
-                e.currentTarget.style.background = darkTheme.colors.bgTertiary;
                 e.currentTarget.style.borderColor = darkTheme.colors.accent;
-                e.currentTarget.style.boxShadow = darkTheme.shadows.default;
-                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = darkTheme.shadows.lg;
+                e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.background = darkTheme.colors.bgSecondary;
-                e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
-                e.currentTarget.style.boxShadow = 'none';
-                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = darkTheme.colors.accent;
+                e.currentTarget.style.boxShadow = darkTheme.shadows.default;
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
               }}
             >
-              <i style={{
-                fontSize: '64px',
-                marginBottom: '20px',
-                color: darkTheme.colors.accent,
-                display: 'block'
-              }} className={`fas ${subject.icon}`}></i>
-              <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '12px', color: darkTheme.colors.textPrimary }}>
-                {subject.name}
-              </h3>
-              <p style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>
-                {subject.note_count} notes
-              </p>
+              {/* Dark overlay for readability */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(135deg, rgba(10, 15, 13, 0.85) 0%, rgba(10, 15, 13, 0.75) 100%)',
+                zIndex: 0
+              }}></div>
+
+              {/* Content */}
+              <div style={{
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+              }}>
+                <i style={{
+                  fontSize: '64px',
+                  marginBottom: '20px',
+                  color: darkTheme.colors.accent,
+                  display: 'block',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+                }} className={`fas ${subject.icon}`}></i>
+                <h3 style={{
+                  fontSize: '22px',
+                  fontWeight: '600',
+                  marginBottom: '12px',
+                  color: 'white',
+                  textShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                }}>
+                  {subject.name}
+                </h3>
+                <p style={{
+                  fontSize: '14px',
+                  color: darkTheme.colors.accent,
+                  fontWeight: '500',
+                  background: 'rgba(0,0,0,0.4)',
+                  padding: '6px 16px',
+                  borderRadius: '20px',
+                  backdropFilter: 'blur(4px)'
+                }}>
+                  {subject.note_count} notes
+                </p>
+              </div>
             </div>
           ))}
         </div>

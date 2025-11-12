@@ -241,7 +241,6 @@ export default function NoteDetailModal({
         {/* Note Image Header */}
         {currentImage && (
           <div
-            onClick={() => currentImage.startsWith('data:') && setIsFullScreen(true)}
             style={{
               height: currentImage.startsWith('data:') ? '400px' : '240px',
               background: currentImage.startsWith('data:')
@@ -255,19 +254,28 @@ export default function NoteDetailModal({
               cursor: currentImage.startsWith('data:') ? 'zoom-in' : 'default',
               position: 'relative'
             }}
-            onMouseOver={(e) => {
-              if (currentImage.startsWith('data:')) {
-                e.currentTarget.style.opacity = '0.9';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (currentImage.startsWith('data:')) {
-                e.currentTarget.style.opacity = '1';
-              }
-            }}
           >
             {/* Show emoji only if no actual image */}
             {!currentImage.startsWith('data:') && currentImage}
+
+            {/* Clickable overlay for zoom - only on the actual image area */}
+            {currentImage.startsWith('data:') && (
+              <div
+                onClick={() => setIsFullScreen(true)}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  cursor: 'zoom-in',
+                  transition: 'background 0.3s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(0,0,0,0.1)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              />
+            )}
 
             {/* Navigation Arrows for Multiple Images */}
             {hasMultipleImages && currentImage.startsWith('data:') && (
@@ -499,36 +507,46 @@ export default function NoteDetailModal({
           </div>
 
           {/* Full Content (if available) */}
-          {note.content && (
-            <div style={{ marginBottom: '24px' }}>
-              <h3
-                style={{
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  marginBottom: '12px',
-                  color: darkTheme.colors.textSecondary
-                }}
-              >
-                FULL CONTENT
-              </h3>
-              <div
-                style={{
-                  background: darkTheme.colors.bgSecondary,
-                  border: `1px solid ${darkTheme.colors.borderColor}`,
-                  borderRadius: '12px',
-                  padding: '16px',
-                  fontSize: isMobile ? '12px' : '14px',
-                  lineHeight: '1.6',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  maxHeight: '400px',
-                  overflowY: 'auto'
-                }}
-              >
-                {note.content}
-              </div>
+          <div style={{ marginBottom: '24px' }}>
+            <h3
+              style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                marginBottom: '12px',
+                color: darkTheme.colors.textSecondary
+              }}
+            >
+              EXTRACTED TEXT
+            </h3>
+            <div
+              style={{
+                background: darkTheme.colors.bgSecondary,
+                border: `1px solid ${darkTheme.colors.borderColor}`,
+                borderRadius: '12px',
+                padding: '16px',
+                fontSize: isMobile ? '13px' : '14px',
+                lineHeight: '1.8',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                maxHeight: '500px',
+                overflowY: 'auto',
+                minHeight: '100px',
+                color: darkTheme.colors.textPrimary
+              }}
+            >
+              {note.content ? note.content : (
+                <div style={{
+                  color: darkTheme.colors.textSecondary,
+                  fontStyle: 'italic',
+                  textAlign: 'center',
+                  padding: '20px'
+                }}>
+                  <i className="fas fa-info-circle" style={{ fontSize: '24px', marginBottom: '12px', display: 'block' }}></i>
+                  No extracted text available for this note
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Stats */}
           <div

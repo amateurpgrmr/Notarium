@@ -363,12 +363,6 @@ export default function SubjectNotesPage({
             >
               {/* Image Section */}
               <div
-                onClick={(e) => {
-                  if (note.image && note.image.startsWith('data:')) {
-                    e.stopPropagation();
-                    setFullScreenImage(note.image);
-                  }
-                }}
                 style={{
                   height: 'clamp(140px, 30vw, 200px)',
                   background: note.image && note.image.startsWith('data:')
@@ -381,43 +375,48 @@ export default function SubjectNotesPage({
                   color: darkTheme.colors.accent,
                   position: 'relative',
                   overflow: 'hidden',
-                  cursor: note.image && note.image.startsWith('data:') ? 'zoom-in' : 'pointer'
-                }}
-                onMouseOver={(e) => {
-                  if (note.image && note.image.startsWith('data:')) {
-                    e.currentTarget.style.opacity = '0.8';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (note.image && note.image.startsWith('data:')) {
-                    e.currentTarget.style.opacity = '1';
-                  }
+                  cursor: 'pointer'
                 }}
               >
                 {/* Show emoji only if no actual image */}
                 {note.image && !note.image.startsWith('data:') && note.image}
-                {/* Fullscreen hint */}
+                {/* Fullscreen zoom button */}
                 {note.image && note.image.startsWith('data:') && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    background: 'rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(4px)',
-                    borderRadius: '6px',
-                    padding: '6px 10px',
-                    color: 'white',
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    pointerEvents: 'none',
-                    opacity: 0,
-                    transition: 'opacity 0.3s'
-                  }}
-                  className="fullscreen-hint">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFullScreenImage(note.image);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      background: 'rgba(0,0,0,0.6)',
+                      backdropFilter: 'blur(4px)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      color: 'white',
+                      fontSize: '14px',
+                      cursor: 'zoom-in',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.3s',
+                      zIndex: 10
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = 'rgba(0,0,0,0.8)';
+                      e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = 'rgba(0,0,0,0.6)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  >
                     <i className="fas fa-expand"></i>
-                  </div>
+                    <span style={{ fontSize: '12px' }}>Zoom</span>
+                  </button>
                 )}
                 <div
                   style={{
