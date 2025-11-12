@@ -95,6 +95,33 @@ function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
+  const [, forceUpdate] = useState({})
+
+  // Force rerender when theme changes
+  useEffect(() => {
+    const handleThemeChange = () => {
+      forceUpdate({})
+    }
+    window.addEventListener('themeChange', handleThemeChange)
+    return () => window.removeEventListener('themeChange', handleThemeChange)
+  }, [])
+
+  // Apply background based on current theme
+  useEffect(() => {
+    if (currentTheme.background) {
+      if (currentTheme.background.image) {
+        const overlay = currentTheme.background.overlay || 'rgba(0,0,0,0.5)'
+        document.body.style.background = `
+          linear-gradient(${overlay}, ${overlay}),
+          url(${currentTheme.background.image}) center/cover fixed
+        `
+      } else if (currentTheme.background.gradient) {
+        document.body.style.background = currentTheme.background.gradient
+      }
+    } else {
+      document.body.style.background = currentTheme.colors.bgPrimary
+    }
+  }, [currentTheme])
 
   const handleSelectSubject = (subject: any) => {
     setCurrentSubject(subject)

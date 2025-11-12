@@ -118,15 +118,22 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
         class: selectedClass
       }));
 
-      // Save theme change
-      if (selectedTheme !== currentTheme.name) {
-        changeTheme(selectedTheme);
-      }
-
       await api.updateProfile(updateData);
       await refreshUser();
+
+      // Save theme change AFTER profile update
+      if (selectedTheme !== currentTheme.name) {
+        changeTheme(selectedTheme);
+        // Wait a moment for theme to apply
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
       setSuccess(true);
-      setTimeout(() => onClose(), 1500);
+      setTimeout(() => {
+        onClose();
+        // Force page refresh to apply all changes
+        window.location.reload();
+      }, 800);
     } catch (err: any) {
       setError(err.message || 'Failed to update profile');
     } finally {
