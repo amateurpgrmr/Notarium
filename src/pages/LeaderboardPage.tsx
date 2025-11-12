@@ -49,13 +49,7 @@ export default function LeaderboardPage({
   }, [setIsLoading]);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundImage: 'url(/nature.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed'
-    }}>
+    <div>
       <h2 style={{
         fontSize: '28px',
         fontWeight: 'bold',

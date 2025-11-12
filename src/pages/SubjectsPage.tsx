@@ -47,13 +47,7 @@ export default function SubjectsPage({
   }, [setIsLoading]);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundImage: 'url(/nature.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed'
-    }}>
+    <div>
       {/* Content */}
       <div>
         <h2 style={{

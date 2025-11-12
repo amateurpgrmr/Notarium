@@ -106,23 +106,6 @@ function HomePage() {
     return () => window.removeEventListener('themeChange', handleThemeChange)
   }, [])
 
-  // Apply background based on current theme
-  useEffect(() => {
-    if (currentTheme.background) {
-      if (currentTheme.background.image) {
-        const overlay = currentTheme.background.overlay || 'rgba(0,0,0,0.5)'
-        document.body.style.background = `
-          linear-gradient(${overlay}, ${overlay}),
-          url(${currentTheme.background.image}) center/cover fixed
-        `
-      } else if (currentTheme.background.gradient) {
-        document.body.style.background = currentTheme.background.gradient
-      }
-    } else {
-      document.body.style.background = currentTheme.colors.bgPrimary
-    }
-  }, [currentTheme])
-
   const handleSelectSubject = (subject: any) => {
     setCurrentSubject(subject)
     setCurrentPage('subject-notes')
@@ -171,7 +154,14 @@ function HomePage() {
   }, [])
 
   return (
-    <div style={{ minHeight: '100vh', background: currentTheme.colors.bgPrimary, color: currentTheme.colors.textPrimary }}>
+    <div style={{
+      minHeight: '100vh',
+      color: currentTheme.colors.textPrimary,
+      backgroundImage: 'url(/nature.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed'
+    }}>
       <style>{darkThemeStyles}</style>
 
       {/* Navigation */}

@@ -239,10 +239,6 @@ export default function ChatPage() {
       bottom: 0,
       display: 'flex',
       flexDirection: 'column',
-      backgroundImage: 'url(/nature.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
       gap: '16px',
       padding: isMobile ? '12px' : '16px',
       zIndex: 10
