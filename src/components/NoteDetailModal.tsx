@@ -39,9 +39,6 @@ export default function NoteDetailModal({
     return [];
   })();
 
-  const currentImage = images[currentImageIndex] || null;
-  const hasMultipleImages = images.length > 1;
-
   const [isLiked, setIsLiked] = useState(note.liked_by_me || false);
   const [likeCount, setLikeCount] = useState(note.likes);
   const [summary, setSummary] = useState<string | null>(null);
@@ -53,6 +50,9 @@ export default function NoteDetailModal({
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const currentImage = images[currentImageIndex] || null;
+  const hasMultipleImages = images.length > 1;
 
   useEffect(() => {
     const checkMobile = () => {
