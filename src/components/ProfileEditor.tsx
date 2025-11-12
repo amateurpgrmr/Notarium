@@ -24,6 +24,9 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(user?.photo_url || null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
 
+  // Theme selection state (separate from saved theme)
+  const [selectedTheme, setSelectedTheme] = useState(currentTheme.name);
+
   // Password change states
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -114,6 +117,11 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
         description,
         class: selectedClass
       }));
+
+      // Save theme change
+      if (selectedTheme !== currentTheme.name) {
+        changeTheme(selectedTheme);
+      }
 
       await api.updateProfile(updateData);
       await refreshUser();
@@ -575,10 +583,26 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                flexDirection: 'column'
               }}>
-                <i className="fas fa-palette"></i>
-                Choose Your Theme
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <i className="fas fa-palette"></i>
+                  Choose Your Theme
+                </div>
+                {selectedTheme !== currentTheme.name && (
+                  <div style={{
+                    fontSize: '12px',
+                    color: darkTheme.colors.warning,
+                    fontWeight: '500',
+                    textAlign: 'center',
+                    background: `${darkTheme.colors.warning}15`,
+                    padding: '6px 12px',
+                    borderRadius: '12px'
+                  }}>
+                    Click "Save Changes" to apply
+                  </div>
+                )}
               </div>
 
               <div style={{
@@ -589,17 +613,17 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                 {Object.values(themes).map((theme) => (
                   <div
                     key={theme.name}
-                    onClick={() => changeTheme(theme.name)}
+                    onClick={() => setSelectedTheme(theme.name)}
                     style={{
                       padding: isMobile ? '16px' : '20px',
                       borderRadius: darkTheme.borderRadius.md,
                       cursor: 'pointer',
                       border: `2px solid ${
-                        currentTheme.name === theme.name
+                        selectedTheme === theme.name
                           ? theme.colors.accent
                           : darkTheme.colors.borderColor
                       }`,
-                      background: currentTheme.name === theme.name
+                      background: selectedTheme === theme.name
                         ? `${theme.colors.accent}15`
                         : darkTheme.colors.bgSecondary,
                       transition: darkTheme.transitions.default,
@@ -610,13 +634,13 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                       gap: isMobile ? '12px' : '16px'
                     }}
                     onMouseOver={(e) => {
-                      if (currentTheme.name !== theme.name) {
+                      if (selectedTheme !== theme.name) {
                         e.currentTarget.style.borderColor = theme.colors.accent;
                         e.currentTarget.style.transform = 'translateX(4px)';
                       }
                     }}
                     onMouseOut={(e) => {
-                      if (currentTheme.name !== theme.name) {
+                      if (selectedTheme !== theme.name) {
                         e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
                         e.currentTarget.style.transform = 'translateX(0)';
                       }
@@ -672,7 +696,7 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                     </div>
 
                     {/* Selected Indicator */}
-                    {currentTheme.name === theme.name && (
+                    {selectedTheme === theme.name && (
                       <div style={{
                         background: theme.colors.accent,
                         color: 'white',
@@ -687,6 +711,24 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                         flexShrink: 0
                       }}>
                         <i className="fas fa-check"></i>
+                      </div>
+                    )}
+
+                    {/* Current Theme Badge */}
+                    {currentTheme.name === theme.name && selectedTheme !== theme.name && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        background: darkTheme.colors.accent,
+                        color: 'white',
+                        fontSize: '10px',
+                        padding: '4px 8px',
+                        borderRadius: '12px',
+                        fontWeight: '600',
+                        textTransform: 'uppercase'
+                      }}>
+                        Current
                       </div>
                     )}
                   </div>
@@ -897,7 +939,10 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               marginTop: '8px'
             }}>
               <button
-                onClick={onClose}
+                onClick={() => {
+                  setSelectedTheme(currentTheme.name); // Reset theme selection
+                  onClose();
+                }}
                 style={{
                   ...buttonSecondaryStyle,
                   flex: 1
