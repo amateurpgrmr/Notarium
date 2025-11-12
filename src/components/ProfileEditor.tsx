@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import api from '../lib/api';
 import { useAuth } from '../App';
-import { darkTheme, modalOverlayStyle, modalContentStyle, inputStyle, buttonPrimaryStyle, buttonSecondaryStyle } from '../theme';
+import { darkTheme, modalOverlayStyle, modalContentStyle, inputStyle, buttonPrimaryStyle, buttonSecondaryStyle, themes } from '../theme';
+import { useTheme } from '../hooks/useTheme';
 import CameraCapture from './CameraCapture';
 
 interface ProfileEditorProps {
@@ -10,6 +11,7 @@ interface ProfileEditorProps {
 
 export default function ProfileEditor({ onClose }: ProfileEditorProps) {
   const { user, refreshUser } = useAuth();
+  const { currentTheme, changeTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -557,9 +559,126 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
               </div>
             )}
 
-            {/* Password Change Section */}
+            {/* Theme Selection Section */}
             <div style={{
               marginTop: '24px',
+              padding: '16px',
+              background: darkTheme.colors.bgTertiary,
+              borderRadius: darkTheme.borderRadius.md,
+              border: `1px solid ${darkTheme.colors.borderColor}`
+            }}>
+              <div style={{
+                marginBottom: '16px',
+                color: darkTheme.colors.textPrimary,
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <i className="fas fa-palette"></i>
+                Choose Your Theme
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(3, 1fr)',
+                gap: '12px'
+              }}>
+                {Object.values(themes).map((theme) => (
+                  <div
+                    key={theme.name}
+                    onClick={() => changeTheme(theme.name)}
+                    style={{
+                      padding: '16px',
+                      borderRadius: darkTheme.borderRadius.md,
+                      cursor: 'pointer',
+                      border: `2px solid ${
+                        currentTheme.name === theme.name
+                          ? theme.colors.accent
+                          : darkTheme.colors.borderColor
+                      }`,
+                      background: currentTheme.name === theme.name
+                        ? `${theme.colors.accent}15`
+                        : darkTheme.colors.bgSecondary,
+                      transition: darkTheme.transitions.default,
+                      position: 'relative' as const,
+                      overflow: 'hidden'
+                    }}
+                    onMouseOver={(e) => {
+                      if (currentTheme.name !== theme.name) {
+                        e.currentTarget.style.borderColor = theme.colors.accent;
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (currentTheme.name !== theme.name) {
+                        e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }
+                    }}
+                  >
+                    {/* Theme Preview */}
+                    <div style={{
+                      height: '60px',
+                      borderRadius: darkTheme.borderRadius.sm,
+                      marginBottom: '12px',
+                      background: theme.background?.image
+                        ? `linear-gradient(${theme.background.overlay || 'rgba(0,0,0,0.3)'}, ${theme.background.overlay || 'rgba(0,0,0,0.3)'}), url(${theme.background.image}) center/cover`
+                        : theme.background?.gradient || theme.colors.bgPrimary,
+                      border: `1px solid ${theme.colors.borderColor}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <div style={{
+                        width: '30px',
+                        height: '30px',
+                        borderRadius: '50%',
+                        background: theme.colors.accent,
+                        boxShadow: `0 0 20px ${theme.colors.accent}50`
+                      }} />
+                    </div>
+
+                    {/* Theme Name */}
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: darkTheme.colors.textPrimary,
+                      marginBottom: '4px',
+                      textAlign: 'center'
+                    }}>
+                      {theme.displayName}
+                    </div>
+
+                    {/* Selected Indicator */}
+                    {currentTheme.name === theme.name && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        background: theme.colors.accent,
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: '24px',
+                        height: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        boxShadow: `0 2px 8px ${theme.colors.accent}80`
+                      }}>
+                        <i className="fas fa-check"></i>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Password Change Section */}
+            <div style={{
+              marginTop: '16px',
               padding: '16px',
               background: darkTheme.colors.bgTertiary,
               borderRadius: darkTheme.borderRadius.md,
