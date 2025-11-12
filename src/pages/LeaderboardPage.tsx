@@ -138,7 +138,7 @@ export default function LeaderboardPage({
                     fontWeight: 'bold',
                     color: darkTheme.colors.accent
                   }}>
-                    {Math.max(0, entry.score || entry.total_likes || entry.points || 0)}
+                    {Math.max(0, entry.points || entry.score || entry.total_likes || 0)}
                   </p>
                 </div>
                 <p style={{
