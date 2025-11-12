@@ -15,7 +15,8 @@ import MyNotesPage from './pages/MyNotesPage'
 import ProfileEditor from './components/ProfileEditor'
 import ProfileStats from './components/ProfileStats'
 import LoadingSpinner from './components/LoadingSpinner'
-import { darkTheme, darkThemeStyles } from './theme'
+import { darkThemeStyles, getCurrentTheme } from './theme'
+import { useTheme } from './hooks/useTheme'
 import './index.css'
 
 // ==================== AUTH CONTEXT ====================
@@ -43,6 +44,7 @@ export function useAuth() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, refreshUser } = useAuth()
+  const loadingTheme = getCurrentTheme()
 
   useEffect(() => {
     // If no user but token exists, try to load user
@@ -59,8 +61,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: darkTheme.colors.bgPrimary,
-        color: darkTheme.colors.textPrimary
+        background: loadingTheme.colors.bgPrimary,
+        color: loadingTheme.colors.textPrimary
       }}>
         <LoadingSpinner message="Loading your workspace..." size="lg" />
       </div>
@@ -83,6 +85,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function HomePage() {
   const { user, logout } = useAuth()
+  const { currentTheme } = useTheme()
   const [currentPage, setCurrentPage] = useState<'subjects' | 'subject-notes' | 'leaderboard' | 'chat' | 'admin'>('subjects')
   const [currentSubject, setCurrentSubject] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
@@ -141,7 +144,7 @@ function HomePage() {
   }, [])
 
   return (
-    <div style={{ minHeight: '100vh', background: darkTheme.colors.bgPrimary, color: darkTheme.colors.textPrimary }}>
+    <div style={{ minHeight: '100vh', background: currentTheme.colors.bgPrimary, color: currentTheme.colors.textPrimary }}>
       <style>{darkThemeStyles}</style>
 
       {/* Navigation */}
@@ -152,7 +155,7 @@ function HomePage() {
         right: 0,
         background: 'rgba(0, 0, 0, 0.95)',
         backdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
+        borderBottom: `1px solid ${currentTheme.colors.borderColor}`,
         padding: isMobile ? '12px 16px' : '16px 40px',
         display: 'flex',
         justifyContent: 'space-between',
@@ -168,13 +171,13 @@ function HomePage() {
             style={{
               background: 'none',
               border: 'none',
-              color: darkTheme.colors.textPrimary,
+              color: currentTheme.colors.textPrimary,
               cursor: 'pointer',
               fontSize: '24px',
               display: 'flex',
               alignItems: 'center',
               padding: '8px',
-              transition: darkTheme.transitions.default
+              transition: currentTheme.transitions.default
             }}
             onMouseOver={(e) => e.currentTarget.style.opacity = '0.7'}
             onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
@@ -193,7 +196,7 @@ function HomePage() {
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            transition: darkTheme.transitions.default,
+            transition: currentTheme.transitions.default,
             padding: 0
           }}
           onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
@@ -214,19 +217,19 @@ function HomePage() {
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
             padding: '10px 14px 10px 36px',
-            background: darkTheme.colors.bgSecondary,
-            border: `1px solid ${darkTheme.colors.borderColor}`,
-            borderRadius: darkTheme.borderRadius.md,
+            background: currentTheme.colors.bgSecondary,
+            border: `1px solid ${currentTheme.colors.borderColor}`,
+            borderRadius: currentTheme.borderRadius.md,
             width: isMobile ? '1fr' : '280px',
             fontSize: '14px',
-            color: darkTheme.colors.textPrimary,
+            color: currentTheme.colors.textPrimary,
             outline: 'none',
-            transition: darkTheme.transitions.default,
+            transition: currentTheme.transitions.default,
             boxSizing: 'border-box',
             flex: isMobile ? 1 : undefined
           } as React.CSSProperties}
           onFocus={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'}
-          onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
+          onBlur={(e) => e.currentTarget.style.borderColor = currentTheme.colors.borderColor}
         />
 
         {/* Desktop Navigation Buttons - Hidden on mobile */}
@@ -236,14 +239,14 @@ function HomePage() {
               onClick={() => navigateTo('subjects')}
               style={{
                 padding: '10px 18px',
-                background: currentPage === 'subjects' ? darkTheme.colors.accent : 'transparent',
+                background: currentPage === 'subjects' ? currentTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: '13px',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default,
-                borderRadius: darkTheme.borderRadius.md
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md
               }}
               onMouseOver={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
               onMouseOut={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'transparent')}
@@ -255,14 +258,14 @@ function HomePage() {
               onClick={() => navigateTo('chat')}
               style={{
                 padding: '10px 18px',
-                background: currentPage === 'chat' ? darkTheme.colors.accent : 'transparent',
+                background: currentPage === 'chat' ? currentTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: '13px',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default,
-                borderRadius: darkTheme.borderRadius.md
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md
               }}
               onMouseOver={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
               onMouseOut={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'transparent')}
@@ -274,14 +277,14 @@ function HomePage() {
               onClick={() => navigateTo('leaderboard')}
               style={{
                 padding: '10px 18px',
-                background: currentPage === 'leaderboard' ? darkTheme.colors.accent : 'transparent',
+                background: currentPage === 'leaderboard' ? currentTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: '13px',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default,
-                borderRadius: darkTheme.borderRadius.md
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md
               }}
               onMouseOver={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
               onMouseOut={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'transparent')}
@@ -294,14 +297,14 @@ function HomePage() {
                 onClick={() => navigateTo('admin')}
                 style={{
                   padding: '10px 18px',
-                  background: currentPage === 'admin' ? darkTheme.colors.accent : 'transparent',
+                  background: currentPage === 'admin' ? currentTheme.colors.accent : 'transparent',
                   border: 'none',
                   color: '#fff',
                   cursor: 'pointer',
                   fontSize: '13px',
                   fontWeight: '500',
-                  transition: darkTheme.transitions.default,
-                  borderRadius: darkTheme.borderRadius.md
+                  transition: currentTheme.transitions.default,
+                  borderRadius: currentTheme.borderRadius.md
                 }}
                 onMouseOver={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
                 onMouseOut={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'transparent')}
@@ -321,8 +324,8 @@ function HomePage() {
                 cursor: 'pointer',
                 fontSize: '13px',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default,
-                borderRadius: darkTheme.borderRadius.md
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -336,13 +339,13 @@ function HomePage() {
               style={{
                 padding: '10px 18px',
                 background: 'transparent',
-                border: `1px solid ${darkTheme.colors.borderColor}`,
+                border: `1px solid ${currentTheme.colors.borderColor}`,
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: '13px',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default,
-                borderRadius: darkTheme.borderRadius.md
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
@@ -350,7 +353,7 @@ function HomePage() {
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
+                e.currentTarget.style.borderColor = currentTheme.colors.borderColor;
               }}
             >
               <i style={{ marginRight: '6px' }} className="fas fa-sign-out-alt"></i>Logout
@@ -368,11 +371,11 @@ function HomePage() {
               gap: '10px',
               background: 'transparent',
               border: 'none',
-              color: darkTheme.colors.textPrimary,
+              color: currentTheme.colors.textPrimary,
               cursor: 'pointer',
-              transition: darkTheme.transitions.default,
+              transition: currentTheme.transitions.default,
               padding: '8px 10px',
-              borderRadius: darkTheme.borderRadius.md
+              borderRadius: currentTheme.borderRadius.md
             }}
             onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
             onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -382,7 +385,7 @@ function HomePage() {
               height: '40px',
               background: user?.photo_url
                 ? `url('${user.photo_url}') center/cover`
-                : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                : `linear-gradient(135deg, ${currentTheme.colors.accent}, #8b5cf6)`,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -514,7 +517,7 @@ function HomePage() {
           height: 'calc(100vh - 64px)',
           background: 'rgba(10, 10, 10, 0.95)',
           backdropFilter: 'blur(10px)',
-          borderRight: `1px solid ${darkTheme.colors.borderColor}`,
+          borderRight: `1px solid ${currentTheme.colors.borderColor}`,
           zIndex: 1001,
           transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
@@ -525,11 +528,11 @@ function HomePage() {
           {/* Profile Section - Top (Full Width) */}
           <div style={{
             padding: '24px 16px',
-            borderBottom: `2px solid ${darkTheme.colors.borderColor}`,
+            borderBottom: `2px solid ${currentTheme.colors.borderColor}`,
             background: `linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1))`,
             textAlign: 'center',
             cursor: 'pointer',
-            transition: darkTheme.transitions.default
+            transition: currentTheme.transitions.default
           }}
           onClick={() => {
             setShowProfileStats(true);
@@ -544,7 +547,7 @@ function HomePage() {
               height: '80px',
               background: user?.photo_url
                 ? `url('${user.photo_url}') center/cover`
-                : `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                : `linear-gradient(135deg, ${currentTheme.colors.accent}, #8b5cf6)`,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -554,7 +557,7 @@ function HomePage() {
               fontSize: '36px',
               margin: '0 auto 12px',
               flexShrink: 0,
-              border: `2px solid ${darkTheme.colors.borderColor}`
+              border: `2px solid ${currentTheme.colors.borderColor}`
             }}>
               {!user?.photo_url && user?.name?.charAt(0).toUpperCase()}
             </div>
@@ -563,7 +566,7 @@ function HomePage() {
             <h3 style={{ margin: '0 0 2px 0', fontSize: '18px', fontWeight: '800', color: '#fff', letterSpacing: '0.5px' }}>
               {user?.name || 'User'}
             </h3>
-            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: darkTheme.colors.textSecondary, fontWeight: '500' }}>
+            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: currentTheme.colors.textSecondary, fontWeight: '500' }}>
               {user?.class ? `📚 ${user.class}` : ''}
             </p>
 
@@ -572,7 +575,7 @@ function HomePage() {
               <p style={{
                 margin: '8px 0',
                 fontSize: '12px',
-                color: darkTheme.colors.textSecondary,
+                color: currentTheme.colors.textSecondary,
                 fontStyle: 'italic',
                 maxWidth: '200px',
                 overflow: 'hidden',
@@ -704,14 +707,14 @@ function HomePage() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: currentPage === 'subjects' ? darkTheme.colors.accent : 'transparent',
+                background: currentPage === 'subjects' ? currentTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: '15px',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default,
-                borderRadius: darkTheme.borderRadius.md,
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md,
                 textAlign: 'left',
                 display: 'flex',
                 alignItems: 'center',
@@ -728,14 +731,14 @@ function HomePage() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: currentPage === 'chat' ? darkTheme.colors.accent : 'transparent',
+                background: currentPage === 'chat' ? currentTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: '15px',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default,
-                borderRadius: darkTheme.borderRadius.md,
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md,
                 textAlign: 'left',
                 display: 'flex',
                 alignItems: 'center',
@@ -752,14 +755,14 @@ function HomePage() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: currentPage === 'leaderboard' ? darkTheme.colors.accent : 'transparent',
+                background: currentPage === 'leaderboard' ? currentTheme.colors.accent : 'transparent',
                 border: 'none',
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: '15px',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default,
-                borderRadius: darkTheme.borderRadius.md,
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md,
                 textAlign: 'left',
                 display: 'flex',
                 alignItems: 'center',
@@ -777,14 +780,14 @@ function HomePage() {
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  background: currentPage === 'admin' ? darkTheme.colors.accent : 'transparent',
+                  background: currentPage === 'admin' ? currentTheme.colors.accent : 'transparent',
                   border: 'none',
                   color: '#fff',
                   cursor: 'pointer',
                   fontSize: '15px',
                   fontWeight: '500',
-                  transition: darkTheme.transitions.default,
-                  borderRadius: darkTheme.borderRadius.md,
+                  transition: currentTheme.transitions.default,
+                  borderRadius: currentTheme.borderRadius.md,
                   textAlign: 'left',
                   display: 'flex',
                   alignItems: 'center',
@@ -800,7 +803,7 @@ function HomePage() {
             {/* Divider */}
             <div style={{
               height: '1px',
-              background: darkTheme.colors.borderColor,
+              background: currentTheme.colors.borderColor,
               margin: '8px 0'
             }}></div>
 
@@ -819,8 +822,8 @@ function HomePage() {
                 cursor: 'pointer',
                 fontSize: '15px',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default,
-                borderRadius: darkTheme.borderRadius.md,
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md,
                 textAlign: 'left',
                 display: 'flex',
                 alignItems: 'center',
@@ -841,20 +844,20 @@ function HomePage() {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: darkTheme.colors.danger,
+                background: currentTheme.colors.danger,
                 border: 'none',
                 color: 'white',
-                borderRadius: darkTheme.borderRadius.md,
+                borderRadius: currentTheme.borderRadius.md,
                 cursor: 'pointer',
-                transition: darkTheme.transitions.default,
+                transition: currentTheme.transitions.default,
                 fontSize: '15px',
                 fontWeight: '500',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px'
               }}
-              onMouseOver={(e) => e.currentTarget.style.background = darkTheme.colors.dangerHover}
-              onMouseOut={(e) => e.currentTarget.style.background = darkTheme.colors.danger}
+              onMouseOver={(e) => e.currentTarget.style.background = currentTheme.colors.dangerHover}
+              onMouseOut={(e) => e.currentTarget.style.background = currentTheme.colors.danger}
             >
               <i className="fas fa-sign-out-alt" style={{ width: '20px' }}></i>Logout
             </button>
@@ -863,12 +866,12 @@ function HomePage() {
           {/* Notarium.Site Footer - Bottom */}
           <div style={{
             padding: '16px',
-            borderTop: `2px solid ${darkTheme.colors.borderColor}`,
+            borderTop: `2px solid ${currentTheme.colors.borderColor}`,
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
             cursor: 'pointer',
-            transition: darkTheme.transitions.default,
+            transition: currentTheme.transitions.default,
             marginTop: 'auto'
           }}
           onClick={() => { navigateTo('subjects'); setCurrentSubject(null); closeMobileMenu(); }}
@@ -886,9 +889,9 @@ function HomePage() {
             />
             <div>
               <h4 style={{ margin: '0', fontSize: '14px', fontWeight: 'bold' }}>
-                Notarium<span style={{ color: darkTheme.colors.accent }}>.Site</span>
+                Notarium<span style={{ color: currentTheme.colors.accent }}>.Site</span>
               </h4>
-              <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: darkTheme.colors.textSecondary }}>Share Your Notes</p>
+              <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: currentTheme.colors.textSecondary }}>Share Your Notes</p>
             </div>
           </div>
 
@@ -963,11 +966,11 @@ function HomePage() {
       <footer style={{
         textAlign: 'center',
         padding: '32px 20px',
-        borderTop: `1px solid ${darkTheme.colors.borderColor}`,
-        color: darkTheme.colors.textSecondary,
+        borderTop: `1px solid ${currentTheme.colors.borderColor}`,
+        color: currentTheme.colors.textSecondary,
         fontSize: '13px',
         marginTop: '48px',
-        background: darkTheme.colors.bgSecondary
+        background: currentTheme.colors.bgSecondary
       }}>
         <p style={{ margin: 0 }}>© 2025 Notarium. All rights reserved.</p>
       </footer>

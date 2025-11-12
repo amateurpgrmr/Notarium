@@ -126,8 +126,8 @@ const pinkTheme: Theme = {
     textPrimary: '#fce4ec',
     textSecondary: '#f8bbd0',
     borderColor: '#6d2e5c',
-    accent: '#ec4899',
-    accentHover: '#f472b6',
+    accent: '#ffc0cb',
+    accentHover: '#ffb3c1',
     success: '#81c784',
     danger: '#ef5350',
     dangerHover: '#e53935',
@@ -139,9 +139,9 @@ const pinkTheme: Theme = {
     slow: 'all 0.5s ease',
   },
   shadows: {
-    default: '0 4px 6px -1px rgba(236, 72, 153, 0.3)',
-    lg: '0 20px 25px -5px rgba(236, 72, 153, 0.5)',
-    md: '0 10px 15px -3px rgba(236, 72, 153, 0.2)',
+    default: '0 4px 6px -1px rgba(255, 192, 203, 0.3)',
+    lg: '0 20px 25px -5px rgba(255, 192, 203, 0.5)',
+    md: '0 10px 15px -3px rgba(255, 192, 203, 0.2)',
   },
   borderRadius: {
     sm: '4px',
@@ -150,7 +150,7 @@ const pinkTheme: Theme = {
     xl: '16px',
   },
   background: {
-    image: '/pink.png',
+    image: '/pink.jpeg',
     overlay: 'rgba(26, 10, 20, 0.85)',
   },
 };
