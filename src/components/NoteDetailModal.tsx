@@ -19,12 +19,40 @@ export default function NoteDetailModal({
 }: NoteDetailModalProps) {
   if (!note) return null;
 
+  // Parse images - support both single image string and array of images
+  const images = (() => {
+    if (!note.image) return [];
+    if (typeof note.image === 'string') {
+      // Check if it's a JSON array
+      if (note.image.startsWith('[')) {
+        try {
+          return JSON.parse(note.image);
+        } catch {
+          return [note.image];
+        }
+      }
+      return [note.image];
+    }
+    if (Array.isArray(note.image)) {
+      return note.image;
+    }
+    return [];
+  })();
+
+  const currentImage = images[currentImageIndex] || null;
+  const hasMultipleImages = images.length > 1;
+
   const [isLiked, setIsLiked] = useState(note.liked_by_me || false);
   const [likeCount, setLikeCount] = useState(note.likes);
   const [summary, setSummary] = useState<string | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const checkMobile = () => {
@@ -34,6 +62,75 @@ export default function NoteDetailModal({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Reset zoom when changing images
+  useEffect(() => {
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
+  }, [currentImageIndex]);
+
+  // Navigation handlers
+  const goToPreviousImage = () => {
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+  };
+
+  const goToNextImage = () => {
+    setCurrentImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+  };
+
+  // Zoom handlers
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(prev + 0.5, 4));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(prev - 0.5, 1));
+    if (zoomLevel <= 1.5) {
+      setImagePosition({ x: 0, y: 0 });
+    }
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  // Drag handlers for zoomed images
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && zoomLevel > 1) {
+      setImagePosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (isFullScreen) {
+        if (e.key === 'ArrowLeft') goToPreviousImage();
+        if (e.key === 'ArrowRight') goToNextImage();
+        if (e.key === 'Escape') setIsFullScreen(false);
+        if (e.key === '+' || e.key === '=') handleZoomIn();
+        if (e.key === '-') handleZoomOut();
+        if (e.key === '0') handleResetZoom();
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isFullScreen, hasMultipleImages]);
 
   const handleLike = () => {
     const newLikedState = !isLiked;
@@ -142,37 +239,128 @@ export default function NoteDetailModal({
         </div>
 
         {/* Note Image Header */}
-        {note.image && (
+        {currentImage && (
           <div
-            onClick={() => note.image.startsWith('data:') && setIsFullScreen(true)}
+            onClick={() => currentImage.startsWith('data:') && setIsFullScreen(true)}
             style={{
-              height: note.image.startsWith('data:') ? '400px' : '240px',
-              background: note.image.startsWith('data:')
-                ? `url(${note.image}) center/contain no-repeat ${darkTheme.colors.bgSecondary}`
+              height: currentImage.startsWith('data:') ? '400px' : '240px',
+              background: currentImage.startsWith('data:')
+                ? `url(${currentImage}) center/contain no-repeat ${darkTheme.colors.bgSecondary}`
                 : `linear-gradient(135deg, ${darkTheme.colors.accent} 0%, #8b5cf6 100%)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: note.image.startsWith('data:') ? '0' : '96px',
+              fontSize: currentImage.startsWith('data:') ? '0' : '96px',
               borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
-              cursor: note.image.startsWith('data:') ? 'zoom-in' : 'default',
+              cursor: currentImage.startsWith('data:') ? 'zoom-in' : 'default',
               position: 'relative'
             }}
             onMouseOver={(e) => {
-              if (note.image.startsWith('data:')) {
+              if (currentImage.startsWith('data:')) {
                 e.currentTarget.style.opacity = '0.9';
               }
             }}
             onMouseOut={(e) => {
-              if (note.image.startsWith('data:')) {
+              if (currentImage.startsWith('data:')) {
                 e.currentTarget.style.opacity = '1';
               }
             }}
           >
             {/* Show emoji only if no actual image */}
-            {!note.image.startsWith('data:') && note.image}
+            {!currentImage.startsWith('data:') && currentImage}
+
+            {/* Navigation Arrows for Multiple Images */}
+            {hasMultipleImages && currentImage.startsWith('data:') && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goToPreviousImage(); }}
+                  style={{
+                    position: 'absolute',
+                    left: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    border: 'none',
+                    color: 'white',
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    transition: 'all 0.3s',
+                    zIndex: 10
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(0,0,0,0.8)';
+                    e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(0,0,0,0.6)';
+                    e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                  }}
+                >
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goToNextImage(); }}
+                  style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    border: 'none',
+                    color: 'white',
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    transition: 'all 0.3s',
+                    zIndex: 10
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(0,0,0,0.8)';
+                    e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'rgba(0,0,0,0.6)';
+                    e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                  }}
+                >
+                  <i className="fas fa-chevron-right"></i>
+                </button>
+
+                {/* Page Indicator */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '16px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(4px)',
+                  borderRadius: '16px',
+                  padding: '6px 16px',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  pointerEvents: 'none'
+                }}>
+                  {currentImageIndex + 1} / {images.length}
+                </div>
+              </>
+            )}
+
             {/* Fullscreen hint icon */}
-            {note.image.startsWith('data:') && (
+            {currentImage.startsWith('data:') && (
               <div style={{
                 position: 'absolute',
                 top: '16px',
@@ -503,9 +691,16 @@ export default function NoteDetailModal({
       </div>
 
       {/* Fullscreen Image Overlay */}
-      {isFullScreen && note.image && note.image.startsWith('data:') && (
+      {isFullScreen && currentImage && currentImage.startsWith('data:') && (
         <div
-          onClick={() => setIsFullScreen(false)}
+          onClick={(e) => {
+            if (zoomLevel === 1 && e.target === e.currentTarget) {
+              setIsFullScreen(false);
+            }
+          }}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           style={{
             position: 'fixed',
             inset: 0,
@@ -516,7 +711,8 @@ export default function NoteDetailModal({
             alignItems: 'center',
             justifyContent: 'center',
             padding: '20px',
-            cursor: 'zoom-out'
+            cursor: isDragging ? 'grabbing' : (zoomLevel > 1 ? 'grab' : 'default'),
+            overflow: 'hidden'
           }}
         >
           {/* Close button */}
@@ -539,7 +735,7 @@ export default function NoteDetailModal({
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.3s',
-              zIndex: 2001
+              zIndex: 2002
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
@@ -553,21 +749,207 @@ export default function NoteDetailModal({
             ×
           </button>
 
-          {/* Full size image */}
+          {/* Zoom Controls */}
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            zIndex: 2002
+          }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleZoomIn(); }}
+              disabled={zoomLevel >= 4}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(4px)',
+                border: 'none',
+                color: 'white',
+                fontSize: '20px',
+                width: '50px',
+                height: '50px',
+                borderRadius: '50%',
+                cursor: zoomLevel >= 4 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s',
+                opacity: zoomLevel >= 4 ? 0.5 : 1
+              }}
+              onMouseOver={(e) => {
+                if (zoomLevel < 4) {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <i className="fas fa-plus"></i>
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleZoomOut(); }}
+              disabled={zoomLevel <= 1}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(4px)',
+                border: 'none',
+                color: 'white',
+                fontSize: '20px',
+                width: '50px',
+                height: '50px',
+                borderRadius: '50%',
+                cursor: zoomLevel <= 1 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s',
+                opacity: zoomLevel <= 1 ? 0.5 : 1
+              }}
+              onMouseOver={(e) => {
+                if (zoomLevel > 1) {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <i className="fas fa-minus"></i>
+            </button>
+            {zoomLevel > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleResetZoom(); }}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(4px)',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '16px',
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.3s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                1:1
+              </button>
+            )}
+          </div>
+
+          {/* Navigation Arrows for Multiple Images */}
+          {hasMultipleImages && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); goToPreviousImage(); }}
+                style={{
+                  position: 'absolute',
+                  left: '20px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(4px)',
+                  border: 'none',
+                  color: 'white',
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '24px',
+                  transition: 'all 0.3s',
+                  zIndex: 2001
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                }}
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); goToNextImage(); }}
+                style={{
+                  position: 'absolute',
+                  right: '20px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(4px)',
+                  border: 'none',
+                  color: 'white',
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '24px',
+                  transition: 'all 0.3s',
+                  zIndex: 2001
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                }}
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </>
+          )}
+
+          {/* Full size image with zoom and pan */}
           <img
-            src={note.image}
+            src={currentImage}
             alt={note.title}
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={handleMouseDown}
             style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
+              maxWidth: zoomLevel === 1 ? '100%' : 'none',
+              maxHeight: zoomLevel === 1 ? '100%' : 'none',
+              width: zoomLevel > 1 ? `${zoomLevel * 100}%` : 'auto',
               objectFit: 'contain',
               borderRadius: '8px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+              transform: `translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+              transition: isDragging ? 'none' : 'transform 0.3s',
+              cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+              userSelect: 'none',
+              pointerEvents: zoomLevel > 1 ? 'auto' : 'none'
             }}
+            draggable={false}
           />
 
-          {/* Help text */}
+          {/* Info Panel */}
           <div style={{
             position: 'absolute',
             bottom: '30px',
@@ -581,11 +963,23 @@ export default function NoteDetailModal({
             fontSize: '14px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '16px',
             pointerEvents: 'none'
           }}>
-            <i className="fas fa-info-circle"></i>
-            Click anywhere to close
+            {hasMultipleImages && (
+              <span style={{ fontWeight: '600' }}>
+                {currentImageIndex + 1} / {images.length}
+              </span>
+            )}
+            {zoomLevel > 1 && (
+              <span style={{ fontWeight: '600' }}>
+                {Math.round(zoomLevel * 100)}%
+              </span>
+            )}
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <i className="fas fa-info-circle"></i>
+              {zoomLevel > 1 ? 'Drag to pan' : 'Use +/- to zoom'}
+            </span>
           </div>
         </div>
       )}
