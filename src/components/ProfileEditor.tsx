@@ -665,9 +665,9 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                         color: darkTheme.colors.textSecondary,
                         lineHeight: '1.4'
                       }}>
-                        {theme.name === 'default' && 'Classic dark theme with green accents'}
-                        {theme.name === 'nature' && 'Natural forest-inspired background'}
-                        {theme.name === 'pink' && 'Modern purple-pink gradient theme'}
+                        {theme.name === 'default' && 'Classic deep blue theme with no background'}
+                        {theme.name === 'nature' && 'Nature background with green accents'}
+                        {theme.name === 'pink' && 'Pink dreams background with pink accents'}
                       </div>
                     </div>
 

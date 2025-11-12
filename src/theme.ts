@@ -39,19 +39,19 @@ export interface Theme {
   };
 }
 
-// SpaceX-inspired dark theme (default)
-const spaceXTheme: Theme = {
+// Deep Blue theme (default - classic)
+const deepBlueTheme: Theme = {
   name: 'default',
-  displayName: 'SpaceX Dark',
+  displayName: 'Deep Blue',
   colors: {
-    bgPrimary: '#000000',
-    bgSecondary: '#0a0a0a',
-    bgTertiary: '#151515',
-    textPrimary: '#ffffff',
-    textSecondary: '#a0a0a0',
-    borderColor: '#1a1a1a',
-    accent: '#005288',
-    accentHover: '#0066aa',
+    bgPrimary: '#0a0f1a',
+    bgSecondary: '#111827',
+    bgTertiary: '#1e293b',
+    textPrimary: '#f1f5f9',
+    textSecondary: '#94a3b8',
+    borderColor: '#334155',
+    accent: '#3b82f6',
+    accentHover: '#60a5fa',
     success: '#4ade80',
     danger: '#ef4444',
     dangerHover: '#dc2626',
@@ -63,9 +63,9 @@ const spaceXTheme: Theme = {
     slow: 'all 0.5s ease',
   },
   shadows: {
-    default: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
-    lg: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
-    md: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+    default: '0 4px 6px -1px rgba(59, 130, 246, 0.2)',
+    lg: '0 20px 25px -5px rgba(59, 130, 246, 0.3)',
+    md: '0 10px 15px -3px rgba(59, 130, 246, 0.15)',
   },
   borderRadius: {
     sm: '4px',
@@ -115,7 +115,7 @@ const natureTheme: Theme = {
   },
 };
 
-// Pink theme
+// Pink Dreams theme
 const pinkTheme: Theme = {
   name: 'pink',
   displayName: 'Pink Dreams',
@@ -124,10 +124,10 @@ const pinkTheme: Theme = {
     bgSecondary: '#2a1228',
     bgTertiary: '#3d1a38',
     textPrimary: '#fce4ec',
-    textSecondary: '#f48fb1',
+    textSecondary: '#f8bbd0',
     borderColor: '#6d2e5c',
-    accent: '#e91e63',
-    accentHover: '#f06292',
+    accent: '#ec4899',
+    accentHover: '#f472b6',
     success: '#81c784',
     danger: '#ef5350',
     dangerHover: '#e53935',
@@ -139,9 +139,9 @@ const pinkTheme: Theme = {
     slow: 'all 0.5s ease',
   },
   shadows: {
-    default: '0 4px 6px -1px rgba(233, 30, 99, 0.3)',
-    lg: '0 20px 25px -5px rgba(233, 30, 99, 0.5)',
-    md: '0 10px 15px -3px rgba(233, 30, 99, 0.2)',
+    default: '0 4px 6px -1px rgba(236, 72, 153, 0.3)',
+    lg: '0 20px 25px -5px rgba(236, 72, 153, 0.5)',
+    md: '0 10px 15px -3px rgba(236, 72, 153, 0.2)',
   },
   borderRadius: {
     sm: '4px',
@@ -150,13 +150,14 @@ const pinkTheme: Theme = {
     xl: '16px',
   },
   background: {
-    gradient: 'linear-gradient(135deg, #1a0a14 0%, #2a1228 50%, #3d1a38 100%)',
+    image: '/pink.png',
+    overlay: 'rgba(26, 10, 20, 0.85)',
   },
 };
 
 // Export all themes
 export const themes: Record<string, Theme> = {
-  default: spaceXTheme,
+  default: deepBlueTheme,
   nature: natureTheme,
   pink: pinkTheme,
 };
