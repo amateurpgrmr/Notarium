@@ -115,51 +115,10 @@ const natureTheme: Theme = {
   },
 };
 
-// Pink Dreams theme
-const pinkTheme: Theme = {
-  name: 'pink',
-  displayName: 'Pink Dreams',
-  colors: {
-    bgPrimary: '#1a0a14',
-    bgSecondary: '#2a1228',
-    bgTertiary: '#3d1a38',
-    textPrimary: '#fce4ec',
-    textSecondary: '#f8bbd0',
-    borderColor: '#6d2e5c',
-    accent: '#ffc0cb',
-    accentHover: '#ffb3c1',
-    success: '#81c784',
-    danger: '#ef5350',
-    dangerHover: '#e53935',
-    warning: '#ffb74d',
-  },
-  transitions: {
-    default: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    fast: 'all 0.15s ease',
-    slow: 'all 0.5s ease',
-  },
-  shadows: {
-    default: '0 4px 6px -1px rgba(255, 192, 203, 0.3)',
-    lg: '0 20px 25px -5px rgba(255, 192, 203, 0.5)',
-    md: '0 10px 15px -3px rgba(255, 192, 203, 0.2)',
-  },
-  borderRadius: {
-    sm: '4px',
-    md: '8px',
-    lg: '12px',
-    xl: '16px',
-  },
-  background: {
-    image: '/pink.jpeg',
-    overlay: 'rgba(26, 10, 20, 0.85)',
-  },
-};
-
 // Export all themes
 export const themes: Record<string, Theme> = {
   default: deepBlueTheme,
   nature: natureTheme,
-  pink: pinkTheme,
 };
 
 // Get current theme from localStorage or default

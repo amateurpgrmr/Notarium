@@ -698,7 +698,6 @@ export default function ProfileEditor({ onClose }: ProfileEditorProps) {
                       }}>
                         {theme.name === 'default' && 'Classic deep blue theme with no background'}
                         {theme.name === 'nature' && 'Nature background with green accents'}
-                        {theme.name === 'pink' && 'Pink dreams background with pink accents'}
                       </div>
                     </div>
 
