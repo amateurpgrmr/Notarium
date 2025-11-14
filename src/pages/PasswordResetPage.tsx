@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { darkTheme } from '../theme';
 import api from '../lib/api';
+import '../styles/login.css';
 
-const SECRET_CODE = 'bru31$';
+const SECRET_CODE = '%62rdn2%';
 
 export default function PasswordResetPage() {
   const navigate = useNavigate();
@@ -14,14 +14,8 @@ export default function PasswordResetPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  // Handle responsive design
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleCodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,278 +73,176 @@ export default function PasswordResetPage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: darkTheme.colors.bgPrimary,
-      padding: isMobile ? '20px' : '40px'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '450px',
-        background: darkTheme.colors.bgSecondary,
-        borderRadius: darkTheme.borderRadius.lg,
-        padding: isMobile ? '24px' : '40px',
-        boxShadow: darkTheme.shadows.lg,
-        border: `1px solid ${darkTheme.colors.borderColor}`
-      }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: isMobile ? '24px' : '32px' }}>
-          <img
-            src="/notarium-logo.jpg"
-            alt="Notarium"
-            style={{ height: isMobile ? '60px' : '80px', width: 'auto', marginBottom: '16px' }}
-          />
-          <h1 style={{
-            fontSize: isMobile ? '22px' : '28px',
-            fontWeight: 'bold',
-            color: darkTheme.colors.textPrimary,
-            marginBottom: '8px'
-          }}>
-            Password Reset
-          </h1>
-          <p style={{
-            fontSize: isMobile ? '13px' : '14px',
-            color: darkTheme.colors.textSecondary
-          }}>
+    <div className="login-container">
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      <div className="login-wrapper">
+        <h1 className="login-title" style={{ animation: 'fadeIn 0.6s ease-out' }}>
+          NOTARIUM
+        </h1>
+
+        <div className="login-card" style={{ animation: 'scaleIn 0.6s ease-out 0.2s both' }}>
+          <h2 className="login-heading">Password Reset</h2>
+          <p className="login-subtitle">
             {step === 'code'
               ? 'Enter the code provided by your admin'
               : 'Enter your email and new password'
             }
           </p>
-        </div>
 
-        {/* Error Message */}
-        {error && (
-          <div style={{
-            padding: isMobile ? '10px 14px' : '12px 16px',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: darkTheme.borderRadius.md,
-            color: '#fca5a5',
-            fontSize: isMobile ? '13px' : '14px',
-            marginBottom: isMobile ? '16px' : '20px'
-          }}>
-            <i className="fas fa-exclamation-circle" style={{ marginRight: '8px' }}></i>
-            {error}
-          </div>
-        )}
+          {error && <div className="login-error">{error}</div>}
 
-        {/* Step 1: Code Entry */}
-        {step === 'code' && (
-          <form onSubmit={handleCodeSubmit}>
-            <div style={{ marginBottom: isMobile ? '16px' : '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: isMobile ? '13px' : '14px',
-                fontWeight: '500',
-                color: darkTheme.colors.textPrimary
-              }}>
-                Admin Code
-              </label>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="Enter the code from admin"
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '10px 14px' : '12px 16px',
-                  background: darkTheme.colors.bgTertiary,
-                  border: `1px solid ${darkTheme.colors.borderColor}`,
-                  borderRadius: darkTheme.borderRadius.md,
-                  color: darkTheme.colors.textPrimary,
-                  fontSize: isMobile ? '14px' : '15px',
-                  outline: 'none',
-                  transition: darkTheme.transitions.default
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
-                onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
-              />
-            </div>
+          {/* Step 1: Code Entry */}
+          {step === 'code' && (
+            <form onSubmit={handleCodeSubmit} className="login-form">
+              <div className="form-group">
+                <label htmlFor="code">Admin Code</label>
+                <input
+                  id="code"
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="Enter the code from admin"
+                  required
+                />
+              </div>
 
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                padding: isMobile ? '12px' : '14px',
-                background: darkTheme.colors.accent,
-                color: 'white',
-                border: 'none',
-                borderRadius: darkTheme.borderRadius.md,
-                fontSize: isMobile ? '14px' : '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: darkTheme.transitions.default
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = darkTheme.colors.accentHover}
-              onMouseOut={(e) => e.currentTarget.style.background = darkTheme.colors.accent}
-            >
-              Continue
-            </button>
-          </form>
-        )}
-
-        {/* Step 2: Password Reset */}
-        {step === 'reset' && (
-          <form onSubmit={handlePasswordReset}>
-            <div style={{ marginBottom: isMobile ? '16px' : '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: isMobile ? '13px' : '14px',
-                fontWeight: '500',
-                color: darkTheme.colors.textPrimary
-              }}>
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '10px 14px' : '12px 16px',
-                  background: darkTheme.colors.bgTertiary,
-                  border: `1px solid ${darkTheme.colors.borderColor}`,
-                  borderRadius: darkTheme.borderRadius.md,
-                  color: darkTheme.colors.textPrimary,
-                  fontSize: isMobile ? '14px' : '15px',
-                  outline: 'none',
-                  transition: darkTheme.transitions.default
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
-                onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
-              />
-            </div>
-
-            <div style={{ marginBottom: isMobile ? '16px' : '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: isMobile ? '13px' : '14px',
-                fontWeight: '500',
-                color: darkTheme.colors.textPrimary
-              }}>
-                New Password
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '10px 14px' : '12px 16px',
-                  background: darkTheme.colors.bgTertiary,
-                  border: `1px solid ${darkTheme.colors.borderColor}`,
-                  borderRadius: darkTheme.borderRadius.md,
-                  color: darkTheme.colors.textPrimary,
-                  fontSize: isMobile ? '14px' : '15px',
-                  outline: 'none',
-                  transition: darkTheme.transitions.default
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
-                onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
-              />
-            </div>
-
-            <div style={{ marginBottom: isMobile ? '20px' : '24px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontSize: isMobile ? '13px' : '14px',
-                fontWeight: '500',
-                color: darkTheme.colors.textPrimary
-              }}>
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '10px 14px' : '12px 16px',
-                  background: darkTheme.colors.bgTertiary,
-                  border: `1px solid ${darkTheme.colors.borderColor}`,
-                  borderRadius: darkTheme.borderRadius.md,
-                  color: darkTheme.colors.textPrimary,
-                  fontSize: isMobile ? '14px' : '15px',
-                  outline: 'none',
-                  transition: darkTheme.transitions.default
-                }}
-                onFocus={(e) => e.currentTarget.style.borderColor = darkTheme.colors.accent}
-                onBlur={(e) => e.currentTarget.style.borderColor = darkTheme.colors.borderColor}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: isMobile ? '10px' : '12px' }}>
-              <button
-                type="button"
-                onClick={() => setStep('code')}
-                style={{
-                  flex: 1,
-                  padding: isMobile ? '12px' : '14px',
-                  background: darkTheme.colors.bgTertiary,
-                  color: darkTheme.colors.textPrimary,
-                  border: `1px solid ${darkTheme.colors.borderColor}`,
-                  borderRadius: darkTheme.borderRadius.md,
-                  fontSize: isMobile ? '14px' : '16px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: darkTheme.transitions.default
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = darkTheme.colors.bgSecondary}
-                onMouseOut={(e) => e.currentTarget.style.background = darkTheme.colors.bgTertiary}
-              >
-                Back
-              </button>
               <button
                 type="submit"
-                disabled={loading}
-                style={{
-                  flex: 2,
-                  padding: isMobile ? '12px' : '14px',
-                  background: loading ? darkTheme.colors.accent + '80' : darkTheme.colors.accent,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: darkTheme.borderRadius.md,
-                  fontSize: isMobile ? '14px' : '16px',
-                  fontWeight: '600',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: darkTheme.transitions.default
-                }}
-                onMouseOver={(e) => {
-                  if (!loading) e.currentTarget.style.background = darkTheme.colors.accentHover;
-                }}
-                onMouseOut={(e) => {
-                  if (!loading) e.currentTarget.style.background = darkTheme.colors.accent;
-                }}
+                className="login-button primary"
               >
-                {loading ? 'Resetting...' : 'Reset Password'}
+                Continue
               </button>
-            </div>
-          </form>
-        )}
+            </form>
+          )}
 
-        {/* Footer */}
-        <div style={{
-          marginTop: isMobile ? '20px' : '24px',
-          paddingTop: isMobile ? '16px' : '20px',
-          borderTop: `1px solid ${darkTheme.colors.borderColor}`,
-          textAlign: 'center'
-        }}>
-          <p style={{
-            fontSize: isMobile ? '12px' : '13px',
-            color: darkTheme.colors.textSecondary
-          }}>
-            Need help? Contact your administrator
+          {/* Step 2: Password Reset */}
+          {step === 'reset' && (
+            <form onSubmit={handlePasswordReset} className="login-form">
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ position: 'relative' }}>
+                <label htmlFor="newPassword">New Password</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    id="newPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    required
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#888',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      padding: '4px 8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
+                    onMouseOut={(e) => e.currentTarget.style.color = '#888'}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ position: 'relative' }}>
+                <label htmlFor="confirmPassword">Confirm New Password</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    required
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#888',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      padding: '4px 8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
+                    onMouseOut={(e) => e.currentTarget.style.color = '#888'}
+                    title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setStep('code')}
+                  className="login-button"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                  }}
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="login-button primary"
+                  style={{ flex: 2 }}
+                >
+                  {loading ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <p className="login-footer">
+            Remember your password? <a href="/login">Sign in</a>
           </p>
         </div>
       </div>
