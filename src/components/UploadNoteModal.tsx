@@ -363,7 +363,7 @@ export default function UploadNoteModal({ onClose, subjects, onSuccess, preselec
           description: quickSummary || 'No description available',
           subject_id: selectedSubject,
           extracted_text: extractedText || 'No extracted text',
-          image_path: imageChunk[0], // Use first image of chunk as primary
+          images: imageChunk, // Send all images in this chunk as array
           quick_summary: quickSummary,
           tags: finalTags,
           status: saveAsDraft ? 'draft' : 'published',

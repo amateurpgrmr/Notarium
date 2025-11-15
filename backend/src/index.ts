@@ -215,6 +215,18 @@ async function initializeDatabase(env: Env) {
     } catch (e) {
       // Column already exists
     }
+    try {
+      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN parent_note_id INTEGER`).run();
+      console.log('[DB_MIGRATION] Added parent_note_id column for continuation notes');
+    } catch (e) {
+      console.log('[DB_MIGRATION] parent_note_id column exists or failed to add:', e);
+    }
+    try {
+      await env.DB.prepare(`ALTER TABLE notes ADD COLUMN part_number INTEGER`).run();
+      console.log('[DB_MIGRATION] Added part_number column for continuation notes');
+    } catch (e) {
+      console.log('[DB_MIGRATION] part_number column exists or failed to add:', e);
+    }
 
     // Data migration: Fix any notes with NULL or empty status/visibility
     try {
@@ -1100,25 +1112,13 @@ async function searchNotes(query: string, request: Request, env: Env) {
   return jsonResponse({ notes: results });
 }
 
-// Create new note
+// Create new note (with multi-photo support and auto-continuation)
 async function createNote(request: Request, env: Env) {
   try {
     const user = await getOrCreateUser(request, env);
     const body = await request.json() as any;
 
     console.log('[CREATE NOTE] User:', user.id, 'Subject:', body.subject_id);
-
-    // Check total data size (D1 has 1MB row limit)
-    const dataSize = JSON.stringify(body).length;
-    const MAX_SIZE = 900000; // 900KB to leave some buffer
-    if (dataSize > MAX_SIZE) {
-      console.error('[CREATE NOTE] Data too large:', dataSize, 'bytes');
-      return jsonResponse({
-        error: 'Note data is too large. Please use fewer or smaller images.',
-        size: dataSize,
-        maxSize: MAX_SIZE
-      }, 413);
-    }
 
     // Validate required fields
     if (!body.subject_id) {
@@ -1138,6 +1138,22 @@ async function createNote(request: Request, env: Env) {
       return jsonResponse({ error: 'Invalid subject ID' }, 400);
     }
 
+    // Handle images - convert to array format
+    let images: string[] = [];
+    if (body.images && Array.isArray(body.images)) {
+      images = body.images;
+    } else if (body.image_path) {
+      // For backward compatibility, check if image_path is already a JSON array
+      try {
+        const parsed = JSON.parse(body.image_path);
+        images = Array.isArray(parsed) ? parsed : [body.image_path];
+      } catch {
+        images = [body.image_path];
+      }
+    }
+
+    console.log('[CREATE NOTE] Total images:', images.length);
+
     // Convert tags array to JSON string for storage
     const tagsJson = body.tags && Array.isArray(body.tags) ? JSON.stringify(body.tags) : '[]';
 
@@ -1146,57 +1162,125 @@ async function createNote(request: Request, env: Env) {
     const userClass = userData?.class || null;
 
     // Determine note status (draft or published)
-    // ALWAYS default to 'published' unless explicitly set to 'draft'
     const noteStatus = (body.status === 'draft') ? 'draft' : 'published';
     const scheduledPublishAt = body.scheduled_publish_at || null;
-    // ALWAYS default to 'everyone' to ensure notes are visible
     const visibility = body.visibility && body.visibility !== '' ? body.visibility : 'everyone';
 
-    // Create note
-    const note = await env.DB.prepare(`
-      INSERT INTO notes (title, description, subject_id, author_id, author_class, extracted_text, image_path, content, tags, summary, status, scheduled_publish_at, visibility)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      RETURNING *
-    `).bind(
-      body.title,
-      body.description || 'No description',
-      body.subject_id,
-      user.id,
-      userClass,
-      body.extracted_text || '',
-      body.image_path || '',
-      body.content || body.description || '',
-      tagsJson,
-      body.quick_summary || body.description || '',
-      noteStatus,
-      scheduledPublishAt,
-      visibility
-    ).first();
-
-    if (!note) {
-      console.error('[CREATE NOTE] Failed to create note in database');
-      return jsonResponse({ error: 'Failed to create note' }, 500);
+    // Split images into chunks of max 3 per note
+    const MAX_IMAGES_PER_NOTE = 3;
+    const imageChunks: string[][] = [];
+    for (let i = 0; i < images.length; i += MAX_IMAGES_PER_NOTE) {
+      imageChunks.push(images.slice(i, i + MAX_IMAGES_PER_NOTE));
     }
 
-    console.log('[CREATE NOTE] Note created:', (note as any).id, 'Status:', noteStatus, 'Visibility:', visibility);
+    console.log('[CREATE NOTE] Image chunks:', imageChunks.length);
 
-    // Update user stats and subject count (only for published notes, not drafts)
-    if (noteStatus === 'published') {
-      try {
-        await env.DB.batch([
-          env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded + 1 WHERE id = ?').bind(user.id),
-          env.DB.prepare('UPDATE subjects SET note_count = note_count + 1 WHERE id = ?').bind(body.subject_id)
-        ]);
-        console.log('[CREATE NOTE] Stats updated successfully');
-      } catch (updateError) {
-        console.error('[CREATE NOTE] Failed to update stats:', updateError);
-        // Note was created, so don't fail - just log the error
+    const createdNotes: any[] = [];
+    let parentNoteId: number | null = null;
+
+    // Create notes for each chunk
+    for (let chunkIndex = 0; chunkIndex < imageChunks.length; chunkIndex++) {
+      const chunk = imageChunks[chunkIndex];
+      const partNumber = chunkIndex + 1;
+      const isFirstPart = chunkIndex === 0;
+
+      // Determine title for this part
+      const noteTitle = isFirstPart ? body.title : `${body.title} (${partNumber})`;
+
+      // Determine extracted text for this part
+      let extractedText = '';
+      if (isFirstPart) {
+        extractedText = body.extracted_text || '';
+      } else {
+        extractedText = `Continued from previous note...\n\n${body.extracted_text || ''}`;
       }
-    } else {
-      console.log('[CREATE NOTE] Draft note created, stats not updated');
+
+      // Store images as JSON array
+      const imagePathJson = JSON.stringify(chunk);
+
+      // Check size for this chunk
+      const chunkData = {
+        title: noteTitle,
+        description: body.description,
+        extracted_text: extractedText,
+        image_path: imagePathJson,
+        tags: tagsJson
+      };
+      const chunkSize = JSON.stringify(chunkData).length;
+      const MAX_SIZE = 900000; // 900KB to leave buffer
+
+      if (chunkSize > MAX_SIZE) {
+        console.error('[CREATE NOTE] Chunk too large:', chunkSize, 'bytes');
+        return jsonResponse({
+          error: 'Note data is too large. Please use smaller images.',
+          size: chunkSize,
+          maxSize: MAX_SIZE
+        }, 413);
+      }
+
+      // Create note with continuation fields
+      const note = await env.DB.prepare(`
+        INSERT INTO notes (
+          title, description, subject_id, author_id, author_class,
+          extracted_text, image_path, content, tags, summary,
+          status, scheduled_publish_at, visibility,
+          parent_note_id, part_number
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        RETURNING *
+      `).bind(
+        noteTitle,
+        body.description || 'No description',
+        body.subject_id,
+        user.id,
+        userClass,
+        extractedText,
+        imagePathJson,
+        body.content || body.description || '',
+        tagsJson,
+        body.quick_summary || body.description || '',
+        noteStatus,
+        scheduledPublishAt,
+        visibility,
+        parentNoteId, // null for first note, previous note ID for continuations
+        partNumber
+      ).first();
+
+      if (!note) {
+        console.error('[CREATE NOTE] Failed to create note in database');
+        return jsonResponse({ error: 'Failed to create note' }, 500);
+      }
+
+      console.log('[CREATE NOTE] Note created:', (note as any).id, 'Part:', partNumber, 'Images:', chunk.length);
+
+      // Set parent ID for next iteration
+      if (isFirstPart) {
+        parentNoteId = (note as any).id;
+      }
+
+      createdNotes.push(note);
+
+      // Update user stats and subject count (only for published notes)
+      if (noteStatus === 'published') {
+        try {
+          await env.DB.batch([
+            env.DB.prepare('UPDATE users SET notes_uploaded = notes_uploaded + 1 WHERE id = ?').bind(user.id),
+            env.DB.prepare('UPDATE subjects SET note_count = note_count + 1 WHERE id = ?').bind(body.subject_id)
+          ]);
+        } catch (updateError) {
+          console.error('[CREATE NOTE] Failed to update stats:', updateError);
+        }
+      }
     }
 
-    return jsonResponse({ note, success: true });
+    console.log('[CREATE NOTE] All notes created successfully. Total:', createdNotes.length);
+
+    return jsonResponse({
+      note: createdNotes[0], // Return first note as primary
+      notes: createdNotes,    // Return all created notes
+      success: true,
+      totalParts: createdNotes.length
+    });
   } catch (error: any) {
     console.error('[CREATE NOTE] Error:', error);
     return jsonResponse({ error: error.message || 'Failed to create note' }, 500);

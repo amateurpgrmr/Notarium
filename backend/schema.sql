@@ -40,10 +40,12 @@ CREATE TABLE IF NOT EXISTS notes (
   author_id INTEGER NOT NULL,
   extracted_text TEXT,
   summary TEXT,
-  image_path TEXT,
+  image_path TEXT,  -- JSON array of base64 images (max 3 per note)
   content TEXT,
   tags TEXT,
   author_class TEXT,
+  parent_note_id INTEGER,  -- Links to parent note for continuation notes
+  part_number INTEGER,  -- Part number for continuation (1, 2, 3, etc.)
   status TEXT NOT NULL DEFAULT 'published',
   visibility TEXT NOT NULL DEFAULT 'everyone',
   scheduled_publish_at TEXT,
@@ -52,7 +54,8 @@ CREATE TABLE IF NOT EXISTS notes (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (subject_id) REFERENCES subjects(id),
-  FOREIGN KEY (author_id) REFERENCES users(id)
+  FOREIGN KEY (author_id) REFERENCES users(id),
+  FOREIGN KEY (parent_note_id) REFERENCES notes(id) ON DELETE CASCADE
 ) STRICT;
 
 -- Note likes tracking table
@@ -91,6 +94,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE INDEX IF NOT EXISTS idx_notes_subject_id ON notes(subject_id);
 CREATE INDEX IF NOT EXISTS idx_notes_author_id ON notes(author_id);
 CREATE INDEX IF NOT EXISTS idx_notes_created_at ON notes(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notes_parent_note_id ON notes(parent_note_id);
 CREATE INDEX IF NOT EXISTS idx_note_likes_note_id ON note_likes(note_id);
 CREATE INDEX IF NOT EXISTS idx_note_likes_user_id ON note_likes(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_user_id ON chat_sessions(user_id);

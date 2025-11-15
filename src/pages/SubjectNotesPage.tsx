@@ -23,6 +23,8 @@ export interface Note {
   created_at: string;
   liked_by_me?: boolean;
   upvoted_by_me?: boolean;
+  parent_note_id?: number | null;
+  part_number?: number | null;
 }
 
 interface SubjectNotesPageProps {
@@ -84,6 +86,8 @@ export default function SubjectNotesPage({
           created_at: note.created_at,
           liked_by_me: note.liked_by_me || false,
           upvoted_by_me: note.upvoted_by_me || false,
+          parent_note_id: note.parent_note_id,
+          part_number: note.part_number,
         }));
 
         setNotes(loadedNotes);
@@ -365,13 +369,36 @@ export default function SubjectNotesPage({
               <div
                 style={{
                   height: 'clamp(140px, 30vw, 200px)',
-                  background: note.image && note.image.startsWith('data:')
-                    ? `url(${note.image}) center/cover no-repeat`
-                    : `linear-gradient(135deg, ${darkTheme.colors.accent}20, ${darkTheme.colors.accent}05)`,
+                  background: (() => {
+                    if (!note.image) return `linear-gradient(135deg, ${darkTheme.colors.accent}20, ${darkTheme.colors.accent}05)`;
+                    // Check if it's a JSON array
+                    if (note.image.startsWith('[')) {
+                      try {
+                        const images = JSON.parse(note.image);
+                        if (Array.isArray(images) && images.length > 0 && images[0].startsWith('data:')) {
+                          return `url(${images[0]}) center/cover no-repeat`;
+                        }
+                      } catch {}
+                    }
+                    // Single image
+                    if (note.image.startsWith('data:')) {
+                      return `url(${note.image}) center/cover no-repeat`;
+                    }
+                    return `linear-gradient(135deg, ${darkTheme.colors.accent}20, ${darkTheme.colors.accent}05)`;
+                  })(),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: note.image && note.image.startsWith('data:') ? '0' : 'clamp(48px, 10vw, 64px)',
+                  fontSize: (() => {
+                    if (!note.image) return 'clamp(48px, 10vw, 64px)';
+                    if (note.image.startsWith('[')) {
+                      try {
+                        const images = JSON.parse(note.image);
+                        return Array.isArray(images) && images[0]?.startsWith('data:') ? '0' : 'clamp(48px, 10vw, 64px)';
+                      } catch {}
+                    }
+                    return note.image.startsWith('data:') ? '0' : 'clamp(48px, 10vw, 64px)';
+                  })(),
                   color: darkTheme.colors.accent,
                   position: 'relative',
                   overflow: 'hidden',
@@ -379,14 +406,96 @@ export default function SubjectNotesPage({
                 }}
               >
                 {/* Show emoji only if no actual image */}
-                {note.image && !note.image.startsWith('data:') && note.image}
+                {(() => {
+                  if (!note.image) return '📄';
+                  if (note.image.startsWith('[')) {
+                    try {
+                      const images = JSON.parse(note.image);
+                      return Array.isArray(images) && !images[0]?.startsWith('data:') ? (images[0] || '📄') : null;
+                    } catch {}
+                  }
+                  return !note.image.startsWith('data:') ? note.image : null;
+                })()}
+
+                {/* Photo count indicator */}
+                {(() => {
+                  let imageCount = 1;
+                  let hasRealImage = false;
+                  if (note.image && note.image.startsWith('[')) {
+                    try {
+                      const images = JSON.parse(note.image);
+                      if (Array.isArray(images)) {
+                        imageCount = images.length;
+                        hasRealImage = images[0]?.startsWith('data:');
+                      }
+                    } catch {}
+                  } else if (note.image && note.image.startsWith('data:')) {
+                    hasRealImage = true;
+                  }
+                  return imageCount > 1 && hasRealImage ? (
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      left: '12px',
+                      background: 'rgba(0,0,0,0.7)',
+                      backdropFilter: 'blur(4px)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '6px 12px',
+                      color: 'white',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      zIndex: 10
+                    }}>
+                      <i className="fas fa-images"></i> {imageCount}
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Continuation note indicator */}
+                {note.part_number && note.part_number > 1 && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '12px',
+                    left: '12px',
+                    background: `${darkTheme.colors.accent}E6`,
+                    backdropFilter: 'blur(4px)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    zIndex: 10
+                  }}>
+                    Part {note.part_number}
+                  </div>
+                )}
+
                 {/* Fullscreen zoom button */}
-                {note.image && note.image.startsWith('data:') && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFullScreenImage(note.image);
-                    }}
+                {(() => {
+                  let hasRealImage = false;
+                  let firstImage = note.image;
+                  if (note.image && note.image.startsWith('[')) {
+                    try {
+                      const images = JSON.parse(note.image);
+                      if (Array.isArray(images) && images[0]?.startsWith('data:')) {
+                        hasRealImage = true;
+                        firstImage = images[0];
+                      }
+                    } catch {}
+                  } else if (note.image && note.image.startsWith('data:')) {
+                    hasRealImage = true;
+                  }
+                  return hasRealImage ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFullScreenImage(firstImage);
+                      }}
                     style={{
                       position: 'absolute',
                       top: '12px',
@@ -417,7 +526,8 @@ export default function SubjectNotesPage({
                     <i className="fas fa-expand"></i>
                     <span style={{ fontSize: '12px' }}>Zoom</span>
                   </button>
-                )}
+                  ) : null;
+                })()}
                 <div
                   style={{
                     position: 'absolute',

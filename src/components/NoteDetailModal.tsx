@@ -50,9 +50,14 @@ export default function NoteDetailModal({
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   const currentImage = images[currentImageIndex] || null;
   const hasMultipleImages = images.length > 1;
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -114,6 +119,35 @@ export default function NoteDetailModal({
 
   const handleMouseUp = () => {
     setIsDragging(false);
+  };
+
+  // Touch swipe handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (hasMultipleImages && zoomLevel === 1) {
+      setTouchEnd(null);
+      setTouchStart(e.targetTouches[0].clientX);
+    }
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (hasMultipleImages && zoomLevel === 1) {
+      setTouchEnd(e.targetTouches[0].clientX);
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd || zoomLevel > 1) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      goToNextImage();
+    }
+    if (isRightSwipe) {
+      goToPreviousImage();
+    }
   };
 
   // Keyboard navigation
@@ -254,6 +288,9 @@ export default function NoteDetailModal({
               cursor: currentImage.startsWith('data:') ? 'zoom-in' : 'default',
               position: 'relative'
             }}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
           >
             {/* Show emoji only if no actual image */}
             {!currentImage.startsWith('data:') && currentImage}
@@ -347,22 +384,51 @@ export default function NoteDetailModal({
                   <i className="fas fa-chevron-right"></i>
                 </button>
 
-                {/* Page Indicator */}
+                {/* Page Indicator and White Dot Indicators */}
                 <div style={{
                   position: 'absolute',
                   bottom: '16px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  background: 'rgba(0,0,0,0.6)',
-                  backdropFilter: 'blur(4px)',
-                  borderRadius: '16px',
-                  padding: '6px 16px',
-                  color: 'white',
-                  fontSize: '14px',
-                  fontWeight: '600',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
                   pointerEvents: 'none'
                 }}>
-                  {currentImageIndex + 1} / {images.length}
+                  {/* Text indicator */}
+                  <div style={{
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    borderRadius: '16px',
+                    padding: '6px 16px',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '600'
+                  }}>
+                    {currentImageIndex + 1} / {images.length}
+                  </div>
+
+                  {/* White dot indicators */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    alignItems: 'center'
+                  }}>
+                    {images.map((_, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: index === currentImageIndex ? 'white' : 'rgba(255, 255, 255, 0.4)',
+                          transition: 'all 0.3s',
+                          boxShadow: index === currentImageIndex ? '0 0 8px rgba(255, 255, 255, 0.6)' : 'none'
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </>
             )}
@@ -973,31 +1039,62 @@ export default function NoteDetailModal({
             bottom: '30px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(4px)',
-            color: 'white',
-            padding: '12px 24px',
-            borderRadius: '24px',
-            fontSize: '14px',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: '16px',
+            gap: '12px',
             pointerEvents: 'none'
           }}>
+            {/* Info bar */}
+            <div style={{
+              background: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(4px)',
+              color: 'white',
+              padding: '12px 24px',
+              borderRadius: '24px',
+              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px'
+            }}>
+              {hasMultipleImages && (
+                <span style={{ fontWeight: '600' }}>
+                  {currentImageIndex + 1} / {images.length}
+                </span>
+              )}
+              {zoomLevel > 1 && (
+                <span style={{ fontWeight: '600' }}>
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+              )}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <i className="fas fa-info-circle"></i>
+                {zoomLevel > 1 ? 'Drag to pan' : 'Use +/- to zoom'}
+              </span>
+            </div>
+
+            {/* White dot indicators for fullscreen */}
             {hasMultipleImages && (
-              <span style={{ fontWeight: '600' }}>
-                {currentImageIndex + 1} / {images.length}
-              </span>
+              <div style={{
+                display: 'flex',
+                gap: '10px',
+                alignItems: 'center'
+              }}>
+                {images.map((_, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      background: index === currentImageIndex ? 'white' : 'rgba(255, 255, 255, 0.3)',
+                      transition: 'all 0.3s',
+                      boxShadow: index === currentImageIndex ? '0 0 10px rgba(255, 255, 255, 0.8)' : 'none'
+                    }}
+                  />
+                ))}
+              </div>
             )}
-            {zoomLevel > 1 && (
-              <span style={{ fontWeight: '600' }}>
-                {Math.round(zoomLevel * 100)}%
-              </span>
-            )}
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <i className="fas fa-info-circle"></i>
-              {zoomLevel > 1 ? 'Drag to pan' : 'Use +/- to zoom'}
-            </span>
           </div>
         </div>
       )}
