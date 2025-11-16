@@ -1020,7 +1020,7 @@ function HomePage() {
             e.currentTarget.style.color = currentTheme.colors.accent;
           }}
         >
-          Meet the Founders
+          Meet the Team
         </button>
       </footer>
 

@@ -111,7 +111,7 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
             fontWeight: 'bold',
             color: darkTheme.colors.textPrimary
           }}>
-            Meet Our Founders
+            Meet Our Team
           </h2>
           <button
             onClick={onClose}
@@ -283,18 +283,6 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
             );
           })}
         </div>
-
-        {/* Footer Note */}
-        <p style={{
-          marginTop: isMobile ? '16px' : '24px',
-          marginBottom: 0,
-          fontSize: '12px',
-          color: darkTheme.colors.textSecondary,
-          textAlign: 'center',
-          fontStyle: 'italic'
-        }}>
-          Building the future of collaborative learning
-        </p>
       </div>
 
       {/* Animations */}
