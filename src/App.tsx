@@ -985,17 +985,22 @@ function HomePage() {
       <footer style={{
         textAlign: 'center',
         padding: '16px 20px',
-        borderTop: `1px solid ${currentTheme.colors.borderColor}`,
+        border: `1px solid ${currentTheme.colors.borderColor}`,
         color: currentTheme.colors.textSecondary,
         fontSize: '13px',
         marginTop: '48px',
+        marginBottom: '24px',
         background: currentTheme.colors.bgSecondary,
-        borderRadius: '16px 16px 0 0',
+        borderRadius: isMobile ? '12px' : '16px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: '16px',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        width: isMobile ? '90%' : '60%',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
       }}>
         <p style={{ margin: 0 }}>© 2025 Notarium. All rights reserved.</p>
         <button
