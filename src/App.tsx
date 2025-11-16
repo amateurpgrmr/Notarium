@@ -15,6 +15,7 @@ import MyNotesPage from './pages/MyNotesPage'
 import ProfileEditor from './components/ProfileEditor'
 import ProfileStats from './components/ProfileStats'
 import LoadingSpinner from './components/LoadingSpinner'
+import FoundersModal from './components/FoundersModal'
 import { darkThemeStyles, getCurrentTheme } from './theme'
 import { useTheme } from './hooks/useTheme'
 import './index.css'
@@ -91,6 +92,7 @@ function HomePage() {
   const [loading, setLoading] = useState(true)
   const [showProfileEditor, setShowProfileEditor] = useState(false)
   const [showProfileStats, setShowProfileStats] = useState(false)
+  const [showFoundersModal, setShowFoundersModal] = useState(false)
   const [subjects, setSubjects] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -982,15 +984,50 @@ function HomePage() {
       {/* Copyright Footer */}
       <footer style={{
         textAlign: 'center',
-        padding: '32px 20px',
+        padding: '16px 20px',
         borderTop: `1px solid ${currentTheme.colors.borderColor}`,
         color: currentTheme.colors.textSecondary,
         fontSize: '13px',
         marginTop: '48px',
-        background: currentTheme.colors.bgSecondary
+        background: currentTheme.colors.bgSecondary,
+        borderRadius: '16px 16px 0 0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '16px',
+        flexWrap: 'wrap'
       }}>
         <p style={{ margin: 0 }}>© 2025 Notarium. All rights reserved.</p>
+        <button
+          onClick={() => setShowFoundersModal(true)}
+          style={{
+            padding: '6px 14px',
+            background: 'rgba(139, 92, 246, 0.15)',
+            border: `1px solid ${currentTheme.colors.accent}`,
+            color: currentTheme.colors.accent,
+            borderRadius: currentTheme.borderRadius.md,
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: '500',
+            transition: currentTheme.transitions.default
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = currentTheme.colors.accent;
+            e.currentTarget.style.color = '#fff';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
+            e.currentTarget.style.color = currentTheme.colors.accent;
+          }}
+        >
+          Meet the Founders
+        </button>
       </footer>
+
+      {/* Founders Modal */}
+      {showFoundersModal && (
+        <FoundersModal onClose={() => setShowFoundersModal(false)} />
+      )}
     </div>
   )
 }
