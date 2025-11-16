@@ -1219,7 +1219,7 @@ async function createNote(request: Request, env: Env) {
       }
 
       // Create note with continuation fields
-      const note = await env.DB.prepare(`
+      const note: any = await env.DB.prepare(`
         INSERT INTO notes (
           title, description, subject_id, author_id, author_class,
           extracted_text, image_path, content, tags, summary,
