@@ -86,15 +86,15 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
           left: '50%',
           transform: 'translate(-50%, -50%)',
           background: darkTheme.colors.bgSecondary,
-          borderRadius: darkTheme.borderRadius.lg,
-          padding: isMobile ? '20px' : '32px',
-          maxWidth: isMobile ? '95%' : '600px',
-          width: isMobile ? '95%' : '90%',
+          borderRadius: isMobile ? '16px' : '20px',
+          padding: isMobile ? '20px' : '36px',
+          maxWidth: isMobile ? '90%' : '550px',
+          width: isMobile ? '90%' : '60%',
           maxHeight: '85vh',
           overflowY: 'auto',
           zIndex: 9999,
           border: `1px solid ${darkTheme.colors.borderColor}`,
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 25px 70px rgba(0, 0, 0, 0.6)',
           animation: 'slideUp 0.3s ease-out'
         }}
       >
