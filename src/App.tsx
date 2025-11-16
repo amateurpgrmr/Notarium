@@ -352,6 +352,26 @@ function HomePage() {
               <i style={{ marginRight: '6px' }} className="fas fa-book"></i>My Notes
             </button>
 
+            {/* Meet the Team Button */}
+            <button
+              onClick={() => setShowFoundersModal(true)}
+              style={{
+                padding: '10px 18px',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '500',
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <i style={{ marginRight: '6px' }} className="fas fa-users"></i>Team
+            </button>
+
             {/* Logout Button */}
             <button
               onClick={logout}
@@ -854,6 +874,34 @@ function HomePage() {
               <i className="fas fa-book" style={{ width: '20px' }}></i>My Notes
             </button>
 
+            {/* Meet the Team Button */}
+            <button
+              onClick={() => {
+                closeMobileMenu()
+                setShowFoundersModal(true)
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '15px',
+                fontWeight: '500',
+                transition: currentTheme.transitions.default,
+                borderRadius: currentTheme.borderRadius.md,
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              <i className="fas fa-users" style={{ width: '20px' }}></i>Team
+            </button>
+
             {/* Logout Button */}
             <button
               onClick={() => {
@@ -980,54 +1028,6 @@ function HomePage() {
       {showProfileEditor && !showProfileStats && (
         <ProfileEditor onClose={() => setShowProfileEditor(false)} />
       )}
-
-      {/* Copyright Footer */}
-      <footer style={{
-        textAlign: 'center',
-        padding: '16px 20px',
-        border: `1px solid ${currentTheme.colors.borderColor}`,
-        color: currentTheme.colors.textSecondary,
-        fontSize: '13px',
-        marginTop: '48px',
-        marginBottom: '24px',
-        background: currentTheme.colors.bgSecondary,
-        borderRadius: isMobile ? '12px' : '16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '16px',
-        flexWrap: 'wrap',
-        width: isMobile ? '90%' : '60%',
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-      }}>
-        <p style={{ margin: 0 }}>© 2025 Notarium. All rights reserved.</p>
-        <button
-          onClick={() => setShowFoundersModal(true)}
-          style={{
-            padding: '6px 14px',
-            background: 'rgba(139, 92, 246, 0.15)',
-            border: `1px solid ${currentTheme.colors.accent}`,
-            color: currentTheme.colors.accent,
-            borderRadius: currentTheme.borderRadius.md,
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: '500',
-            transition: currentTheme.transitions.default
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = currentTheme.colors.accent;
-            e.currentTarget.style.color = '#fff';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
-            e.currentTarget.style.color = currentTheme.colors.accent;
-          }}
-        >
-          Meet the Team
-        </button>
-      </footer>
 
       {/* Founders Modal */}
       {showFoundersModal && (
