@@ -32,7 +32,7 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
     {
       name: 'Imsal',
       role: 'Art/Design Manager & Innovation Manager',
-      contribution: 'Designed the art used in this website as well as co-designed the interface.',
+      contribution: 'Designed the art used in this website as well as co-designing the interface.',
       photo: '/per.3.jpg'
     },
     {
@@ -198,19 +198,9 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
                       borderRadius: '50%',
                       background: `url('${founder.photo}') center/cover, linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
                       border: `2px solid ${darkTheme.colors.accent}`,
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      fontSize: isMobile ? '18px' : '20px'
+                      flexShrink: 0
                     }}
-                  >
-                    <span style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                      {founder.name.charAt(0)}
-                    </span>
-                  </div>
+                  />
 
                   {/* Founder Name */}
                   <div style={{ flex: 1 }}>
