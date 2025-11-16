@@ -21,18 +21,35 @@ Add the following image files to `/public`:
 
 ## Customizing Founder Information
 
-After adding the photos, update the founder names and roles in:
+After adding the photos, update the founder names, roles, and contributions in:
 `src/components/FoundersModal.tsx`
 
-Edit the `founders` array (lines 13-19) with the actual founder information:
+Edit the `founders` array (lines 19-50) with the actual founder information:
 
 ```typescript
 const founders: Founder[] = [
-  { name: 'Your Name', role: 'Your Role', photo: '/per.1.jpg' },
-  { name: 'Name 2', role: 'Role 2', photo: '/per.2.jpg' },
+  {
+    name: 'Your Name',
+    role: 'Your Role',
+    contribution: 'Brief description of their contribution to the platform.',
+    photo: '/per.1.jpg'
+  },
   // ... etc
 ];
 ```
+
+## Features
+
+### Desktop View
+- Shows all founder information (photo, name, role, contribution) at once
+- Hover effects on cards
+- Contribution displayed in highlighted boxes
+
+### Mobile View
+- Compact list showing photo and name initially
+- Tap on any founder to expand and see their role and contribution
+- Smooth expand/collapse animations
+- Visual indicator (arrow) shows expand state
 
 ## How to Access
 

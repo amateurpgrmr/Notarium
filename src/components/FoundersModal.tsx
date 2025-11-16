@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { darkTheme } from '../theme';
 
 interface Founder {
   name: string;
   role: string;
+  contribution: string;
   photo: string;
 }
 
@@ -11,13 +13,55 @@ interface FoundersModalProps {
 }
 
 export default function FoundersModal({ onClose }: FoundersModalProps) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
   const founders: Founder[] = [
-    { name: 'Founder 1', role: 'Co-Founder & CEO', photo: '/per.1.jpg' },
-    { name: 'Founder 2', role: 'Co-Founder & CTO', photo: '/per.2.jpg' },
-    { name: 'Founder 3', role: 'Co-Founder & COO', photo: '/per.3.jpg' },
-    { name: 'Founder 4', role: 'Co-Founder & CMO', photo: '/per.4.jpg' },
-    { name: 'Founder 5', role: 'Co-Founder & CFO', photo: '/per.5.jpg' },
+    {
+      name: 'Founder 1',
+      role: 'Co-Founder & CEO',
+      contribution: 'Visionary leader driving strategic growth and innovation in educational technology.',
+      photo: '/per.1.jpg'
+    },
+    {
+      name: 'Founder 2',
+      role: 'Co-Founder & CTO',
+      contribution: 'Technical architect building scalable infrastructure and cutting-edge features.',
+      photo: '/per.2.jpg'
+    },
+    {
+      name: 'Founder 3',
+      role: 'Co-Founder & COO',
+      contribution: 'Operations expert ensuring seamless platform performance and user experience.',
+      photo: '/per.3.jpg'
+    },
+    {
+      name: 'Founder 4',
+      role: 'Co-Founder & CMO',
+      contribution: 'Marketing strategist connecting students and fostering community engagement.',
+      photo: '/per.4.jpg'
+    },
+    {
+      name: 'Founder 5',
+      role: 'Co-Founder & CFO',
+      contribution: 'Financial steward managing resources and sustainable growth strategies.',
+      photo: '/per.5.jpg'
+    },
   ];
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const toggleExpand = (index: number) => {
+    if (isMobile) {
+      setExpandedIndex(expandedIndex === index ? null : index);
+    }
+  };
 
   return (
     <>
@@ -43,10 +87,10 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
           transform: 'translate(-50%, -50%)',
           background: darkTheme.colors.bgSecondary,
           borderRadius: darkTheme.borderRadius.lg,
-          padding: '32px',
-          maxWidth: '500px',
-          width: '90%',
-          maxHeight: '80vh',
+          padding: isMobile ? '20px' : '32px',
+          maxWidth: isMobile ? '95%' : '600px',
+          width: isMobile ? '95%' : '90%',
+          maxHeight: '85vh',
           overflowY: 'auto',
           zIndex: 9999,
           border: `1px solid ${darkTheme.colors.borderColor}`,
@@ -59,11 +103,11 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '24px'
+          marginBottom: isMobile ? '16px' : '24px'
         }}>
           <h2 style={{
             margin: 0,
-            fontSize: '24px',
+            fontSize: isMobile ? '20px' : '24px',
             fontWeight: 'bold',
             color: darkTheme.colors.textPrimary
           }}>
@@ -94,81 +138,165 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
           </button>
         </div>
 
-        {/* Founders Grid */}
+        {/* Mobile Hint */}
+        {isMobile && (
+          <p style={{
+            margin: '0 0 12px 0',
+            fontSize: '12px',
+            color: darkTheme.colors.textSecondary,
+            textAlign: 'center',
+            fontStyle: 'italic'
+          }}>
+            Tap on a founder to see their role and contribution
+          </p>
+        )}
+
+        {/* Founders List */}
         <div style={{
           display: 'grid',
-          gap: '20px'
+          gap: isMobile ? '12px' : '16px'
         }}>
-          {founders.map((founder, index) => (
-            <div
-              key={index}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                padding: '16px',
-                background: darkTheme.colors.bgTertiary,
-                borderRadius: darkTheme.borderRadius.md,
-                border: `1px solid ${darkTheme.colors.borderColor}`,
-                transition: darkTheme.transitions.default
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.borderColor = darkTheme.colors.accent;
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = darkTheme.colors.bgTertiary;
-                e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
-              }}
-            >
-              {/* Founder Photo */}
+          {founders.map((founder, index) => {
+            const isExpanded = expandedIndex === index;
+
+            return (
               <div
+                key={index}
+                onClick={() => toggleExpand(index)}
                 style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  background: `url('${founder.photo}') center/cover, linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
-                  border: `2px solid ${darkTheme.colors.accent}`,
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '20px'
+                  padding: isMobile ? '12px' : '16px',
+                  background: darkTheme.colors.bgTertiary,
+                  borderRadius: darkTheme.borderRadius.md,
+                  border: `1px solid ${isExpanded && isMobile ? darkTheme.colors.accent : darkTheme.colors.borderColor}`,
+                  transition: 'all 0.3s ease',
+                  cursor: isMobile ? 'pointer' : 'default'
+                }}
+                onMouseOver={(e) => {
+                  if (!isMobile) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.borderColor = darkTheme.colors.accent;
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isMobile) {
+                    e.currentTarget.style.background = darkTheme.colors.bgTertiary;
+                    e.currentTarget.style.borderColor = darkTheme.colors.borderColor;
+                  }
                 }}
               >
-                {/* Fallback to first letter if image doesn't load */}
-                <span style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                  {founder.name.charAt(0)}
-                </span>
-              </div>
+                {/* Top Row: Photo and Name (Always Visible) */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  {/* Founder Photo */}
+                  <div
+                    style={{
+                      width: isMobile ? '50px' : '60px',
+                      height: isMobile ? '50px' : '60px',
+                      borderRadius: '50%',
+                      background: `url('${founder.photo}') center/cover, linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                      border: `2px solid ${darkTheme.colors.accent}`,
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: isMobile ? '18px' : '20px'
+                    }}
+                  >
+                    <span style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                      {founder.name.charAt(0)}
+                    </span>
+                  </div>
 
-              {/* Founder Info */}
-              <div style={{ flex: 1 }}>
-                <h3 style={{
-                  margin: '0 0 4px 0',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: darkTheme.colors.textPrimary
-                }}>
-                  {founder.name}
-                </h3>
-                <p style={{
-                  margin: 0,
-                  fontSize: '13px',
-                  color: darkTheme.colors.textSecondary
-                }}>
-                  {founder.role}
-                </p>
+                  {/* Founder Name */}
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{
+                      margin: 0,
+                      fontSize: isMobile ? '15px' : '16px',
+                      fontWeight: '600',
+                      color: darkTheme.colors.textPrimary
+                    }}>
+                      {founder.name}
+                    </h3>
+
+                    {/* Desktop: Show role inline */}
+                    {!isMobile && (
+                      <p style={{
+                        margin: '4px 0 0 0',
+                        fontSize: '13px',
+                        color: darkTheme.colors.accent,
+                        fontWeight: '500'
+                      }}>
+                        {founder.role}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Mobile: Expand indicator */}
+                  {isMobile && (
+                    <div style={{
+                      fontSize: '14px',
+                      color: darkTheme.colors.textSecondary,
+                      transition: 'transform 0.3s ease',
+                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+                    }}>
+                      ▼
+                    </div>
+                  )}
+                </div>
+
+                {/* Expandable Content (Mobile) / Always Visible (Desktop) */}
+                {(isExpanded || !isMobile) && (
+                  <div
+                    style={{
+                      marginTop: '12px',
+                      paddingTop: '12px',
+                      borderTop: `1px solid ${darkTheme.colors.borderColor}`,
+                      animation: isMobile ? 'expandDown 0.3s ease-out' : 'none'
+                    }}
+                  >
+                    {/* Mobile: Show role */}
+                    {isMobile && (
+                      <p style={{
+                        margin: '0 0 8px 0',
+                        fontSize: '13px',
+                        color: darkTheme.colors.accent,
+                        fontWeight: '500'
+                      }}>
+                        {founder.role}
+                      </p>
+                    )}
+
+                    {/* Contribution (Both Mobile & Desktop) */}
+                    <div style={{
+                      padding: '10px',
+                      background: 'rgba(139, 92, 246, 0.1)',
+                      borderRadius: darkTheme.borderRadius.sm,
+                      borderLeft: `3px solid ${darkTheme.colors.accent}`
+                    }}>
+                      <p style={{
+                        margin: 0,
+                        fontSize: isMobile ? '12px' : '13px',
+                        color: darkTheme.colors.textSecondary,
+                        lineHeight: '1.5'
+                      }}>
+                        {founder.contribution}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Footer Note */}
         <p style={{
-          marginTop: '24px',
+          marginTop: isMobile ? '16px' : '24px',
           marginBottom: 0,
           fontSize: '12px',
           color: darkTheme.colors.textSecondary,
@@ -198,6 +326,19 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
           to {
             opacity: 1;
             transform: translate(-50%, -50%);
+          }
+        }
+
+        @keyframes expandDown {
+          from {
+            opacity: 0;
+            maxHeight: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            maxHeight: 500px;
+            transform: translateY(0);
           }
         }
       `}</style>
