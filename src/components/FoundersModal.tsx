@@ -18,33 +18,33 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
 
   const founders: Founder[] = [
     {
-      name: 'Founder 1',
-      role: 'Co-Founder & CEO',
-      contribution: 'Visionary leader driving strategic growth and innovation in educational technology.',
+      name: 'Richard Amadeus',
+      role: 'Team Lead & Chief Software Developer',
+      contribution: 'Co-led this team, and developed most of the code for Notarium.',
       photo: '/per.1.jpg'
     },
     {
-      name: 'Founder 2',
-      role: 'Co-Founder & CTO',
-      contribution: 'Technical architect building scalable infrastructure and cutting-edge features.',
+      name: 'Zoey',
+      role: 'Co-Leader & Project Manager',
+      contribution: 'Led this team to success, and directed team flow throughout development.',
       photo: '/per.2.jpg'
     },
     {
-      name: 'Founder 3',
-      role: 'Co-Founder & COO',
-      contribution: 'Operations expert ensuring seamless platform performance and user experience.',
+      name: 'Imsal',
+      role: 'Art/Design Manager & Innovation Manager',
+      contribution: 'Designed the art used in this website as well as co-designed the interface.',
       photo: '/per.3.jpg'
     },
     {
-      name: 'Founder 4',
-      role: 'Co-Founder & CMO',
-      contribution: 'Marketing strategist connecting students and fostering community engagement.',
+      name: 'Samuel Butar-Butar',
+      role: 'Assistant Software Developer',
+      contribution: 'Assisted in development, primarily in the UI section.',
       photo: '/per.4.jpg'
     },
     {
-      name: 'Founder 5',
-      role: 'Co-Founder & CFO',
-      contribution: 'Financial steward managing resources and sustainable growth strategies.',
+      name: 'Vincent',
+      role: 'Financial Manager',
+      contribution: 'Managed the team\'s finances and budget throughout the project.',
       photo: '/per.5.jpg'
     },
   ];
