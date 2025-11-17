@@ -3,13 +3,19 @@
  * Handles notes management, user data, chat sessions, and authentication with Gemini AI integration
  */
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import bcrypt from 'bcryptjs';
+import { SignJWT, jwtVerify } from 'jose';
+import { z } from 'zod';
 
 interface Env {
   DB: D1Database;
+  RATE_LIMIT: KVNamespace;
   GEMINI_API_KEY?: string;
-  JWT_SECRET?: string;
+  JWT_SECRET: string;
+  ADMIN_PASSWORD: string;
   DEEPSEEK_API_KEY?: string;
   GOOGLE_CLOUD_VISION_API_KEY?: string;
+  FRONTEND_URL?: string;
 }
 
 interface User {
@@ -27,23 +33,179 @@ interface User {
   updated_at?: string;
 }
 
-// CORS headers for all responses
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Encrypted-Yw-ID, X-Is-Login',
+// Security constants
+const MAX_REQUEST_SIZE = 10 * 1024 * 1024; // 10MB
+const RATE_LIMIT_WINDOW = 900; // 15 minutes in seconds
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
+const JWT_EXPIRATION = '24h';
+const REFRESH_TOKEN_EXPIRATION = '7d';
+
+// CORS headers function (will use env.FRONTEND_URL or fallback)
+function getCorsHeaders(env: Env) {
+  const allowedOrigin = env.FRONTEND_URL || 'https://notarium-site.vercel.app';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Encrypted-Yw-ID, X-Is-Login',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+// Security headers
+const SECURITY_HEADERS = {
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';",
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
 };
 
-// Helper function to create JSON responses
-function jsonResponse(data: any, status: number = 200) {
+// Helper function to create JSON responses with security headers
+function jsonResponse(data: any, status: number = 200, env?: Env) {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (env) {
+    Object.assign(headers, getCorsHeaders(env), SECURITY_HEADERS);
+  } else {
+    // Fallback for backward compatibility
+    Object.assign(headers, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Encrypted-Yw-ID, X-Is-Login',
+    });
+  }
+
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...CORS_HEADERS,
-    },
+    headers,
   });
 }
+
+// ===== SECURITY HELPER FUNCTIONS =====
+
+// Password hashing
+async function hashPassword(password: string): Promise<string> {
+  return await bcrypt.hash(password, 10);
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return await bcrypt.compare(password, hash);
+}
+
+// JWT functions
+async function createToken(payload: { id: number; email: string; role: string }, env: Env, expiresIn: string = JWT_EXPIRATION): Promise<string> {
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  return await new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(expiresIn)
+    .sign(secret);
+}
+
+async function verifyToken(token: string, env: Env): Promise<{ id: number; email: string; role: string } | null> {
+  try {
+    const secret = new TextEncoder().encode(env.JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    return {
+      id: payload.id as number,
+      email: payload.email as string,
+      role: payload.role as string,
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+// Rate limiting
+async function checkRateLimit(ip: string, endpoint: string, env: Env): Promise<boolean> {
+  const key = `ratelimit:${endpoint}:${ip}`;
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - RATE_LIMIT_WINDOW;
+
+  try {
+    // Get attempts from KV
+    const attemptsData = await env.RATE_LIMIT.get(key);
+    const attempts: number[] = attemptsData ? JSON.parse(attemptsData) : [];
+
+    // Filter attempts within the window
+    const recentAttempts = attempts.filter(timestamp => timestamp > windowStart);
+
+    if (recentAttempts.length >= RATE_LIMIT_MAX_ATTEMPTS) {
+      return false; // Rate limit exceeded
+    }
+
+    // Add current attempt
+    recentAttempts.push(now);
+    await env.RATE_LIMIT.put(key, JSON.stringify(recentAttempts), { expirationTtl: RATE_LIMIT_WINDOW });
+    return true; // Allow request
+  } catch (error) {
+    console.error('[RATE_LIMIT] Error:', error);
+    return true; // Allow request if rate limiting fails
+  }
+}
+
+// Prompt injection sanitization for AI inputs
+function sanitizeAIInput(input: string): string {
+  if (!input) return '';
+
+  // Remove potentially harmful prompt injection patterns
+  let sanitized = input
+    .replace(/system\s*:/gi, '')
+    .replace(/assistant\s*:/gi, '')
+    .replace(/user\s*:/gi, '')
+    .replace(/<\|.*?\|>/g, '') // Remove special tokens
+    .replace(/\[INST\]|\[\/INST\]/g, '') // Remove instruction markers
+    .trim();
+
+  // Limit length to prevent abuse
+  if (sanitized.length > 10000) {
+    sanitized = sanitized.substring(0, 10000);
+  }
+
+  return sanitized;
+}
+
+// Request size validation
+function validateRequestSize(request: Request): boolean {
+  const contentLength = request.headers.get('content-length');
+  if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE) {
+    return false;
+  }
+  return true;
+}
+
+// Zod validation schemas
+const signupSchema = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(128),
+  class: z.string().max(50).optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+const noteSchema = z.object({
+  title: z.string().min(1).max(200),
+  content: z.string().max(100000),
+  subject_id: z.number().int().positive(),
+  description: z.string().max(500).optional(),
+});
+
+const chatMessageSchema = z.object({
+  message: z.string().min(1).max(10000),
+});
+
+const profileUpdateSchema = z.object({
+  display_name: z.string().min(1).max(100).optional(),
+  class: z.string().max(50).optional(),
+  description: z.string().max(500).optional(),
+  photo_url: z.string().url().max(500).optional(),
+});
 
 // Initialize database tables
 async function initializeDatabase(env: Env) {
@@ -839,8 +1001,8 @@ Make it engaging and suitable for high school students. Write the entire explana
   }
 }
 
-// Extract user ID from Bearer token
-function getUserIdFromToken(request: Request): number | null {
+// Extract user ID from Bearer token using JWT
+async function getUserIdFromToken(request: Request, env: Env): Promise<number | null> {
   const auth = request.headers.get('Authorization');
   const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
 
@@ -848,16 +1010,12 @@ function getUserIdFromToken(request: Request): number | null {
     return null;
   }
 
-  try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-    return decoded.id;
-  } catch (e) {
-    return null;
-  }
+  const decoded = await verifyToken(token, env);
+  return decoded?.id || null;
 }
 
-// Extract full user info from Bearer token
-function getUserFromToken(request: Request): { id: number; email: string; role: string } | null {
+// Extract full user info from Bearer token using JWT
+async function getUserFromToken(request: Request, env: Env): Promise<{ id: number; email: string; role: string } | null> {
   const auth = request.headers.get('Authorization');
   const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
 
@@ -865,21 +1023,13 @@ function getUserFromToken(request: Request): { id: number; email: string; role: 
     return null;
   }
 
-  try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-    if (decoded.id && decoded.email && decoded.role) {
-      return { id: decoded.id, email: decoded.email, role: decoded.role };
-    }
-    return null;
-  } catch (e) {
-    return null;
-  }
+  return await verifyToken(token, env);
 }
 
 // Get or create user from headers - never returns null
 async function getOrCreateUser(request: Request, env: Env): Promise<User> {
   // Try to get user ID from Bearer token first
-  const userIdFromToken = getUserIdFromToken(request);
+  const userIdFromToken = await getUserIdFromToken(request, env);
 
   if (userIdFromToken) {
     // Get user from database using ID
@@ -1406,12 +1556,12 @@ async function verifyAdmin(request: Request, env: Env) {
   const body = await request.json() as any;
   const { email, password } = body;
 
-  // Check if email ends with @notarium.site and password matches
-  if (email && email.endsWith('@notarium.site') && password === '51234') {
-    return jsonResponse({ success: true, isAdmin: true });
+  // Check if email ends with @notarium.site and password matches environment variable
+  if (email && email.endsWith('@notarium.site') && password === env.ADMIN_PASSWORD) {
+    return jsonResponse({ success: true, isAdmin: true }, 200, env);
   }
 
-  return jsonResponse({ success: false, isAdmin: false, error: 'Invalid credentials' }, 401);
+  return jsonResponse({ success: false, isAdmin: false, error: 'Invalid credentials' }, 401, env);
 }
 
 // Admin upvote note (gives higher weight)
@@ -2230,12 +2380,30 @@ async function explainConceptEndpoint(request: Request, env: Env) {
 // Sign up endpoint
 async function signupEndpoint(request: Request, env: Env) {
   try {
-    const body = await request.json() as any;
-    const { name, email, password, class: userClass } = body;
-
-    if (!email || !password || !name) {
-      return jsonResponse({ error: 'Missing required fields: name, email, password' }, 400);
+    // Check request size
+    if (!validateRequestSize(request)) {
+      return jsonResponse({ error: 'Request too large' }, 413, env);
     }
+
+    // Rate limiting
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const canProceed = await checkRateLimit(ip, 'signup', env);
+    if (!canProceed) {
+      return jsonResponse({ error: 'Too many signup attempts. Please try again in 15 minutes.' }, 429, env);
+    }
+
+    const body = await request.json() as any;
+
+    // Input validation with zod
+    const validation = signupSchema.safeParse(body);
+    if (!validation.success) {
+      return jsonResponse({
+        error: 'Invalid input',
+        details: validation.error.errors
+      }, 400, env);
+    }
+
+    const { name, email, password, class: userClass } = validation.data;
 
     // Check if user already exists
     const existing = await env.DB.prepare(
@@ -2243,22 +2411,29 @@ async function signupEndpoint(request: Request, env: Env) {
     ).bind(email).first();
 
     if (existing) {
-      return jsonResponse({ error: 'Email already registered' }, 409);
+      return jsonResponse({ error: 'Email already registered' }, 409, env);
     }
+
+    // Hash password with bcrypt
+    const hashedPassword = await hashPassword(password);
 
     // Create new user
     const user = await env.DB.prepare(`
       INSERT INTO users (display_name, email, password_hash, class, role, notes_uploaded, total_likes, total_admin_upvotes, diamonds, created_at)
       VALUES (?, ?, ?, ?, 'student', 0, 0, 0, 0, datetime('now'))
       RETURNING id, email, display_name, class, role, notes_uploaded, total_likes, total_admin_upvotes, diamonds, description, photo_url
-    `).bind(name, email, password, userClass || null).first();
+    `).bind(name, email, hashedPassword, userClass || null).first();
 
     if (!user) {
-      return jsonResponse({ error: 'Failed to create user' }, 500);
+      return jsonResponse({ error: 'Failed to create user' }, 500, env);
     }
 
-    // Create a simple token (in production, use proper JWT)
-    const token = Buffer.from(JSON.stringify({ id: (user as any).id, email: (user as any).email })).toString('base64');
+    // Create secure JWT token
+    const token = await createToken({
+      id: (user as any).id,
+      email: (user as any).email,
+      role: (user as any).role
+    }, env);
 
     // Calculate points (1 point per note upload, 1 point per like, 1 point per admin like)
     const points = ((user as any).notes_uploaded || 0) + ((user as any).total_likes || 0) + ((user as any).total_admin_upvotes || 0);
@@ -2279,13 +2454,13 @@ async function signupEndpoint(request: Request, env: Env) {
         description: (user as any).description || null,
         photo_url: (user as any).photo_url || null
       }
-    }, 201);
+    }, 201, env);
   } catch (error: any) {
     console.error('Signup error:', error);
     if (error.message && error.message.includes('UNIQUE')) {
-      return jsonResponse({ error: 'Email already registered' }, 409);
+      return jsonResponse({ error: 'Email already registered' }, 409, env);
     }
-    return jsonResponse({ error: error.message || 'Signup failed' }, 500);
+    return jsonResponse({ error: error.message || 'Signup failed' }, 500, env);
   }
 }
 
@@ -2294,6 +2469,18 @@ async function loginEndpoint(request: Request, env: Env) {
   try {
     console.log('[LOGIN] Request received');
 
+    // Check request size
+    if (!validateRequestSize(request)) {
+      return jsonResponse({ error: 'Request too large' }, 413, env);
+    }
+
+    // Rate limiting
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const canProceed = await checkRateLimit(ip, 'login', env);
+    if (!canProceed) {
+      return jsonResponse({ error: 'Too many login attempts. Please try again in 15 minutes.' }, 429, env);
+    }
+
     // Parse request body
     let body;
     try {
@@ -2301,15 +2488,19 @@ async function loginEndpoint(request: Request, env: Env) {
       console.log('[LOGIN] Body parsed:', { email: body?.email, hasPassword: !!body?.password });
     } catch (parseError) {
       console.error('[LOGIN] Body parse error:', parseError);
-      return jsonResponse({ error: 'Invalid request body format' }, 400);
+      return jsonResponse({ error: 'Invalid request body format' }, 400, env);
     }
 
-    const { email, password } = body;
-
-    if (!email || !password) {
-      console.error('[LOGIN] Missing credentials');
-      return jsonResponse({ error: 'Email and password required' }, 400);
+    // Input validation with zod
+    const validation = loginSchema.safeParse(body);
+    if (!validation.success) {
+      return jsonResponse({
+        error: 'Invalid input',
+        details: validation.error.errors
+      }, 400, env);
     }
+
+    const { email, password } = validation.data;
 
     console.log('[LOGIN] Querying user:', email);
 
@@ -2377,9 +2568,11 @@ async function loginEndpoint(request: Request, env: Env) {
       return jsonResponse({ error: 'Invalid email or password' }, 401);
     }
 
-    if ((user as any).password_hash !== password) {
+    // Verify password with bcrypt
+    const isPasswordValid = await verifyPassword(password, (user as any).password_hash);
+    if (!isPasswordValid) {
       console.log('[LOGIN] Password mismatch for user:', email);
-      return jsonResponse({ error: 'Invalid email or password' }, 401);
+      return jsonResponse({ error: 'Invalid email or password' }, 401, env);
     }
 
     // Check if user is suspended
@@ -2415,12 +2608,12 @@ async function loginEndpoint(request: Request, env: Env) {
 
     console.log('[LOGIN] Creating token for user:', (user as any).id);
 
-    // Create token with role included
-    const token = Buffer.from(JSON.stringify({
+    // Create secure JWT token
+    const token = await createToken({
       id: (user as any).id,
       email: (user as any).email,
       role: (user as any).role || 'student'
-    })).toString('base64');
+    }, env);
 
     // Calculate points (1 point per note upload, 1 point per like, 1 point per admin like)
     const points = ((user as any).notes_uploaded || 0) + ((user as any).total_likes || 0) + ((user as any).total_admin_upvotes || 0);
@@ -2444,10 +2637,10 @@ async function loginEndpoint(request: Request, env: Env) {
         description: (user as any).description || null,
         photo_url: (user as any).photo_url || null
       }
-    });
+    }, 200, env);
   } catch (error: any) {
     console.error('[LOGIN] Unexpected error:', error, { message: error?.message, stack: error?.stack });
-    return jsonResponse({ error: `Login failed: ${error?.message || 'Unknown error'}` }, 500);
+    return jsonResponse({ error: `Login failed: ${error?.message || 'Unknown error'}` }, 500, env);
   }
 }
 
@@ -2465,7 +2658,7 @@ async function meEndpoint(request: Request, env: Env) {
 
     if (!token) {
       console.error('[ME] No token provided');
-      return jsonResponse({ error: 'Unauthorized - No token provided' }, 401);
+      return jsonResponse({ error: 'Unauthorized - No token provided' }, 401, env);
     }
 
     console.log('[ME] Token received:', {
@@ -2473,23 +2666,14 @@ async function meEndpoint(request: Request, env: Env) {
       tokenPreview: token.substring(0, 20) + '...'
     });
 
-    // Validate and decode token
-    let decoded;
-    try {
-      const decodedStr = Buffer.from(token, 'base64').toString();
-      console.log('[ME] Decoded token string:', decodedStr);
-      decoded = JSON.parse(decodedStr);
-      console.log('[ME] Parsed token:', { id: decoded.id, email: decoded.email });
-    } catch (tokenError) {
-      console.error('[ME] Token decode error:', tokenError);
-      return jsonResponse({ error: 'Invalid token format' }, 401);
+    // Validate and decode JWT token
+    const decoded = await verifyToken(token, env);
+    if (!decoded || !decoded.id) {
+      console.error('[ME] Invalid or expired token');
+      return jsonResponse({ error: 'Invalid or expired token' }, 401, env);
     }
 
-    if (!decoded.id) {
-      console.error('[ME] Token missing user ID:', decoded);
-      return jsonResponse({ error: 'Invalid token - missing user ID' }, 401);
-    }
-
+    console.log('[ME] Token verified:', { id: decoded.id, email: decoded.email });
     const userId = decoded.id;
 
     try {
@@ -2744,9 +2928,9 @@ export default {
 
           console.log('[ADMIN-LOGIN] Request:', { email, hasPassword: !!password, classValue });
 
-          // Check admin credentials
-          if (!email.endsWith('@notarium.site') || password !== 'notariumanagers') {
-            return jsonResponse({ error: 'Invalid admin credentials' }, 401);
+          // Check admin credentials - use environment variable for password
+          if (!email.endsWith('@notarium.site') || password !== env.ADMIN_PASSWORD) {
+            return jsonResponse({ error: 'Invalid admin credentials' }, 401, env);
           }
 
           // Validate class value
@@ -2764,12 +2948,13 @@ export default {
           console.log('[ADMIN-LOGIN] Existing user found:', !!admin);
 
           if (!admin) {
-            // Create admin user with specified class
+            // Create admin user with specified class - hash the password
+            const hashedPassword = await hashPassword(password);
             const result = await env.DB.prepare(`
               INSERT INTO users (encrypted_yw_id, display_name, email, password_hash, class, role, created_at)
               VALUES (?, ?, ?, ?, ?, 'admin', datetime('now'))
               RETURNING id, email, display_name, class, role
-            `).bind('admin_' + email, 'Admin', email, password, validClass).first();
+            `).bind('admin_' + email, 'Admin', email, hashedPassword, validClass).first();
             admin = result;
           } else {
             // Update existing user: set role to admin and update class
@@ -2793,8 +2978,12 @@ export default {
             }
           }
 
-          // Create token
-          const token = Buffer.from(JSON.stringify({ id: (admin as any).id, email: (admin as any).email, role: 'admin' })).toString('base64');
+          // Create secure JWT token
+          const token = await createToken({
+            id: (admin as any).id,
+            email: (admin as any).email,
+            role: 'admin'
+          }, env);
 
           return jsonResponse({
             token,
@@ -2804,7 +2993,7 @@ export default {
               name: (admin as any).display_name,
               role: 'admin'
             }
-          });
+          }, 200, env);
         } catch (error: any) {
           return jsonResponse({ error: error.message }, 500);
         }

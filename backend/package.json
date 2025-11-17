@@ -15,12 +15,16 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "jose": "^5.2.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240604.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.10.0",
     "typescript": "^5.3.3",
     "wrangler": "^4.46.0"
