@@ -181,21 +181,21 @@ export default function Login() {
   };
 
   return (
-    <div className="relative w-full min-h-screen flex items-center justify-center">
+    <div className="relative w-full h-screen flex items-center justify-center overflow-hidden">
       {/* Shader Animation Background */}
       <div className="absolute inset-0 z-0">
         <ShaderAnimation />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="flex gap-8 py-20 items-center justify-center flex-col max-w-4xl mx-auto">
+      <div className="container mx-auto px-4 relative z-10 max-h-screen overflow-y-auto">
+        <div className="flex gap-4 py-8 items-center justify-center flex-col max-w-4xl mx-auto">
           {/* Animated Hero Header */}
-          <div className="flex gap-4 flex-col items-center">
-            <h1 className="text-5xl md:text-7xl max-w-3xl tracking-tighter text-center font-regular text-white">
-              <span className="block mb-2">NOTARIUM</span>
-              <span className="text-3xl md:text-5xl block">
+          <div className="flex gap-2 flex-col items-center">
+            <h1 className="text-4xl md:text-5xl max-w-3xl tracking-tighter text-center font-regular text-white">
+              <span className="block mb-1">NOTARIUM</span>
+              <span className="text-2xl md:text-3xl block">
                 <span>A library that's</span>
-                <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
+                <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-2 md:pt-1">
                   &nbsp;
                   {titles.map((title, index) => (
                     <motion.span
@@ -222,15 +222,15 @@ export default function Login() {
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl leading-relaxed tracking-tight text-gray-400 max-w-2xl text-center">
+            <p className="text-sm md:text-base leading-relaxed tracking-tight text-gray-400 max-w-2xl text-center">
               Sign in to access your study materials
             </p>
           </div>
 
           {/* Login Form Card */}
           <div className="w-full max-w-md">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 shadow-lg">
-              <h2 className="text-2xl font-semibold text-center mb-6 text-white">Welcome Back</h2>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 shadow-lg">
+              <h2 className="text-xl font-semibold text-center mb-4 text-white">Welcome Back</h2>
 
               {error && (
                 <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded-md p-3 mb-4 text-sm">
@@ -243,8 +243,8 @@ export default function Login() {
                 </div>
               )}
 
-              <form onSubmit={handleEmailLogin} className="space-y-4">
-                <div className="space-y-2">
+              <form onSubmit={handleEmailLogin} className="space-y-3">
+                <div className="space-y-1">
                   <label htmlFor="email" className="text-sm font-medium text-white">
                     Email
                   </label>
@@ -259,7 +259,7 @@ export default function Login() {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label htmlFor="password" className="text-sm font-medium text-white">
                     Password
                   </label>
@@ -313,27 +313,27 @@ export default function Login() {
               </form>
 
               {/* Forgot Password Link */}
-              <div className="text-center mt-4">
+              <div className="text-center mt-2">
                 <button
                   type="button"
                   onClick={handleOpenForgotPassword}
-                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                  className="text-xs text-gray-400 hover:text-white transition-colors"
                 >
                   Forgot Password?
                 </button>
               </div>
 
-              <p className="text-center text-sm text-gray-400 mt-6">
+              <p className="text-center text-xs text-gray-400 mt-3">
                 Don't have an account?{' '}
                 <a href="/signup" className="text-white hover:underline font-medium">
                   Sign up
                 </a>
               </p>
 
-              <div className="mt-6 pt-6 border-t border-zinc-800 text-center">
+              <div className="mt-3 pt-3 border-t border-zinc-800 text-center">
                 <a
                   href="/admin-login"
-                  className="text-sm text-gray-400 hover:text-white inline-flex items-center gap-2 transition-colors"
+                  className="text-xs text-gray-400 hover:text-white inline-flex items-center gap-1 transition-colors"
                 >
                   <span>🔐</span>
                   <span>Admin Sign In</span>

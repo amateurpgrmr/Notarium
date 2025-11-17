@@ -76,21 +76,21 @@ export default function Signup() {
   };
 
   return (
-    <div className="relative w-full min-h-screen flex items-center justify-center">
+    <div className="relative w-full h-screen flex items-center justify-center overflow-hidden">
       {/* Shader Animation Background */}
       <div className="absolute inset-0 z-0">
         <ShaderAnimation />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="flex gap-8 py-20 items-center justify-center flex-col max-w-4xl mx-auto">
+      <div className="container mx-auto px-4 relative z-10 max-h-screen overflow-y-auto">
+        <div className="flex gap-4 py-8 items-center justify-center flex-col max-w-4xl mx-auto">
           {/* Animated Hero Header */}
-          <div className="flex gap-4 flex-col items-center">
-            <h1 className="text-5xl md:text-7xl max-w-3xl tracking-tighter text-center font-regular text-white">
-              <span className="block mb-2">NOTARIUM</span>
-              <span className="text-3xl md:text-5xl block">
+          <div className="flex gap-2 flex-col items-center">
+            <h1 className="text-4xl md:text-5xl max-w-3xl tracking-tighter text-center font-regular text-white">
+              <span className="block mb-1">NOTARIUM</span>
+              <span className="text-2xl md:text-3xl block">
                 <span>A library that's</span>
-                <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
+                <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-2 md:pt-1">
                   &nbsp;
                   {titles.map((title, index) => (
                     <motion.span
@@ -117,15 +117,15 @@ export default function Signup() {
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl leading-relaxed tracking-tight text-gray-400 max-w-2xl text-center">
+            <p className="text-sm md:text-base leading-relaxed tracking-tight text-gray-400 max-w-2xl text-center">
               Join a library of notes
             </p>
           </div>
 
           {/* Signup Form Card */}
           <div className="w-full max-w-md">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 shadow-lg">
-              <h2 className="text-2xl font-semibold text-center mb-6 text-white">Create Account</h2>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 shadow-lg">
+              <h2 className="text-xl font-semibold text-center mb-4 text-white">Create Account</h2>
 
               {error && (
                 <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded-md p-3 mb-4 text-sm">
@@ -133,8 +133,8 @@ export default function Signup() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="space-y-1">
                   <label htmlFor="name" className="text-sm font-medium text-white">
                     Full Name
                   </label>
@@ -150,7 +150,7 @@ export default function Signup() {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label htmlFor="email" className="text-sm font-medium text-white">
                     Email
                   </label>
@@ -166,7 +166,7 @@ export default function Signup() {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label htmlFor="class" className="text-sm font-medium text-white">
                     Class/Grade
                   </label>
@@ -185,7 +185,7 @@ export default function Signup() {
                   </select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label htmlFor="password" className="text-sm font-medium text-white">
                     Password
                   </label>
@@ -201,7 +201,7 @@ export default function Signup() {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label htmlFor="confirmPassword" className="text-sm font-medium text-white">
                     Confirm Password
                   </label>
@@ -245,7 +245,7 @@ export default function Signup() {
                 `}</style>
               </form>
 
-              <p className="text-center text-sm text-gray-400 mt-6">
+              <p className="text-center text-xs text-gray-400 mt-3">
                 Already have an account?{' '}
                 <a href="/login" className="text-white hover:underline font-medium">
                   Sign in
