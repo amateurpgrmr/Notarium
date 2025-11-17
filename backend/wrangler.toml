@@ -3,6 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Production environment variables (top-level deployment)
+[vars]
+ENVIRONMENT = "production"
+FRONTEND_URL = "https://notarium-site.vercel.app"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "notarium-db"
