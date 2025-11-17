@@ -2873,9 +2873,10 @@ export default {
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
-        status: 200,
+        status: 204,
         headers: {
-          ...CORS_HEADERS,
+          ...getCorsHeaders(env),
+          ...SECURITY_HEADERS,
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Encrypted-Yw-ID, X-Is-Login',
           'Access-Control-Max-Age': '86400',
@@ -3183,14 +3184,16 @@ export default {
             return jsonResponse({ error: 'User not found' }, 404);
           }
 
-          // Store password as plain text (matching existing login system)
+          // Hash the new password with bcrypt
+          const hashedPassword = await hashPassword(newPassword);
+
           // Update password in database
           await env.DB.prepare(`
             UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?
-          `).bind(newPassword, user.id).run();
+          `).bind(hashedPassword, user.id).run();
 
           console.log('[PASSWORD_RESET] Password reset successfully for user:', email);
-          return jsonResponse({ success: true, message: 'Password reset successfully' });
+          return jsonResponse({ success: true, message: 'Password reset successfully' }, 200, env);
         } catch (error: any) {
           console.error('[PASSWORD_RESET] Error:', error);
           return jsonResponse({ error: error.message || 'Failed to reset password' }, 500);
@@ -3207,20 +3210,13 @@ export default {
           const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
 
           if (!token) {
-            return jsonResponse({ error: 'Unauthorized - No token provided' }, 401);
+            return jsonResponse({ error: 'Unauthorized - No token provided' }, 401, env);
           }
 
-          // Decode token
-          let decoded;
-          try {
-            const decodedStr = Buffer.from(token, 'base64').toString();
-            decoded = JSON.parse(decodedStr);
-          } catch (tokenError) {
-            return jsonResponse({ error: 'Invalid token format' }, 401);
-          }
-
-          if (!decoded.id) {
-            return jsonResponse({ error: 'Invalid token - missing user ID' }, 401);
+          // Verify JWT token
+          const decoded = await verifyToken(token, env);
+          if (!decoded || !decoded.id) {
+            return jsonResponse({ error: 'Invalid or expired token' }, 401, env);
           }
 
           const userId = decoded.id;
@@ -3241,19 +3237,22 @@ export default {
             return jsonResponse({ error: 'User not found' }, 404);
           }
 
-          // Verify current password (plain text comparison - matching existing login system)
-          if (currentPassword !== user.password_hash) {
-            return jsonResponse({ error: 'Current password is incorrect' }, 401);
+          // Verify current password with bcrypt
+          const isPasswordValid = await verifyPassword(currentPassword, user.password_hash);
+          if (!isPasswordValid) {
+            return jsonResponse({ error: 'Current password is incorrect' }, 401, env);
           }
 
-          // Store new password as plain text (matching existing login system)
+          // Hash the new password with bcrypt
+          const hashedNewPassword = await hashPassword(newPassword);
+
           // Update password in database
           await env.DB.prepare(`
             UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?
-          `).bind(newPassword, userId).run();
+          `).bind(hashedNewPassword, userId).run();
 
           console.log('[PASSWORD_CHANGE] Password changed successfully for user ID:', userId);
-          return jsonResponse({ success: true, message: 'Password changed successfully' });
+          return jsonResponse({ success: true, message: 'Password changed successfully' }, 200, env);
         } catch (error: any) {
           console.error('[PASSWORD_CHANGE] Error:', error);
           return jsonResponse({ error: error.message || 'Failed to change password' }, 500);
