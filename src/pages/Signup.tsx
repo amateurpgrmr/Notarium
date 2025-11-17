@@ -75,12 +75,12 @@ export default function Signup() {
   };
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-background">
+    <div className="w-full min-h-screen flex items-center justify-center bg-black">
       <div className="container mx-auto px-4">
         <div className="flex gap-8 py-20 items-center justify-center flex-col max-w-4xl mx-auto">
           {/* Animated Hero Header */}
           <div className="flex gap-4 flex-col items-center">
-            <h1 className="text-5xl md:text-7xl max-w-3xl tracking-tighter text-center font-regular">
+            <h1 className="text-5xl md:text-7xl max-w-3xl tracking-tighter text-center font-regular text-white">
               <span className="block mb-2">NOTARIUM</span>
               <span className="text-3xl md:text-5xl block">
                 <span>A library that's</span>
@@ -89,7 +89,7 @@ export default function Signup() {
                   {titles.map((title, index) => (
                     <motion.span
                       key={index}
-                      className="absolute font-semibold text-primary"
+                      className="absolute font-semibold text-white"
                       initial={{ opacity: 0, y: "-100" }}
                       transition={{ type: "spring", stiffness: 50 }}
                       animate={
@@ -111,25 +111,25 @@ export default function Signup() {
               </span>
             </h1>
 
-            <p className="text-lg md:text-xl leading-relaxed tracking-tight text-muted-foreground max-w-2xl text-center">
+            <p className="text-lg md:text-xl leading-relaxed tracking-tight text-gray-400 max-w-2xl text-center">
               Join a library of notes
             </p>
           </div>
 
           {/* Signup Form Card */}
           <div className="w-full max-w-md">
-            <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
-              <h2 className="text-2xl font-semibold text-center mb-6">Create Account</h2>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 shadow-lg">
+              <h2 className="text-2xl font-semibold text-center mb-6 text-white">Create Account</h2>
 
               {error && (
-                <div className="bg-destructive/10 text-destructive border border-destructive/20 rounded-md p-3 mb-4 text-sm">
+                <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded-md p-3 mb-4 text-sm">
                   {error}
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium">
+                  <label htmlFor="name" className="text-sm font-medium text-white">
                     Full Name
                   </label>
                   <input
@@ -139,13 +139,13 @@ export default function Signup() {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="John Doe"
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium">
+                  <label htmlFor="email" className="text-sm font-medium text-white">
                     Email
                   </label>
                   <input
@@ -155,13 +155,13 @@ export default function Signup() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="you@example.com"
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="class" className="text-sm font-medium">
+                  <label htmlFor="class" className="text-sm font-medium text-white">
                     Class/Grade
                   </label>
                   <select
@@ -169,7 +169,7 @@ export default function Signup() {
                     name="class"
                     value={formData.class}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                     required
                   >
                     <option value="">Select your class</option>
@@ -180,7 +180,7 @@ export default function Signup() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium">
+                  <label htmlFor="password" className="text-sm font-medium text-white">
                     Password
                   </label>
                   <input
@@ -190,13 +190,13 @@ export default function Signup() {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="confirmPassword" className="text-sm font-medium">
+                  <label htmlFor="confirmPassword" className="text-sm font-medium text-white">
                     Confirm Password
                   </label>
                   <input
@@ -206,7 +206,7 @@ export default function Signup() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                     required
                   />
                 </div>
@@ -214,16 +214,16 @@ export default function Signup() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full"
+                  className="w-full bg-white text-black hover:bg-gray-200"
                   size="lg"
                 >
                   {isLoading ? 'Creating account...' : 'Sign Up'}
                 </Button>
               </form>
 
-              <p className="text-center text-sm text-muted-foreground mt-6">
+              <p className="text-center text-sm text-gray-400 mt-6">
                 Already have an account?{' '}
-                <a href="/login" className="text-primary hover:underline font-medium">
+                <a href="/login" className="text-white hover:underline font-medium">
                   Sign in
                 </a>
               </p>

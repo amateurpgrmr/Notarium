@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import api from '../lib/api';
-import '../styles/login.css';
+import { Button } from '@/components/ui/button';
 
 const SECRET_CODE = '%62rdn2%';
 
@@ -15,6 +16,7 @@ export default function Login() {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [titleNumber, setTitleNumber] = useState(0);
 
   // Forgot Password Modal States
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -27,6 +29,22 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const titles = useMemo(
+    () => ["collaborative", "organized", "efficient", "powerful", "smart"],
+    []
+  );
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (titleNumber === titles.length - 1) {
+        setTitleNumber(0);
+      } else {
+        setTitleNumber(titleNumber + 1);
+      }
+    }, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [titleNumber, titles]);
 
   // Auto-redirect if already authenticated or auto-login if token exists
   useEffect(() => {
@@ -162,138 +180,142 @@ export default function Login() {
   };
 
   return (
-    <div className="login-container">
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scaleIn {
-          from { transform: scale(0.95); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
+    <div className="w-full min-h-screen flex items-center justify-center bg-black">
+      <div className="container mx-auto px-4">
+        <div className="flex gap-8 py-20 items-center justify-center flex-col max-w-4xl mx-auto">
+          {/* Animated Hero Header */}
+          <div className="flex gap-4 flex-col items-center">
+            <h1 className="text-5xl md:text-7xl max-w-3xl tracking-tighter text-center font-regular text-white">
+              <span className="block mb-2">NOTARIUM</span>
+              <span className="text-3xl md:text-5xl block">
+                <span>A library that's</span>
+                <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
+                  &nbsp;
+                  {titles.map((title, index) => (
+                    <motion.span
+                      key={index}
+                      className="absolute font-semibold text-white"
+                      initial={{ opacity: 0, y: "-100" }}
+                      transition={{ type: "spring", stiffness: 50 }}
+                      animate={
+                        titleNumber === index
+                          ? {
+                              y: 0,
+                              opacity: 1,
+                            }
+                          : {
+                              y: titleNumber > index ? -150 : 150,
+                              opacity: 0,
+                            }
+                      }
+                    >
+                      {title}
+                    </motion.span>
+                  ))}
+                </span>
+              </span>
+            </h1>
 
-      <div className="login-wrapper">
-        <h1 className="login-title" style={{ animation: 'fadeIn 0.6s ease-out' }}>
-          NOTARIUM
-        </h1>
-
-        <div className="login-card" style={{ animation: 'scaleIn 0.6s ease-out 0.2s both' }}>
-          <h2 className="login-heading">Welcome Back</h2>
-          <p className="login-subtitle">Sign in to access your study materials</p>
-
-          {error && <div className="login-error">{error}</div>}
-          {successMessage && <div className="login-success">{successMessage}</div>}
-
-          <form onSubmit={handleEmailLogin} className="login-form">
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-
-            <div className="form-group" style={{ position: 'relative' }}>
-              <label htmlFor="password">Password</label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  style={{ paddingRight: '40px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    background: 'none',
-                    border: 'none',
-                    color: '#888',
-                    cursor: 'pointer',
-                    fontSize: '18px',
-                    padding: '4px 8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-                  onMouseOut={(e) => e.currentTarget.style.color = '#888'}
-                  title={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="login-button primary"
-            >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-
-          {/* Forgot Password Link */}
-          <div style={{ textAlign: 'center', marginTop: '12px', marginBottom: '8px' }}>
-            <button
-              type="button"
-              onClick={handleOpenForgotPassword}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#888',
-                fontSize: '13px',
-                cursor: 'pointer',
-                textDecoration: 'none',
-                transition: 'color 0.2s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-              onMouseOut={(e) => e.currentTarget.style.color = '#888'}
-            >
-              Forgot Password?
-            </button>
+            <p className="text-lg md:text-xl leading-relaxed tracking-tight text-gray-400 max-w-2xl text-center">
+              Sign in to access your study materials
+            </p>
           </div>
 
-          <p className="login-footer">
-            Don't have an account? <a href="/signup">Sign up</a>
-          </p>
+          {/* Login Form Card */}
+          <div className="w-full max-w-md">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 shadow-lg">
+              <h2 className="text-2xl font-semibold text-center mb-6 text-white">Welcome Back</h2>
 
-          <div style={{
-            marginTop: '16px',
-            paddingTop: '16px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            textAlign: 'center'
-          }}>
-            <a
-              href="/admin-login"
-              style={{
-                color: '#888',
-                fontSize: '13px',
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'color 0.2s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-              onMouseOut={(e) => e.currentTarget.style.color = '#888'}
-            >
-              <span>🔐</span>
-              <span>Admin Sign In</span>
-            </a>
+              {error && (
+                <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded-md p-3 mb-4 text-sm">
+                  {error}
+                </div>
+              )}
+              {successMessage && (
+                <div className="bg-green-500/10 text-green-400 border border-green-500/20 rounded-md p-3 mb-4 text-sm">
+                  {successMessage}
+                </div>
+              )}
+
+              <form onSubmit={handleEmailLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="email" className="text-sm font-medium text-white">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="password" className="text-sm font-medium text-white">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-3 py-2 pr-10 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? '👁️' : '👁️‍🗨️'}
+                    </button>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-white text-black hover:bg-gray-200"
+                  size="lg"
+                >
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </Button>
+              </form>
+
+              {/* Forgot Password Link */}
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={handleOpenForgotPassword}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+
+              <p className="text-center text-sm text-gray-400 mt-6">
+                Don't have an account?{' '}
+                <a href="/signup" className="text-white hover:underline font-medium">
+                  Sign up
+                </a>
+              </p>
+
+              <div className="mt-6 pt-6 border-t border-zinc-800 text-center">
+                <a
+                  href="/admin-login"
+                  className="text-sm text-gray-400 hover:text-white inline-flex items-center gap-2 transition-colors"
+                >
+                  <span>🔐</span>
+                  <span>Admin Sign In</span>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -301,133 +323,102 @@ export default function Login() {
       {/* Forgot Password Modal */}
       {showForgotPassword && (
         <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '20px',
-            animation: 'fadeIn 0.3s ease-out'
-          }}
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-5"
           onClick={handleCloseForgotPassword}
         >
           <div
-            className="login-card"
-            style={{
-              maxWidth: '450px',
-              width: '100%',
-              animation: 'scaleIn 0.3s ease-out'
-            }}
+            className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 shadow-lg max-w-md w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 className="login-heading" style={{ margin: 0 }}>Reset Password</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold text-white">Reset Password</h2>
               <button
                 onClick={handleCloseForgotPassword}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#888',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  padding: '0',
-                  lineHeight: '1',
-                  transition: 'color 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-                onMouseOut={(e) => e.currentTarget.style.color = '#888'}
+                className="text-gray-400 hover:text-white text-2xl transition-colors"
               >
                 ×
               </button>
             </div>
 
-            <p className="login-subtitle" style={{ marginBottom: '20px' }}>
+            <p className="text-gray-400 mb-6">
               {resetStep === 'code'
                 ? 'Enter the code provided by your admin'
                 : 'Enter your email and new password'
               }
             </p>
 
-            {resetError && <div className="login-error">{resetError}</div>}
+            {resetError && (
+              <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded-md p-3 mb-4 text-sm">
+                {resetError}
+              </div>
+            )}
 
             {/* Step 1: Code Entry */}
             {resetStep === 'code' && (
-              <form onSubmit={handleCodeSubmit} className="login-form">
-                <div className="form-group">
-                  <label htmlFor="resetCode">Admin Code</label>
+              <form onSubmit={handleCodeSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="resetCode" className="text-sm font-medium text-white">
+                    Admin Code
+                  </label>
                   <input
                     id="resetCode"
                     type="text"
                     value={resetCode}
                     onChange={(e) => setResetCode(e.target.value)}
                     placeholder="Enter the code from admin"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                     required
                     autoFocus
                   />
                 </div>
 
-                <button
+                <Button
                   type="submit"
-                  className="login-button primary"
+                  className="w-full bg-white text-black hover:bg-gray-200"
+                  size="lg"
                 >
                   Continue
-                </button>
+                </Button>
               </form>
             )}
 
             {/* Step 2: Password Reset */}
             {resetStep === 'reset' && (
-              <form onSubmit={handlePasswordReset} className="login-form">
-                <div className="form-group">
-                  <label htmlFor="resetEmail">Email</label>
+              <form onSubmit={handlePasswordReset} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="resetEmail" className="text-sm font-medium text-white">
+                    Email
+                  </label>
                   <input
                     id="resetEmail"
                     type="email"
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     placeholder="you@example.com"
+                    className="w-full px-3 py-2 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                     required
                     autoFocus
                   />
                 </div>
 
-                <div className="form-group" style={{ position: 'relative' }}>
-                  <label htmlFor="newPassword">New Password</label>
-                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div className="space-y-2">
+                  <label htmlFor="newPassword" className="text-sm font-medium text-white">
+                    New Password
+                  </label>
+                  <div className="relative">
                     <input
                       id="newPassword"
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
+                      className="w-full px-3 py-2 pr-10 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                       required
-                      style={{ paddingRight: '40px' }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '12px',
-                        background: 'none',
-                        border: 'none',
-                        color: '#888',
-                        cursor: 'pointer',
-                        fontSize: '18px',
-                        padding: '4px 8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'color 0.2s'
-                      }}
-                      onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-                      onMouseOut={(e) => e.currentTarget.style.color = '#888'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                       title={showNewPassword ? 'Hide password' : 'Show password'}
                     >
                       {showNewPassword ? '👁️' : '👁️‍🗨️'}
@@ -435,37 +426,24 @@ export default function Login() {
                   </div>
                 </div>
 
-                <div className="form-group" style={{ position: 'relative' }}>
-                  <label htmlFor="confirmPassword">Confirm New Password</label>
-                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div className="space-y-2">
+                  <label htmlFor="confirmPassword" className="text-sm font-medium text-white">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
                     <input
                       id="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirm new password"
+                      className="w-full px-3 py-2 pr-10 border border-zinc-700 rounded-md bg-zinc-800 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
                       required
-                      style={{ paddingRight: '40px' }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '12px',
-                        background: 'none',
-                        border: 'none',
-                        color: '#888',
-                        cursor: 'pointer',
-                        fontSize: '18px',
-                        padding: '4px 8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'color 0.2s'
-                      }}
-                      onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-                      onMouseOut={(e) => e.currentTarget.style.color = '#888'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                       title={showConfirmPassword ? 'Hide password' : 'Show password'}
                     >
                       {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
@@ -473,27 +451,23 @@ export default function Login() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
+                <div className="flex gap-3">
+                  <Button
                     type="button"
                     onClick={() => setResetStep('code')}
-                    className="login-button"
-                    style={{
-                      flex: 1,
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)'
-                    }}
+                    className="flex-1 bg-zinc-800 text-white border border-zinc-700 hover:bg-zinc-700"
+                    size="lg"
                   >
                     Back
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="submit"
                     disabled={resetLoading}
-                    className="login-button primary"
-                    style={{ flex: 2 }}
+                    className="flex-[2] bg-white text-black hover:bg-gray-200"
+                    size="lg"
                   >
                     {resetLoading ? 'Resetting...' : 'Reset Password'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             )}
