@@ -50,3 +50,6 @@ temp/
 # Deployment
 .vercel
 .wrangler
+
+# Internal documentation
+SETUP_INTERNAL.md
