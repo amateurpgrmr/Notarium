@@ -278,14 +278,32 @@ export default function Login() {
                   </div>
                 </div>
 
-                <Button
+                <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-white text-black hover:bg-gray-200"
-                  size="lg"
+                  className="relative w-full h-12 overflow-hidden rounded-md group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? 'Signing in...' : 'Sign In'}
-                </Button>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animate-gradient-xy opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute inset-0.5 bg-black rounded-md flex items-center justify-center">
+                    <span className="relative z-10 text-white font-medium text-base">
+                      {isLoading ? 'Signing in...' : 'Sign In'}
+                    </span>
+                  </div>
+                </button>
+                <style>{`
+                  @keyframes gradient-xy {
+                    0%, 100% {
+                      background-position: 0% 50%;
+                    }
+                    50% {
+                      background-position: 100% 50%;
+                    }
+                  }
+                  .animate-gradient-xy {
+                    background-size: 200% 200%;
+                    animation: gradient-xy 3s ease infinite;
+                  }
+                `}</style>
               </form>
 
               {/* Forgot Password Link */}
@@ -372,13 +390,17 @@ export default function Login() {
                   />
                 </div>
 
-                <Button
+                <button
                   type="submit"
-                  className="w-full bg-white text-black hover:bg-gray-200"
-                  size="lg"
+                  className="relative w-full h-12 overflow-hidden rounded-md group"
                 >
-                  Continue
-                </Button>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animate-gradient-xy opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute inset-0.5 bg-black rounded-md flex items-center justify-center">
+                    <span className="relative z-10 text-white font-medium text-base">
+                      Continue
+                    </span>
+                  </div>
+                </button>
               </form>
             )}
 
@@ -452,22 +474,25 @@ export default function Login() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button
+                  <button
                     type="button"
                     onClick={() => setResetStep('code')}
-                    className="flex-1 bg-zinc-800 text-white border border-zinc-700 hover:bg-zinc-700"
-                    size="lg"
+                    className="flex-1 h-12 bg-zinc-800 text-white border border-zinc-700 hover:bg-zinc-700 rounded-md transition-colors font-medium"
                   >
                     Back
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     type="submit"
                     disabled={resetLoading}
-                    className="flex-[2] bg-white text-black hover:bg-gray-200"
-                    size="lg"
+                    className="relative flex-[2] h-12 overflow-hidden rounded-md group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {resetLoading ? 'Resetting...' : 'Reset Password'}
-                  </Button>
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animate-gradient-xy opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="absolute inset-0.5 bg-black rounded-md flex items-center justify-center">
+                      <span className="relative z-10 text-white font-medium text-base">
+                        {resetLoading ? 'Resetting...' : 'Reset Password'}
+                      </span>
+                    </div>
+                  </button>
                 </div>
               </form>
             )}

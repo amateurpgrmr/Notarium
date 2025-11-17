@@ -211,14 +211,32 @@ export default function Signup() {
                   />
                 </div>
 
-                <Button
+                <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-white text-black hover:bg-gray-200"
-                  size="lg"
+                  className="relative w-full h-12 overflow-hidden rounded-md group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? 'Creating account...' : 'Sign Up'}
-                </Button>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animate-gradient-xy opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute inset-0.5 bg-black rounded-md flex items-center justify-center">
+                    <span className="relative z-10 text-white font-medium text-base">
+                      {isLoading ? 'Creating account...' : 'Sign Up'}
+                    </span>
+                  </div>
+                </button>
+                <style>{`
+                  @keyframes gradient-xy {
+                    0%, 100% {
+                      background-position: 0% 50%;
+                    }
+                    50% {
+                      background-position: 100% 50%;
+                    }
+                  }
+                  .animate-gradient-xy {
+                    background-size: 200% 200%;
+                    animation: gradient-xy 3s ease infinite;
+                  }
+                `}</style>
               </form>
 
               <p className="text-center text-sm text-gray-400 mt-6">
