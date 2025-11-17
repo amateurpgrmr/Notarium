@@ -44,7 +44,7 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
     {
       name: 'Vincent',
       role: 'Co Treasurer',
-      contribution: 'Managed the team\'s finances and budget throughout the project.',
+      contribution: 'Hampir Berguna',
       photo: '/per.5.jpg'
     },
   ];
