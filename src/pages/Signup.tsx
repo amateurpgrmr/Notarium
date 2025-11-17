@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../lib/api';
 import { Button } from '@/components/ui/button';
+import { ShaderAnimation } from '@/components/ui/shader-animation';
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -75,8 +76,13 @@ export default function Signup() {
   };
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-black">
-      <div className="container mx-auto px-4">
+    <div className="relative w-full min-h-screen flex items-center justify-center">
+      {/* Shader Animation Background */}
+      <div className="absolute inset-0 z-0">
+        <ShaderAnimation />
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
         <div className="flex gap-8 py-20 items-center justify-center flex-col max-w-4xl mx-auto">
           {/* Animated Hero Header */}
           <div className="flex gap-4 flex-col items-center">

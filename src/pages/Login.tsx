@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../lib/api';
 import { Button } from '@/components/ui/button';
+import { ShaderAnimation } from '@/components/ui/shader-animation';
 
 const SECRET_CODE = '%62rdn2%';
 
@@ -180,8 +181,13 @@ export default function Login() {
   };
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-black">
-      <div className="container mx-auto px-4">
+    <div className="relative w-full min-h-screen flex items-center justify-center">
+      {/* Shader Animation Background */}
+      <div className="absolute inset-0 z-0">
+        <ShaderAnimation />
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
         <div className="flex gap-8 py-20 items-center justify-center flex-col max-w-4xl mx-auto">
           {/* Animated Hero Header */}
           <div className="flex gap-4 flex-col items-center">
@@ -341,7 +347,7 @@ export default function Login() {
       {/* Forgot Password Modal */}
       {showForgotPassword && (
         <div
-          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-5"
+          className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-50 p-5"
           onClick={handleCloseForgotPassword}
         >
           <div
