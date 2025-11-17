@@ -3,7 +3,7 @@ import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme, cardStyle, inputStyle, buttonPrimaryStyle } from '../theme';
 import ReactMarkdown from 'react-markdown';
-import { PromptInputBox } from '@/components/ui/ai-prompt-box';
+import { AIInputWithLoading } from '@/components/ui/ai-input-with-loading';
 import { ShaderAnimation } from '@/components/ui/shader-animation';
 
 interface ChatMessage {
@@ -732,20 +732,56 @@ export default function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area - AI Prompt Box */}
+            {/* Input Area - AI Input */}
             <div style={{
               padding: '20px 24px',
               borderTop: `1px solid ${darkTheme.colors.borderColor}`,
-              background: 'transparent',
+              background: 'rgba(0, 0, 0, 0.3)',
               backdropFilter: 'blur(10px)'
             }}>
-              <PromptInputBox
-                onSend={(message) => {
-                  setInputValue(message);
-                  setTimeout(() => handleSendMessage(), 0);
-                }}
-                isLoading={sending}
+              <AIInputWithLoading
                 placeholder="Ask your AI tutor a question..."
+                onSubmit={async (value) => {
+                  if (!selectedSession || !value.trim()) return;
+
+                  const userMessage = value;
+                  setSending(true);
+
+                  try {
+                    // Add user message locally
+                    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+
+                    // Get AI response from Gemini
+                    const response = await api.request(`/api/chat/sessions/${selectedSession.id}/ai-response`, {
+                      method: 'POST',
+                      body: { message: userMessage, subject: selectedSession.subject }
+                    });
+
+                    const aiResponseContent = response.response || 'I apologize, but I could not generate a response.';
+
+                    // Add AI message locally
+                    setMessages((prev) => [...prev, { role: 'assistant', content: aiResponseContent }]);
+                  } catch (error: any) {
+                    console.error('Failed to send message:', error);
+                    // Remove user message if request failed
+                    setMessages((prev) => {
+                      const newMessages = [...prev];
+                      if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'user') {
+                        newMessages.pop();
+                      }
+                      return newMessages;
+                    });
+                    // Show error message
+                    setMessages((prev) => [...prev, {
+                      role: 'assistant',
+                      content: `Error: ${error.message || 'Failed to get response from AI tutor. Please try again.'}`
+                    }]);
+                  } finally {
+                    setSending(false);
+                  }
+                }}
+                loadingDuration={2000}
+                className="w-full"
               />
             </div>
           </>
