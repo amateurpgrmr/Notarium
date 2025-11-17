@@ -10,7 +10,7 @@ database_id = "17779d22-7479-479c-8de7-dfe102916ba3"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "placeholder_create_kv_namespace"
+id = "5d033dba4be2443e98c4782d44e0b777"
 
 [env.development]
 vars = { ENVIRONMENT = "development", FRONTEND_URL = "http://localhost:5173" }
@@ -22,8 +22,8 @@ database_id = "local-dev"
 
 [[env.development.kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "placeholder_create_kv_namespace"
-preview_id = "placeholder_create_kv_namespace"
+id = "5d033dba4be2443e98c4782d44e0b777"
+preview_id = "ad6509290e94483f9467a11eb2fff1b8"
 
 [env.production]
 vars = { ENVIRONMENT = "production", FRONTEND_URL = "https://notarium-site.vercel.app" }
@@ -35,4 +35,4 @@ database_id = "17779d22-7479-479c-8de7-dfe102916ba3"
 
 [[env.production.kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "placeholder_create_kv_namespace"
+id = "5d033dba4be2443e98c4782d44e0b777"
