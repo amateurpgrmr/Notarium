@@ -3,7 +3,7 @@ import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme, cardStyle, inputStyle, buttonPrimaryStyle } from '../theme';
 import ReactMarkdown from 'react-markdown';
-import { AIInputWithLoading } from '@/components/ui/ai-input-with-loading';
+import { StudyChatInput } from '@/components/ui/study-chat-input';
 import { ShaderAnimation } from '@/components/ui/shader-animation';
 
 interface ChatMessage {
@@ -109,8 +109,7 @@ export default function ChatPage() {
     }
   };
 
-  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.currentTarget.files?.[0];
+  const handleDocumentUpload = async (file: File) => {
     if (!file || !selectedSession) return;
 
     try {
@@ -150,7 +149,6 @@ export default function ChatPage() {
       ]);
     } finally {
       setUploading(false);
-      e.currentTarget.value = '';
     }
   };
 
@@ -279,10 +277,10 @@ export default function ChatPage() {
         <button
           onClick={() => setShowNewSession(!showNewSession)}
           style={{
-            padding: '10px 18px',
-            background: darkTheme.colors.accent,
+            padding: '11px 20px',
+            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
             border: 'none',
-            borderRadius: darkTheme.borderRadius.md,
+            borderRadius: '12px',
             color: 'white',
             cursor: 'pointer',
             fontWeight: '600',
@@ -292,10 +290,17 @@ export default function ChatPage() {
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
           } as React.CSSProperties}
-          onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-          onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.4)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
+          }}
         >
           <i className="fas fa-plus"></i>New Chat
         </button>
@@ -308,35 +313,41 @@ export default function ChatPage() {
                 key={session.id}
                 onClick={() => handleSelectSession(session)}
                 style={{
-                  padding: '10px 16px',
+                  padding: '11px 18px',
                   background: selectedSession?.id === session.id
-                    ? 'rgba(139, 92, 246, 0.2)'
-                    : darkTheme.colors.bgSecondary,
+                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15))'
+                    : 'rgba(30, 30, 35, 0.6)',
                   border: selectedSession?.id === session.id
-                    ? `2px solid ${darkTheme.colors.accent}`
-                    : `1px solid ${darkTheme.colors.borderColor}`,
-                  borderRadius: darkTheme.borderRadius.md,
+                    ? `2px solid #8b5cf6`
+                    : `1px solid rgba(139, 92, 246, 0.2)`,
+                  borderRadius: '12px',
                   color: darkTheme.colors.textPrimary,
                   cursor: 'pointer',
                   fontSize: '14px',
                   fontWeight: selectedSession?.id === session.id ? '600' : '500',
                   transition: darkTheme.transitions.default,
                   whiteSpace: 'nowrap',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: selectedSession?.id === session.id
+                    ? '0 4px 12px rgba(139, 92, 246, 0.25)'
+                    : 'none'
                 }}
                 onMouseOver={(e) => {
                   if (selectedSession?.id !== session.id) {
-                    e.currentTarget.style.background = darkTheme.colors.bgTertiary;
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
                   }
                 }}
                 onMouseOut={(e) => {
                   if (selectedSession?.id !== session.id) {
-                    e.currentTarget.style.background = darkTheme.colors.bgSecondary;
+                    e.currentTarget.style.background = 'rgba(30, 30, 35, 0.6)';
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
                   }
                 }}
               >
                 <span style={{ fontWeight: '600' }}>{session.subject}</span>
-                <span style={{ fontSize: '12px', opacity: '0.7' }}>• {session.topic}</span>
+                <span style={{ fontSize: '12px', opacity: '0.7', marginLeft: '6px' }}>• {session.topic}</span>
               </button>
             ))}
           </div>
@@ -346,52 +357,114 @@ export default function ChatPage() {
       {/* New Session Form - Collapsible */}
       {showNewSession && (
         <div style={{
-          padding: '16px',
-          background: darkTheme.colors.bgSecondary,
-          borderRadius: darkTheme.borderRadius.md,
-          border: `1px solid ${darkTheme.colors.borderColor}`,
+          padding: '20px',
+          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.05))',
+          borderRadius: '16px',
+          border: `1px solid rgba(139, 92, 246, 0.2)`,
           display: 'flex',
-          gap: '12px',
+          gap: '14px',
           flexWrap: 'wrap',
-          alignItems: 'flex-end'
+          alignItems: 'flex-end',
+          backdropFilter: 'blur(10px)'
         }}>
           <div style={{ flex: 1, minWidth: '200px' }}>
-            <label style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, display: 'block', marginBottom: '6px' }}>Subject</label>
+            <label style={{
+              fontSize: '12px',
+              color: '#a78bfa',
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: '600',
+              letterSpacing: '0.3px',
+              textTransform: 'uppercase'
+            }}>Subject</label>
             <input
               type="text"
               placeholder="e.g., Biology"
               value={newSessionSubject}
               onChange={(e) => setNewSessionSubject(e.target.value)}
               style={{
-                ...inputStyle,
-                width: '100%'
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(30, 30, 35, 0.6)',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+                borderRadius: '10px',
+                color: darkTheme.colors.textPrimary,
+                fontSize: '14px',
+                outline: 'none',
+                transition: darkTheme.transitions.default,
+                backdropFilter: 'blur(10px)'
               } as React.CSSProperties}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#8b5cf6';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             />
           </div>
           <div style={{ flex: 1, minWidth: '200px' }}>
-            <label style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, display: 'block', marginBottom: '6px' }}>Topic</label>
+            <label style={{
+              fontSize: '12px',
+              color: '#a78bfa',
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: '600',
+              letterSpacing: '0.3px',
+              textTransform: 'uppercase'
+            }}>Topic</label>
             <input
               type="text"
               placeholder="e.g., Cell Division"
               value={newSessionTopic}
               onChange={(e) => setNewSessionTopic(e.target.value)}
               style={{
-                ...inputStyle,
-                width: '100%'
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(30, 30, 35, 0.6)',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+                borderRadius: '10px',
+                color: darkTheme.colors.textPrimary,
+                fontSize: '14px',
+                outline: 'none',
+                transition: darkTheme.transitions.default,
+                backdropFilter: 'blur(10px)'
               } as React.CSSProperties}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#8b5cf6';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             />
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button
               onClick={handleCreateSession}
               disabled={sending}
               style={{
-                ...buttonPrimaryStyle,
-                padding: '10px 24px',
-                opacity: sending ? 0.6 : 1
+                padding: '12px 28px',
+                background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                border: 'none',
+                borderRadius: '10px',
+                color: 'white',
+                cursor: sending ? 'not-allowed' : 'pointer',
+                fontWeight: '600',
+                fontSize: '14px',
+                transition: darkTheme.transitions.default,
+                opacity: sending ? 0.6 : 1,
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               } as React.CSSProperties}
+              onMouseOver={(e) => !sending && (e.currentTarget.style.transform = 'translateY(-2px)')}
+              onMouseOut={(e) => !sending && (e.currentTarget.style.transform = 'translateY(0)')}
             >
-              <i className="fas fa-check" style={{ marginRight: '6px' }}></i>Create
+              <i className="fas fa-check"></i>Create
             </button>
             <button
               onClick={() => {
@@ -400,17 +473,25 @@ export default function ChatPage() {
                 setNewSessionTopic('');
               }}
               style={{
-                padding: '10px 24px',
-                background: darkTheme.colors.bgTertiary,
-                border: `1px solid ${darkTheme.colors.borderColor}`,
-                borderRadius: darkTheme.borderRadius.md,
+                padding: '12px 28px',
+                background: 'rgba(30, 30, 35, 0.6)',
+                border: `1px solid rgba(139, 92, 246, 0.2)`,
+                borderRadius: '10px',
                 color: darkTheme.colors.textPrimary,
                 cursor: 'pointer',
                 fontWeight: '500',
-                transition: darkTheme.transitions.default
+                fontSize: '14px',
+                transition: darkTheme.transitions.default,
+                backdropFilter: 'blur(10px)'
               } as React.CSSProperties}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-              onMouseOut={(e) => e.currentTarget.style.background = darkTheme.colors.bgTertiary}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.08)';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(30, 30, 35, 0.6)';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+              }}
             >
               Cancel
             </button>
@@ -431,26 +512,53 @@ export default function ChatPage() {
           <>
             {/* Chat Header */}
             <div style={{
-              padding: '20px',
-              borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
-              background: darkTheme.colors.bgSecondary,
+              padding: isMobile ? '16px' : '24px 28px',
+              borderBottom: `1px solid rgba(139, 92, 246, 0.2)`,
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08))',
+              backdropFilter: 'blur(20px)',
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'flex-start',
+              alignItems: 'center',
               gap: '16px'
             }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>
-                  📚 {selectedSession.subject}
-                </h2>
-                <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: darkTheme.colors.textSecondary }}>
-                  Topic: <strong>{selectedSession.topic}</strong>
-                </p>
-                <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: darkTheme.colors.accent }}>
-                  🤖 AI Study Tutor
-                </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{
+                  width: isMobile ? '48px' : '56px',
+                  height: isMobile ? '48px' : '56px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '24px' : '28px',
+                  boxShadow: '0 8px 24px rgba(139, 92, 246, 0.4)',
+                  flexShrink: 0
+                }}>
+                  🤖
+                </div>
+                <div>
+                  <h2 style={{
+                    margin: 0,
+                    fontSize: isMobile ? '16px' : '20px',
+                    fontWeight: '700',
+                    background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>
+                    {selectedSession.subject}
+                  </h2>
+                  <p style={{
+                    margin: '4px 0 0 0',
+                    fontSize: isMobile ? '13px' : '14px',
+                    color: darkTheme.colors.textSecondary,
+                    fontWeight: '500'
+                  }}>
+                    {selectedSession.topic}
+                  </p>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button
                   onClick={toggleFullscreen}
                   style={{
@@ -458,73 +566,53 @@ export default function ChatPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '10px',
-                    background: darkTheme.colors.bgTertiary,
-                    border: `1px solid ${darkTheme.colors.borderColor}`,
-                    borderRadius: darkTheme.borderRadius.md,
+                    background: 'rgba(139, 92, 246, 0.1)',
+                    border: `1px solid rgba(139, 92, 246, 0.3)`,
+                    borderRadius: '12px',
                     cursor: 'pointer',
                     transition: darkTheme.transitions.default,
-                    fontSize: '16px',
+                    fontSize: '18px',
                     color: darkTheme.colors.textPrimary,
-                    width: '40px',
-                    height: '40px'
+                    width: '42px',
+                    height: '42px'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.background = darkTheme.colors.accent;
-                    e.currentTarget.style.color = 'white';
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
+                    e.currentTarget.style.borderColor = darkTheme.colors.accent;
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.background = darkTheme.colors.bgTertiary;
-                    e.currentTarget.style.color = darkTheme.colors.textPrimary;
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
                   }}
                   title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
                 >
                   <i className={`fas fa-${isFullscreen ? 'compress' : 'expand'}`}></i>
                 </button>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 16px',
-                  background: darkTheme.colors.accent,
-                  borderRadius: darkTheme.borderRadius.md,
-                  cursor: uploading ? 'not-allowed' : 'pointer',
-                  opacity: uploading ? 0.6 : 1,
-                  transition: darkTheme.transitions.default,
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: 'white',
-                  whiteSpace: 'nowrap'
-                } as React.CSSProperties}
-                onMouseOver={(e) => !uploading && (e.currentTarget.style.opacity = '0.9')}
-                onMouseOut={(e) => !uploading && (e.currentTarget.style.opacity = '1')}
-                >
-                  <i className="fas fa-upload"></i>
-                  {uploading ? 'Uploading...' : 'Upload Document'}
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
-                    onChange={handleDocumentUpload}
-                    disabled={uploading}
-                    style={{ display: 'none' }}
-                  />
-                </label>
               </div>
             </div>
 
             {/* Info Section - Uploaded Documents and Key Concepts */}
             {(uploadedDocuments.length > 0 || (noteAnalysis || keyConcepts.length > 0)) && (
               <div style={{
-                padding: '16px 20px',
-                background: 'rgba(139, 92, 246, 0.05)',
-                borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
+                padding: isMobile ? '14px 16px' : '18px 24px',
+                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.05))',
+                borderBottom: `1px solid rgba(139, 92, 246, 0.2)`,
                 display: 'flex',
-                gap: '20px',
-                flexWrap: 'wrap'
+                gap: '24px',
+                flexWrap: 'wrap',
+                backdropFilter: 'blur(10px)'
               }}>
                 {/* Uploaded Documents */}
                 {uploadedDocuments.length > 0 && (
                   <div>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '600', color: darkTheme.colors.accent }}>
+                    <p style={{
+                      margin: '0 0 10px 0',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      color: '#a78bfa',
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase'
+                    }}>
                       📎 Documents ({uploadedDocuments.length})
                     </p>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -532,11 +620,14 @@ export default function ChatPage() {
                         <span
                           key={idx}
                           style={{
-                            padding: '4px 10px',
-                            background: darkTheme.colors.bgSecondary,
-                            borderRadius: darkTheme.borderRadius.sm,
+                            padding: '6px 14px',
+                            background: 'rgba(139, 92, 246, 0.12)',
+                            border: '1px solid rgba(139, 92, 246, 0.3)',
+                            borderRadius: '10px',
                             fontSize: '12px',
-                            color: darkTheme.colors.textSecondary
+                            color: '#e4e4e7',
+                            fontWeight: '500',
+                            backdropFilter: 'blur(10px)'
                           }}
                         >
                           {doc.fileName}
@@ -549,7 +640,14 @@ export default function ChatPage() {
                 {/* Key Concepts */}
                 {keyConcepts.length > 0 && (
                   <div>
-                    <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: '600', color: darkTheme.colors.accent }}>
+                    <p style={{
+                      margin: '0 0 10px 0',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      color: '#a78bfa',
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase'
+                    }}>
                       💡 Key Concepts
                     </p>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -557,12 +655,13 @@ export default function ChatPage() {
                         <span
                           key={idx}
                           style={{
-                            padding: '6px 12px',
-                            background: darkTheme.colors.accent,
-                            borderRadius: darkTheme.borderRadius.sm,
+                            padding: '7px 14px',
+                            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                            borderRadius: '10px',
                             color: 'white',
                             fontSize: '12px',
-                            fontWeight: '500'
+                            fontWeight: '600',
+                            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
                           }}
                         >
                           {concept}
@@ -573,8 +672,22 @@ export default function ChatPage() {
                 )}
 
                 {analyzing && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: darkTheme.colors.textSecondary }}>
-                    <i className="fas fa-spinner" style={{ animation: 'spin 1s linear infinite' }}></i>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '13px',
+                    color: '#a78bfa',
+                    fontWeight: '500'
+                  }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(139, 92, 246, 0.3)',
+                      borderTopColor: '#8b5cf6',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
                     Analyzing available notes...
                   </div>
                 )}
@@ -596,12 +709,41 @@ export default function ChatPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   height: '100%',
-                  color: darkTheme.colors.textSecondary,
                   flexDirection: 'column',
-                  gap: '16px'
+                  gap: '24px'
                 }}>
-                  <i className="fas fa-comments" style={{ fontSize: '56px', opacity: '0.5' }}></i>
-                  <p style={{ fontSize: '16px', textAlign: 'center' }}>Start your study session by asking the AI tutor a question</p>
+                  <div style={{
+                    width: '100px',
+                    height: '100px',
+                    borderRadius: '28px',
+                    background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '52px',
+                    boxShadow: '0 12px 40px rgba(139, 92, 246, 0.4)',
+                    animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                  }}>
+                    🤖
+                  </div>
+                  <div style={{ textAlign: 'center', maxWidth: '450px' }}>
+                    <h3 style={{
+                      fontSize: '20px',
+                      fontWeight: '700',
+                      color: '#e4e4e7',
+                      margin: '0 0 12px 0'
+                    }}>
+                      Ready to Learn?
+                    </h3>
+                    <p style={{
+                      fontSize: '15px',
+                      color: darkTheme.colors.textSecondary,
+                      lineHeight: '1.6',
+                      margin: 0
+                    }}>
+                      Ask me anything about {selectedSession.subject}. I'm here to help you understand {selectedSession.topic} and more!
+                    </p>
+                  </div>
                 </div>
               )}
               {messages.map((msg, idx) => (
@@ -610,74 +752,78 @@ export default function ChatPage() {
                   style={{
                     display: 'flex',
                     justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    gap: '12px'
+                    gap: '14px',
+                    animation: 'fadeIn 0.4s ease-out'
                   }}
                 >
                   {msg.role === 'assistant' && (
                     <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      background: darkTheme.colors.accent,
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '14px',
+                      background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: 'white',
                       flexShrink: 0,
-                      fontSize: '20px',
-                      boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
+                      fontSize: '22px',
+                      boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)',
                       alignSelf: 'flex-start',
-                      marginTop: '4px'
+                      marginTop: '2px'
                     }}>
                       🤖
                     </div>
                   )}
                   <div style={{
-                    maxWidth: '75%',
-                    padding: msg.role === 'user' ? '16px 20px' : '18px 22px',
-                    borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                    maxWidth: isMobile ? '85%' : '75%',
+                    padding: msg.role === 'user' ? '14px 20px' : '18px 24px',
+                    borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     background: msg.role === 'user'
-                      ? darkTheme.colors.accent
-                      : darkTheme.colors.bgSecondary,
+                      ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
+                      : 'rgba(30, 30, 35, 0.6)',
                     color: msg.role === 'user' ? '#fff' : darkTheme.colors.textPrimary,
                     wordWrap: 'break-word',
                     lineHeight: '1.7',
                     fontSize: '15px',
                     boxShadow: msg.role === 'user'
-                      ? '0 2px 12px rgba(139, 92, 246, 0.25)'
-                      : '0 1px 4px rgba(0, 0, 0, 0.1)',
-                    border: msg.role === 'user' ? 'none' : `1px solid ${darkTheme.colors.borderColor}`
+                      ? '0 4px 16px rgba(139, 92, 246, 0.3)'
+                      : '0 2px 8px rgba(0, 0, 0, 0.15)',
+                    border: msg.role === 'user' ? 'none' : `1px solid rgba(139, 92, 246, 0.15)`,
+                    backdropFilter: msg.role === 'assistant' ? 'blur(10px)' : 'none'
                   }}>
                     {msg.role === 'assistant' ? (
                       <ReactMarkdown
                         components={{
-                          p: ({ children }) => <p style={{ margin: '0 0 12px 0', lineHeight: '1.7' }}>{children}</p>,
-                          ul: ({ children }) => <ul style={{ margin: '12px 0', paddingLeft: '24px', lineHeight: '1.8' }}>{children}</ul>,
-                          ol: ({ children }) => <ol style={{ margin: '12px 0', paddingLeft: '24px', lineHeight: '1.8' }}>{children}</ol>,
+                          p: ({ children }) => <p style={{ margin: '0 0 14px 0', lineHeight: '1.7', color: '#e4e4e7' }}>{children}</p>,
+                          ul: ({ children }) => <ul style={{ margin: '14px 0', paddingLeft: '24px', lineHeight: '1.8', color: '#e4e4e7' }}>{children}</ul>,
+                          ol: ({ children }) => <ol style={{ margin: '14px 0', paddingLeft: '24px', lineHeight: '1.8', color: '#e4e4e7' }}>{children}</ol>,
                           li: ({ children }) => <li style={{ margin: '6px 0', paddingLeft: '4px' }}>{children}</li>,
-                          strong: ({ children }) => <strong style={{ fontWeight: '700', color: darkTheme.colors.accent }}>{children}</strong>,
+                          strong: ({ children }) => <strong style={{ fontWeight: '700', color: '#a78bfa', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>{children}</strong>,
                           em: ({ children }) => <em style={{ fontStyle: 'italic', opacity: 0.95 }}>{children}</em>,
                           code: ({ children }) => <code style={{
-                            background: 'rgba(0, 0, 0, 0.25)',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            fontSize: '13.5px',
+                            background: 'rgba(139, 92, 246, 0.15)',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            fontSize: '14px',
                             fontFamily: 'monospace',
-                            border: '1px solid rgba(139, 92, 246, 0.2)'
+                            border: '1px solid rgba(139, 92, 246, 0.3)',
+                            color: '#c4b5fd'
                           }}>{children}</code>,
-                          h1: ({ children }) => <h1 style={{ fontSize: '22px', fontWeight: '700', margin: '16px 0 10px 0', lineHeight: '1.3' }}>{children}</h1>,
-                          h2: ({ children }) => <h2 style={{ fontSize: '19px', fontWeight: '700', margin: '14px 0 8px 0', lineHeight: '1.3' }}>{children}</h2>,
-                          h3: ({ children }) => <h3 style={{ fontSize: '17px', fontWeight: '600', margin: '12px 0 6px 0', lineHeight: '1.4' }}>{children}</h3>,
+                          h1: ({ children }) => <h1 style={{ fontSize: '24px', fontWeight: '700', margin: '18px 0 12px 0', lineHeight: '1.3', color: '#a78bfa' }}>{children}</h1>,
+                          h2: ({ children }) => <h2 style={{ fontSize: '20px', fontWeight: '700', margin: '16px 0 10px 0', lineHeight: '1.3', color: '#a78bfa' }}>{children}</h2>,
+                          h3: ({ children }) => <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '14px 0 8px 0', lineHeight: '1.4', color: '#a78bfa' }}>{children}</h3>,
                           blockquote: ({ children }) => <blockquote style={{
-                            borderLeft: `4px solid ${darkTheme.colors.accent}`,
-                            paddingLeft: '16px',
-                            margin: '12px 0',
+                            borderLeft: `4px solid #8b5cf6`,
+                            paddingLeft: '18px',
+                            margin: '14px 0',
                             fontStyle: 'italic',
-                            opacity: 0.9,
-                            background: 'rgba(139, 92, 246, 0.05)',
-                            paddingTop: '8px',
-                            paddingBottom: '8px',
-                            borderRadius: '0 8px 8px 0'
+                            opacity: 0.95,
+                            background: 'rgba(139, 92, 246, 0.08)',
+                            paddingTop: '10px',
+                            paddingBottom: '10px',
+                            borderRadius: '0 10px 10px 0',
+                            color: '#c4b5fd'
                           }}>{children}</blockquote>
                         }}
                       >
@@ -687,61 +833,92 @@ export default function ChatPage() {
                       msg.content
                     )}
                   </div>
+                  {msg.role === 'user' && (
+                    <div style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '14px',
+                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      flexShrink: 0,
+                      fontSize: '22px',
+                      boxShadow: '0 4px 16px rgba(99, 102, 241, 0.4)',
+                      alignSelf: 'flex-start',
+                      marginTop: '2px',
+                      fontWeight: '600'
+                    }}>
+                      👤
+                    </div>
+                  )}
                 </div>
               ))}
               {sending && (
                 <div style={{
                   display: 'flex',
                   justifyContent: 'flex-start',
-                  gap: '12px'
+                  gap: '14px',
+                  animation: 'fadeIn 0.4s ease-out'
                 }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: darkTheme.colors.accent,
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '14px',
+                    background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
                     flexShrink: 0,
-                    fontSize: '20px',
-                    boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
+                    fontSize: '22px',
+                    boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)',
                     alignSelf: 'flex-start',
-                    marginTop: '4px'
+                    marginTop: '2px',
+                    animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                   }}>
                     🤖
                   </div>
                   <div style={{
-                    padding: '16px 20px',
-                    borderRadius: '20px 20px 20px 4px',
-                    background: darkTheme.colors.bgSecondary,
-                    color: darkTheme.colors.textSecondary,
+                    padding: '18px 24px',
+                    borderRadius: '18px 18px 18px 4px',
+                    background: 'rgba(30, 30, 35, 0.6)',
+                    color: '#e4e4e7',
                     fontSize: '15px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
-                    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
-                    border: `1px solid ${darkTheme.colors.borderColor}`
+                    gap: '12px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                    border: `1px solid rgba(139, 92, 246, 0.15)`,
+                    backdropFilter: 'blur(10px)'
                   }}>
-                    <i className="fas fa-circle-notch" style={{ animation: 'spin 1s linear infinite' }}></i>
-                    Generating response...
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      border: '3px solid rgba(139, 92, 246, 0.3)',
+                      borderTopColor: '#8b5cf6',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    <span style={{ fontWeight: '500' }}>Thinking...</span>
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area - AI Input */}
+            {/* Input Area - Study Chat Input */}
             <div style={{
               padding: '20px 24px',
               borderTop: `1px solid ${darkTheme.colors.borderColor}`,
               background: 'rgba(0, 0, 0, 0.3)',
               backdropFilter: 'blur(10px)'
             }}>
-              <AIInputWithLoading
+              <StudyChatInput
                 placeholder="Ask your AI tutor a question..."
-                onSubmit={async (value) => {
+                disabled={sending}
+                onSubmit={async (value, options) => {
                   if (!selectedSession || !value.trim()) return;
 
                   const userMessage = value;
@@ -754,7 +931,12 @@ export default function ChatPage() {
                     // Get AI response from Gemini
                     const response = await api.request(`/api/chat/sessions/${selectedSession.id}/ai-response`, {
                       method: 'POST',
-                      body: { message: userMessage, subject: selectedSession.subject }
+                      body: {
+                        message: userMessage,
+                        subject: selectedSession.subject,
+                        think: options?.think,
+                        deepSearch: options?.deepSearch
+                      }
                     });
 
                     const aiResponseContent = response.response || 'I apologize, but I could not generate a response.';
@@ -780,8 +962,7 @@ export default function ChatPage() {
                     setSending(false);
                   }
                 }}
-                loadingDuration={2000}
-                className="w-full"
+                onFileUpload={handleDocumentUpload}
               />
             </div>
           </>
@@ -809,6 +990,26 @@ export default function ChatPage() {
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(0.98);
+          }
         }
       `}</style>
 
