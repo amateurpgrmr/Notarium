@@ -4,16 +4,19 @@ A modern note-sharing platform for students built with React, TypeScript, Cloudf
 
 ## Features
 
-- **Authentication** - Google OAuth 2.0 with JWT sessions
-- **Notes Management** - Create, edit, and share notes with subject categorization
-- **AI Study Assistant** - Chat sessions for study help
-- **User Dashboard** - Track stats, points, and recent activity
+- **Notes Management** - Create, share, and organize notes by subject with search functionality
+- **AI Study Assistant** - Chat with AI, generate summaries, quizzes, and study plans
+- **Gamification** - Earn points and badges, compete on leaderboards
+- **OCR Technology** - Upload images and extract text automatically
+- **Admin Moderation** - User management and content moderation tools
+- **Mobile Responsive** - Full mobile support with touch-optimized interface
 
 ## Tech Stack
 
 **Frontend:** React 19, TypeScript, Vite, Tailwind CSS
 **Backend:** Cloudflare Workers, Hono, D1 Database
-**Auth:** Google OAuth 2.0, JWT
+**AI:** DeepSeek for AI chat, summarization, and study assistance
+**Auth:** JWT with email/password authentication
 
 ## Getting Started
 
@@ -39,4 +42,4 @@ vercel
 
 ## License
 
-MIT
+Licensed
