@@ -3,6 +3,8 @@ import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme, cardStyle, inputStyle, buttonPrimaryStyle } from '../theme';
 import ReactMarkdown from 'react-markdown';
+import { PromptInputBox } from '@/components/ui/ai-prompt-box';
+import { ShaderAnimation } from '@/components/ui/shader-animation';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -233,16 +235,35 @@ export default function ChatPage() {
   return (
     <div style={{
       position: 'fixed',
-      top: isMobile ? '64px' : '76px',
+      top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '16px',
-      padding: isMobile ? '12px' : '16px',
-      zIndex: 10
+      overflow: 'hidden'
     }}>
+      {/* Shader Animation Background */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 0
+      }}>
+        <ShaderAnimation />
+      </div>
+
+      {/* Content */}
+      <div style={{
+        position: 'relative',
+        top: isMobile ? '64px' : '76px',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        padding: isMobile ? '12px' : '16px',
+        zIndex: 10,
+        height: `calc(100vh - ${isMobile ? '64px' : '76px'})`
+      }}>
       {/* Session Tabs - Top */}
       <div style={{
         display: 'flex',
@@ -711,46 +732,21 @@ export default function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area - Large and Easy */}
+            {/* Input Area - AI Prompt Box */}
             <div style={{
               padding: '20px 24px',
               borderTop: `1px solid ${darkTheme.colors.borderColor}`,
-              background: darkTheme.colors.bgSecondary,
-              display: 'flex',
-              gap: '12px',
-              boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)'
+              background: 'transparent',
+              backdropFilter: 'blur(10px)'
             }}>
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              <PromptInputBox
+                onSend={(message) => {
+                  setInputValue(message);
+                  setTimeout(() => handleSendMessage(), 0);
+                }}
+                isLoading={sending}
                 placeholder="Ask your AI tutor a question..."
-                disabled={sending}
-                style={{
-                  ...inputStyle,
-                  flex: 1,
-                  padding: '16px 20px',
-                  fontSize: '15px',
-                  opacity: sending ? 0.6 : 1,
-                  borderRadius: '16px'
-                } as React.CSSProperties}
               />
-              <button
-                onClick={handleSendMessage}
-                disabled={sending || !inputValue.trim()}
-                style={{
-                  ...buttonPrimaryStyle,
-                  padding: '16px 32px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  opacity: sending || !inputValue.trim() ? 0.6 : 1,
-                  borderRadius: '16px',
-                  boxShadow: sending || !inputValue.trim() ? 'none' : '0 2px 12px rgba(139, 92, 246, 0.3)'
-                } as React.CSSProperties}
-              >
-                <i className="fas fa-paper-plane"></i>
-              </button>
             </div>
           </>
         ) : (
@@ -782,6 +778,7 @@ export default function ChatPage() {
 
       {/* Hidden file input for document upload */}
       <input type="file" id="docUpload" style={{ display: 'none' }} />
+      </div>
     </div>
   );
 }
