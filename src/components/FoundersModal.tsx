@@ -24,13 +24,13 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
       photo: '/per.1.jpg'
     },
     {
-      name: 'Zoey',
+      name: 'Zoey Budiman',
       role: 'Co-Leader & Project Manager',
       contribution: 'Led this team to success, and directed team flow throughout development.',
       photo: '/per.2.jpg'
     },
     {
-      name: 'Imsal',
+      name: 'Imsal Gloria',
       role: 'Art/Design Manager & Innovation Manager',
       contribution: 'Designed the art used in this website as well as co-designing the interface.',
       photo: '/per.3.jpg'
