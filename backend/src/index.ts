@@ -3162,6 +3162,61 @@ export default {
         }
       }
 
+      // Password migration endpoint (one-time use to migrate plain-text to bcrypt)
+      if (path === '/api/admin/migrate-passwords' && request.method === 'POST') {
+        try {
+          const body = await request.json() as any;
+          const { adminPassword } = body;
+
+          if (adminPassword !== env.ADMIN_PASSWORD) {
+            return jsonResponse({ error: 'Unauthorized' }, 401, env);
+          }
+
+          const users = await env.DB.prepare('SELECT id, password_hash FROM users').all();
+          let migrated = 0;
+          let alreadyHashed = 0;
+          let errors = 0;
+
+          for (const user of users.results) {
+            const userId = (user as any).id;
+            const plainPassword = (user as any).password_hash;
+
+            if (!plainPassword) {
+              continue; // Skip users with no password
+            }
+
+            // Check if already hashed (bcrypt hashes start with $2)
+            if (plainPassword.startsWith('$2')) {
+              alreadyHashed++;
+              continue;
+            }
+
+            try {
+              // Hash the plain text password
+              const hashed = await hashPassword(plainPassword);
+              await env.DB.prepare(
+                'UPDATE users SET password_hash = ? WHERE id = ?'
+              ).bind(hashed, userId).run();
+              migrated++;
+            } catch (error) {
+              console.error(`[MIGRATION] Failed to migrate user ${userId}:`, error);
+              errors++;
+            }
+          }
+
+          return jsonResponse({
+            success: true,
+            migrated,
+            alreadyHashed,
+            errors,
+            total: users.results.length
+          }, 200, env);
+        } catch (error: any) {
+          console.error('[MIGRATION] Error:', error);
+          return jsonResponse({ error: error.message || 'Migration failed' }, 500, env);
+        }
+      }
+
       // Admin password reset (no auth required, uses secret code on frontend)
       if (path === '/api/auth/admin-reset-password' && request.method === 'POST') {
         if (!env.DB) {
