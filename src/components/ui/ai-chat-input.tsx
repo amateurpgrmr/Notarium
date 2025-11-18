@@ -64,7 +64,7 @@ export function AIChatInput({ onSubmit, onFileUpload, disabled = false, placehol
   };
 
   return (
-    <div className="w-full space-y-3" ref={formRef}>
+    <div className="w-full space-y-4" ref={formRef}>
       {/* Enhanced Controls Bar - Shows when input is focused */}
       <AnimatePresence>
         {(showControls || inputValue) && (
@@ -72,14 +72,19 @@ export function AIChatInput({ onSubmit, onFileUpload, disabled = false, placehol
             initial={{ opacity: 0, y: 10, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: 10, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="flex gap-3 items-center flex-wrap px-2"
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="flex gap-3 items-center flex-wrap px-1"
           >
             {/* File Upload */}
             {onFileUpload && (
               <>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2.5 rounded-full transition-all font-medium backdrop-blur-xl border",
+                    "bg-black/40 border-white/10 text-white/70",
+                    "hover:bg-black/60 hover:border-purple-500/30 hover:text-white hover:shadow-[0_0_15px_rgba(139,92,246,0.2)]",
+                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-black/40"
+                  )}
                   title="Attach file"
                   type="button"
                   disabled={disabled}
@@ -101,10 +106,10 @@ export function AIChatInput({ onSubmit, onFileUpload, disabled = false, placehol
             {/* Think Toggle */}
             <button
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full transition-all font-medium group",
+                "flex items-center gap-2 px-4 py-2.5 rounded-full transition-all font-medium group backdrop-blur-xl border",
                 thinkActive
-                  ? "bg-purple-600/30 outline outline-1 outline-purple-400/60 text-white"
-                  : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+                  ? "bg-purple-600/20 border-purple-400/50 text-white shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                  : "bg-black/40 border-white/10 text-white/70 hover:bg-black/60 hover:border-purple-500/30 hover:text-white"
               )}
               title="Enable deeper reasoning"
               type="button"
@@ -121,10 +126,10 @@ export function AIChatInput({ onSubmit, onFileUpload, disabled = false, placehol
             {/* Deep Search Toggle */}
             <button
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full transition-all font-medium",
+                "flex items-center gap-2 px-4 py-2.5 rounded-full transition-all font-medium backdrop-blur-xl border",
                 deepSearchActive
-                  ? "bg-blue-600/30 outline outline-1 outline-blue-400/60 text-white"
-                  : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+                  ? "bg-blue-600/20 border-blue-400/50 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                  : "bg-black/40 border-white/10 text-white/70 hover:bg-black/60 hover:border-blue-500/30 hover:text-white"
               )}
               title="Search relevant study materials"
               type="button"
@@ -136,24 +141,37 @@ export function AIChatInput({ onSubmit, onFileUpload, disabled = false, placehol
             </button>
 
             {/* Info Text */}
-            <span className="text-xs text-white/40 ml-2">
+            <span className="text-xs text-white/30 ml-2 font-medium">
               Press Enter to send
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Input - PlaceholdersAndVanishInput */}
+      {/* Main Input - PlaceholdersAndVanishInput with enhanced wrapper */}
       <div className="relative" onFocus={() => setShowControls(true)}>
+        {/* Animated gradient border */}
         <div
           className={cn(
-            "rounded-full overflow-hidden transition-all duration-300",
-            "bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-purple-600/20",
-            "p-[2px]",
-            showControls || inputValue ? "shadow-[0_0_30px_rgba(139,92,246,0.4)]" : "shadow-[0_0_15px_rgba(139,92,246,0.2)]"
+            "rounded-full overflow-hidden transition-all duration-500",
+            "relative",
+            showControls || inputValue ? "shadow-[0_0_40px_rgba(139,92,246,0.5),0_0_80px_rgba(59,130,246,0.3)]" : "shadow-[0_0_20px_rgba(139,92,246,0.25)]"
           )}
         >
-          <div className="rounded-full bg-zinc-900/95 backdrop-blur-xl">
+          {/* Gradient border effect */}
+          <div className={cn(
+            "absolute inset-0 rounded-full opacity-75 blur-sm transition-opacity duration-500",
+            "bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600",
+            showControls || inputValue ? "opacity-100" : "opacity-50"
+          )} />
+
+          {/* Static border */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/30 via-blue-500/30 to-purple-500/30 p-[2px]">
+            <div className="rounded-full bg-black/90 h-full w-full" />
+          </div>
+
+          {/* Content */}
+          <div className="relative z-10">
             <PlaceholdersAndVanishInput
               placeholders={placeholder ? [placeholder] : AI_PLACEHOLDERS}
               onChange={(e) => {
@@ -169,10 +187,10 @@ export function AIChatInput({ onSubmit, onFileUpload, disabled = false, placehol
 
         {/* Loading Overlay */}
         {isSubmitting && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full backdrop-blur-sm z-[100]">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full backdrop-blur-md z-[100]">
             <div className="flex items-center gap-3 text-white">
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span className="text-sm font-medium">Sending...</span>
+              <div className="w-5 h-5 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+              <span className="text-sm font-semibold">Sending...</span>
             </div>
           </div>
         )}

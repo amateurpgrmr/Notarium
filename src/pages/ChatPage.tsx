@@ -246,6 +246,13 @@ export default function ChatPage() {
         zIndex: 0
       }}>
         <ShaderAnimation />
+        {/* Dark overlay for better contrast */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.7) 100%)',
+          pointerEvents: 'none'
+        }} />
       </div>
 
       {/* Content */}
@@ -271,13 +278,13 @@ export default function ChatPage() {
         gap: '10px',
         alignItems: 'center',
         padding: isMobile ? '12px 16px' : '14px 20px',
-        background: 'rgba(17, 17, 17, 0.6)',
-        backdropFilter: 'blur(20px)',
+        background: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(30px)',
         borderRadius: '16px',
         border: '1px solid rgba(139, 92, 246, 0.2)',
         overflowX: 'auto',
         maxWidth: '100%',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.1)'
       }}>
         {/* New Chat Button */}
         <button
@@ -353,14 +360,15 @@ export default function ChatPage() {
       {showNewSession && (
         <div style={{
           padding: '20px',
-          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.05))',
+          background: 'rgba(10, 10, 15, 0.8)',
           borderRadius: '16px',
-          border: `1px solid rgba(139, 92, 246, 0.2)`,
+          border: `1px solid rgba(139, 92, 246, 0.25)`,
           display: 'flex',
           gap: '14px',
           flexWrap: 'wrap',
           alignItems: 'flex-end',
-          backdropFilter: 'blur(10px)'
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.1)'
         }}>
           <div style={{ flex: 1, minWidth: '200px' }}>
             <label style={{
@@ -496,12 +504,16 @@ export default function ChatPage() {
 
       {/* Chat Area - Large and Full Width */}
       <div style={{
-        ...cardStyle,
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         padding: 0,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        borderRadius: '20px',
+        background: 'rgba(10, 10, 15, 0.7)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(139, 92, 246, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.1)'
       } as React.CSSProperties}>
         {selectedSession ? (
           <>
@@ -909,10 +921,10 @@ export default function ChatPage() {
 
             {/* Input Area - AI Chat Input */}
             <div style={{
-              padding: '20px 24px',
-              borderTop: `1px solid ${darkTheme.colors.borderColor}`,
-              background: 'rgba(0, 0, 0, 0.3)',
-              backdropFilter: 'blur(10px)'
+              padding: isMobile ? '16px 20px' : '24px 28px',
+              borderTop: `1px solid rgba(139, 92, 246, 0.15)`,
+              background: 'rgba(0, 0, 0, 0.6)',
+              backdropFilter: 'blur(20px)'
             }}>
               <AIChatInput
                 disabled={sending}
