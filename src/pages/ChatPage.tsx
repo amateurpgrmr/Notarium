@@ -3,7 +3,7 @@ import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme, cardStyle, inputStyle, buttonPrimaryStyle } from '../theme';
 import ReactMarkdown from 'react-markdown';
-import { StudyChatInput } from '@/components/ui/study-chat-input';
+import { AIChatInput } from '@/components/ui/ai-chat-input';
 import { ShaderAnimation } from '@/components/ui/shader-animation';
 
 interface ChatMessage {
@@ -257,100 +257,95 @@ export default function ChatPage() {
         bottom: 0,
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
-        padding: isMobile ? '12px' : '16px',
+        justifyContent: 'space-between',
+        padding: isMobile ? '20px' : '32px',
         zIndex: 10,
-        height: `calc(100vh - ${isMobile ? '64px' : '76px'})`
+        height: `calc(100vh - ${isMobile ? '64px' : '76px'})`,
+        maxWidth: '1400px',
+        margin: '0 auto',
+        width: '100%'
       }}>
-      {/* Session Tabs - Top */}
+      {/* Compact Session Bar - Top */}
       <div style={{
         display: 'flex',
-        gap: '12px',
+        gap: '10px',
         alignItems: 'center',
-        paddingBottom: '12px',
-        borderBottom: `1px solid ${darkTheme.colors.borderColor}`,
+        padding: isMobile ? '12px 16px' : '14px 20px',
+        background: 'rgba(17, 17, 17, 0.6)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: '16px',
+        border: '1px solid rgba(139, 92, 246, 0.2)',
         overflowX: 'auto',
-        overflowY: 'hidden',
-        minHeight: '56px'
+        maxWidth: '100%',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
       }}>
         {/* New Chat Button */}
         <button
           onClick={() => setShowNewSession(!showNewSession)}
           style={{
-            padding: '11px 20px',
+            padding: '8px 16px',
             background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: '10px',
             color: 'white',
             cursor: 'pointer',
             fontWeight: '600',
-            fontSize: '14px',
+            fontSize: '13px',
             transition: darkTheme.transitions.default,
             whiteSpace: 'nowrap',
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+            gap: '6px',
+            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
           } as React.CSSProperties}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.4)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
-          }}
+          onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+          onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
         >
-          <i className="fas fa-plus"></i>New Chat
+          <i className="fas fa-plus"></i>
+          {!isMobile && 'New'}
         </button>
 
         {/* Session Tabs */}
         {!loading && sessions.length > 0 && (
-          <div style={{ display: 'flex', gap: '8px', flex: 1, minWidth: 0 }}>
+          <>
             {sessions.map((session) => (
               <button
                 key={session.id}
                 onClick={() => handleSelectSession(session)}
                 style={{
-                  padding: '11px 18px',
+                  padding: '8px 16px',
                   background: selectedSession?.id === session.id
-                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.15))'
-                    : 'rgba(30, 30, 35, 0.6)',
+                    ? 'rgba(139, 92, 246, 0.2)'
+                    : 'rgba(255, 255, 255, 0.05)',
                   border: selectedSession?.id === session.id
-                    ? `2px solid #8b5cf6`
-                    : `1px solid rgba(139, 92, 246, 0.2)`,
-                  borderRadius: '12px',
+                    ? '1px solid #8b5cf6'
+                    : '1px solid rgba(139, 92, 246, 0.15)',
+                  borderRadius: '10px',
                   color: darkTheme.colors.textPrimary,
                   cursor: 'pointer',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: selectedSession?.id === session.id ? '600' : '500',
                   transition: darkTheme.transitions.default,
                   whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: selectedSession?.id === session.id
-                    ? '0 4px 12px rgba(139, 92, 246, 0.25)'
-                    : 'none'
+                  flexShrink: 0
                 }}
                 onMouseOver={(e) => {
                   if (selectedSession?.id !== session.id) {
-                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
                   }
                 }}
                 onMouseOut={(e) => {
                   if (selectedSession?.id !== session.id) {
-                    e.currentTarget.style.background = 'rgba(30, 30, 35, 0.6)';
-                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                   }
                 }}
               >
-                <span style={{ fontWeight: '600' }}>{session.subject}</span>
-                <span style={{ fontSize: '12px', opacity: '0.7', marginLeft: '6px' }}>• {session.topic}</span>
+                {session.subject}
+                {!isMobile && <span style={{ fontSize: '11px', opacity: '0.6', marginLeft: '6px' }}>• {session.topic}</span>}
               </button>
             ))}
-          </div>
+          </>
         )}
       </div>
 
@@ -728,12 +723,16 @@ export default function ChatPage() {
                   </div>
                   <div style={{ textAlign: 'center', maxWidth: '450px' }}>
                     <h3 style={{
-                      fontSize: '20px',
+                      fontSize: '24px',
                       fontWeight: '700',
                       color: '#e4e4e7',
-                      margin: '0 0 12px 0'
+                      margin: '0 0 16px 0',
+                      background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
                     }}>
-                      Ready to Learn?
+                      How Can I Help You?
                     </h3>
                     <p style={{
                       fontSize: '15px',
@@ -741,7 +740,7 @@ export default function ChatPage() {
                       lineHeight: '1.6',
                       margin: 0
                     }}>
-                      Ask me anything about {selectedSession.subject}. I'm here to help you understand {selectedSession.topic} and more!
+                      Ask me anything about {selectedSession.subject}. I'm here to help you master {selectedSession.topic} and more!
                     </p>
                   </div>
                 </div>
@@ -908,15 +907,14 @@ export default function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area - Study Chat Input */}
+            {/* Input Area - AI Chat Input */}
             <div style={{
               padding: '20px 24px',
               borderTop: `1px solid ${darkTheme.colors.borderColor}`,
               background: 'rgba(0, 0, 0, 0.3)',
               backdropFilter: 'blur(10px)'
             }}>
-              <StudyChatInput
-                placeholder="Ask your AI tutor a question..."
+              <AIChatInput
                 disabled={sending}
                 onSubmit={async (value, options) => {
                   if (!selectedSession || !value.trim()) return;
