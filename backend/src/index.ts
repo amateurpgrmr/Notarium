@@ -2,7 +2,7 @@
  * Notarium Backend API
  * Handles notes management, user data, chat sessions, and authentication with Gemini AI integration
  */
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+// Note: Using Gemini REST API instead of SDK for Cloudflare Workers compatibility
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { z } from 'zod';
@@ -555,14 +555,8 @@ async function syncNoteCounts(env: Env) {
   }
 }
 
-// Initialize Gemini API
-function getGeminiClient(env: Env) {
-  const apiKey = env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not configured');
-  }
-  return new GoogleGenerativeAI(apiKey);
-}
+// Note: Gemini REST API is used directly via fetch() for Cloudflare Workers compatibility
+// The @google/generative-ai SDK doesn't work in Workers runtime
 
 // Get user's notes for context
 async function getUserNotes(userId: number, subject?: string, env?: Env): Promise<any[]> {
