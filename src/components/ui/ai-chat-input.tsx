@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { useState, useRef } from "react";
 import { Lightbulb, Globe, Paperclip } from "lucide-react";
