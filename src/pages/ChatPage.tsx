@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { darkTheme, cardStyle, inputStyle, buttonPrimaryStyle } from '../theme';
+import { darkTheme } from '../theme';
 import ReactMarkdown from 'react-markdown';
-import { AIChatInput } from '@/components/ui/ai-chat-input';
 import { ShaderAnimation } from '@/components/ui/shader-animation';
 
 interface ChatMessage {
@@ -27,20 +26,15 @@ export default function ChatPage() {
   const [newSessionSubject, setNewSessionSubject] = useState('');
   const [newSessionTopic, setNewSessionTopic] = useState('');
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
-  const [noteAnalysis, setNoteAnalysis] = useState<string>('');
   const [keyConcepts, setKeyConcepts] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadSessions();
   }, []);
 
   useEffect(() => {
-    // Auto scroll to bottom when new messages arrive
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -85,70 +79,10 @@ export default function ChatPage() {
       setShowNewSession(false);
       setNewSessionSubject('');
       setNewSessionTopic('');
-
-      // Analyze available notes for this subject and topic
-      await analyzeNotesForSession(newSessionSubject, newSessionTopic);
     } catch (error) {
       console.error('Failed to create session:', error);
     } finally {
       setSending(false);
-    }
-  };
-
-  const analyzeNotesForSession = async (subject: string, topic: string) => {
-    try {
-      setAnalyzing(true);
-      const result = await api.chat.analyzeNotes(subject, topic);
-      setNoteAnalysis(result.analysis || '');
-      setKeyConcepts(result.keyConcepts || []);
-    } catch (error) {
-      console.error('Failed to analyze notes:', error);
-      setNoteAnalysis('Unable to analyze notes for this topic.');
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
-  const handleDocumentUpload = async (file: File) => {
-    if (!file || !selectedSession) return;
-
-    try {
-      setUploading(true);
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64 = (event.target?.result as string)?.split(',')[1] || '';
-        await api.chat.uploadDocument(base64, file.name, selectedSession.id);
-
-        // Add document to list
-        setUploadedDocuments([
-          ...uploadedDocuments,
-          {
-            fileName: file.name,
-            uploadedAt: new Date().toLocaleTimeString()
-          }
-        ]);
-
-        // Add system message about document upload
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: `📄 Document "${file.name}" has been uploaded and analyzed. I can now reference this document in our conversation.`
-          }
-        ]);
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error('Failed to upload document:', error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: `Failed to upload document. Please try again.`
-        }
-      ]);
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -160,22 +94,17 @@ export default function ChatPage() {
     setSending(true);
 
     try {
-      // Add user message locally
       setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
 
-      // Get AI response from Gemini
       const response = await api.request(`/api/chat/sessions/${selectedSession.id}/ai-response`, {
         method: 'POST',
         body: { message: userMessage, subject: selectedSession.subject }
       });
 
       const aiResponseContent = response.response || 'I apologize, but I could not generate a response.';
-
-      // Add AI message locally
       setMessages((prev) => [...prev, { role: 'assistant', content: aiResponseContent }]);
     } catch (error: any) {
       console.error('Failed to send message:', error);
-      // Remove user message if request failed
       setMessages((prev) => {
         const newMessages = [...prev];
         if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'user') {
@@ -183,7 +112,6 @@ export default function ChatPage() {
         }
         return newMessages;
       });
-      // Show error message
       setMessages((prev) => [...prev, {
         role: 'assistant',
         content: `Error: ${error.message || 'Failed to get response from AI tutor. Please try again.'}`
@@ -193,41 +121,15 @@ export default function ChatPage() {
     }
   };
 
-  // Detect mobile for responsive sizing
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+      setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Fullscreen functionality
-  const toggleFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
-        setIsFullscreen(true);
-      } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
-      }
-    } catch (error) {
-      console.error('Fullscreen error:', error);
-    }
-  };
-
-  // Listen for fullscreen changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
   return (
@@ -246,307 +148,433 @@ export default function ChatPage() {
         zIndex: 0
       }}>
         <ShaderAnimation />
-        {/* Dark overlay for better contrast */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.7) 100%)',
+          background: 'radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.8) 100%)',
           pointerEvents: 'none'
         }} />
       </div>
 
-      {/* Content */}
+      {/* Left Floating Sidebar */}
       <div style={{
-        position: 'relative',
+        position: 'fixed',
         top: isMobile ? '64px' : '76px',
-        left: 0,
-        right: 0,
-        bottom: 0,
+        left: sidebarOpen ? '20px' : '-280px',
+        width: '260px',
+        height: `calc(100vh - ${isMobile ? '84px' : '96px'})`,
+        background: 'rgba(10, 10, 15, 0.95)',
+        backdropFilter: 'blur(30px)',
+        borderRadius: '20px',
+        border: '1px solid rgba(139, 92, 246, 0.2)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+        zIndex: 100,
+        transition: 'left 0.3s ease',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: isMobile ? '20px' : '32px',
-        zIndex: 10,
-        height: `calc(100vh - ${isMobile ? '64px' : '76px'})`,
-        maxWidth: '1400px',
-        margin: '0 auto',
-        width: '100%'
-      }}>
-      {/* Compact Session Bar - Top */}
-      <div style={{
-        display: 'flex',
-        gap: '10px',
-        alignItems: 'center',
-        padding: isMobile ? '12px 16px' : '14px 20px',
-        background: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(30px)',
-        borderRadius: '16px',
-        border: '1px solid rgba(139, 92, 246, 0.2)',
-        overflowX: 'auto',
-        maxWidth: '100%',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.1)'
-      }}>
-        {/* New Chat Button */}
-        <button
-          onClick={() => setShowNewSession(!showNewSession)}
-          style={{
-            padding: '8px 16px',
-            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-            border: 'none',
-            borderRadius: '10px',
-            color: 'white',
-            cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '13px',
-            transition: darkTheme.transitions.default,
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
-          } as React.CSSProperties}
-          onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-          onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-        >
-          <i className="fas fa-plus"></i>
-          {!isMobile && 'New'}
-        </button>
+        padding: '20px'
+      } as React.CSSProperties}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <h2 style={{
+            margin: 0,
+            fontSize: '18px',
+            fontWeight: '700',
+            background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            Chat History
+          </h2>
+          <button
+            onClick={() => setShowNewSession(true)}
+            style={{
+              padding: '8px 12px',
+              background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+              border: 'none',
+              borderRadius: '10px',
+              color: 'white',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '12px',
+              transition: darkTheme.transitions.default,
+              boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
+            }}
+          >
+            <i className="fas fa-plus"></i> New
+          </button>
+        </div>
 
-        {/* Session Tabs */}
-        {!loading && sessions.length > 0 && (
-          <>
-            {sessions.map((session) => (
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '20px', color: darkTheme.colors.textSecondary }}>
+              <LoadingSpinner />
+            </div>
+          ) : sessions.length > 0 ? (
+            sessions.map((session) => (
               <button
                 key={session.id}
                 onClick={() => handleSelectSession(session)}
                 style={{
-                  padding: '8px 16px',
+                  padding: '12px 16px',
                   background: selectedSession?.id === session.id
                     ? 'rgba(139, 92, 246, 0.2)'
                     : 'rgba(255, 255, 255, 0.05)',
                   border: selectedSession?.id === session.id
                     ? '1px solid #8b5cf6'
                     : '1px solid rgba(139, 92, 246, 0.15)',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   color: darkTheme.colors.textPrimary,
                   cursor: 'pointer',
-                  fontSize: '13px',
+                  fontSize: '14px',
                   fontWeight: selectedSession?.id === session.id ? '600' : '500',
                   transition: darkTheme.transitions.default,
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0
-                }}
-                onMouseOver={(e) => {
-                  if (selectedSession?.id !== session.id) {
-                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (selectedSession?.id !== session.id) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  }
+                  textAlign: 'left',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
                 }}
               >
-                {session.subject}
-                {!isMobile && <span style={{ fontSize: '11px', opacity: '0.6', marginLeft: '6px' }}>• {session.topic}</span>}
+                <div style={{ fontSize: '14px', fontWeight: '600' }}>{session.subject}</div>
+                <div style={{ fontSize: '12px', opacity: '0.7' }}>{session.topic}</div>
               </button>
-            ))}
-          </>
-        )}
+            ))
+          ) : (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px 20px',
+              color: darkTheme.colors.textSecondary,
+              fontSize: '14px'
+            }}>
+              No chats yet. Create one to get started!
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* New Session Form - Collapsible */}
-      {showNewSession && (
-        <div style={{
-          padding: '20px',
-          background: 'rgba(10, 10, 15, 0.8)',
-          borderRadius: '16px',
-          border: `1px solid rgba(139, 92, 246, 0.25)`,
-          display: 'flex',
-          gap: '14px',
-          flexWrap: 'wrap',
-          alignItems: 'flex-end',
+      {/* Toggle Sidebar Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        style={{
+          position: 'fixed',
+          top: isMobile ? '80px' : '92px',
+          left: sidebarOpen ? '300px' : '20px',
+          width: '40px',
+          height: '40px',
+          background: 'rgba(139, 92, 246, 0.2)',
           backdropFilter: 'blur(20px)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.1)'
-        }}>
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <label style={{
-              fontSize: '12px',
-              color: '#a78bfa',
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: '600',
-              letterSpacing: '0.3px',
-              textTransform: 'uppercase'
-            }}>Subject</label>
-            <input
-              type="text"
-              placeholder="e.g., Biology"
-              value={newSessionSubject}
-              onChange={(e) => setNewSessionSubject(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: 'rgba(30, 30, 35, 0.6)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-                borderRadius: '10px',
-                color: darkTheme.colors.textPrimary,
-                fontSize: '14px',
-                outline: 'none',
-                transition: darkTheme.transitions.default,
-                backdropFilter: 'blur(10px)'
-              } as React.CSSProperties}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#8b5cf6';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            />
-          </div>
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <label style={{
-              fontSize: '12px',
-              color: '#a78bfa',
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: '600',
-              letterSpacing: '0.3px',
-              textTransform: 'uppercase'
-            }}>Topic</label>
-            <input
-              type="text"
-              placeholder="e.g., Cell Division"
-              value={newSessionTopic}
-              onChange={(e) => setNewSessionTopic(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: 'rgba(30, 30, 35, 0.6)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-                borderRadius: '10px',
-                color: darkTheme.colors.textPrimary,
-                fontSize: '14px',
-                outline: 'none',
-                transition: darkTheme.transitions.default,
-                backdropFilter: 'blur(10px)'
-              } as React.CSSProperties}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#8b5cf6';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={handleCreateSession}
-              disabled={sending}
-              style={{
-                padding: '12px 28px',
-                background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                border: 'none',
-                borderRadius: '10px',
-                color: 'white',
-                cursor: sending ? 'not-allowed' : 'pointer',
+          border: '1px solid rgba(139, 92, 246, 0.3)',
+          borderRadius: '12px',
+          color: darkTheme.colors.textPrimary,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 101,
+          transition: 'left 0.3s ease',
+          fontSize: '16px',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
+        }}
+      >
+        <i className={`fas fa-${sidebarOpen ? 'chevron-left' : 'bars'}`}></i>
+      </button>
+
+      {/* New Session Modal */}
+      {showNewSession && (
+        <>
+          <div
+            onClick={() => setShowNewSession(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.6)',
+              backdropFilter: 'blur(4px)',
+              zIndex: 200
+            }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: isMobile ? '90%' : '500px',
+            maxWidth: '90vw',
+            padding: '32px',
+            background: 'rgba(10, 10, 15, 0.95)',
+            backdropFilter: 'blur(40px)',
+            borderRadius: '20px',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.7)',
+            zIndex: 201
+          }}>
+            <h2 style={{
+              margin: '0 0 24px 0',
+              fontSize: '24px',
+              fontWeight: '700',
+              background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              New Chat Session
+            </h2>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{
+                fontSize: '13px',
+                color: '#a78bfa',
+                display: 'block',
+                marginBottom: '8px',
                 fontWeight: '600',
-                fontSize: '14px',
-                transition: darkTheme.transitions.default,
-                opacity: sending ? 0.6 : 1,
-                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              } as React.CSSProperties}
-              onMouseOver={(e) => !sending && (e.currentTarget.style.transform = 'translateY(-2px)')}
-              onMouseOut={(e) => !sending && (e.currentTarget.style.transform = 'translateY(0)')}
-            >
-              <i className="fas fa-check"></i>Create
-            </button>
-            <button
-              onClick={() => {
-                setShowNewSession(false);
-                setNewSessionSubject('');
-                setNewSessionTopic('');
-              }}
-              style={{
-                padding: '12px 28px',
-                background: 'rgba(30, 30, 35, 0.6)',
-                border: `1px solid rgba(139, 92, 246, 0.2)`,
-                borderRadius: '10px',
-                color: darkTheme.colors.textPrimary,
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '14px',
-                transition: darkTheme.transitions.default,
-                backdropFilter: 'blur(10px)'
-              } as React.CSSProperties}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.08)';
-                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'rgba(30, 30, 35, 0.6)';
-                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.2)';
-              }}
-            >
-              Cancel
-            </button>
+                textTransform: 'uppercase'
+              }}>Subject</label>
+              <input
+                type="text"
+                placeholder="e.g., Biology"
+                value={newSessionSubject}
+                onChange={(e) => setNewSessionSubject(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '14px 18px',
+                  background: 'rgba(30, 30, 35, 0.6)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  borderRadius: '12px',
+                  color: darkTheme.colors.textPrimary,
+                  fontSize: '15px',
+                  outline: 'none'
+                } as React.CSSProperties}
+              />
+            </div>
+
+            <div style={{ marginBottom: '28px' }}>
+              <label style={{
+                fontSize: '13px',
+                color: '#a78bfa',
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: '600',
+                textTransform: 'uppercase'
+              }}>Topic</label>
+              <input
+                type="text"
+                placeholder="e.g., Cell Division"
+                value={newSessionTopic}
+                onChange={(e) => setNewSessionTopic(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '14px 18px',
+                  background: 'rgba(30, 30, 35, 0.6)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  borderRadius: '12px',
+                  color: darkTheme.colors.textPrimary,
+                  fontSize: '15px',
+                  outline: 'none'
+                } as React.CSSProperties}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={handleCreateSession}
+                disabled={sending}
+                style={{
+                  flex: 1,
+                  padding: '14px 24px',
+                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: 'white',
+                  cursor: sending ? 'not-allowed' : 'pointer',
+                  fontWeight: '600',
+                  fontSize: '15px',
+                  opacity: sending ? 0.6 : 1,
+                  boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)'
+                } as React.CSSProperties}
+              >
+                {sending ? 'Creating...' : 'Create Chat'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowNewSession(false);
+                  setNewSessionSubject('');
+                  setNewSessionTopic('');
+                }}
+                style={{
+                  padding: '14px 24px',
+                  background: 'rgba(30, 30, 35, 0.6)',
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  borderRadius: '12px',
+                  color: darkTheme.colors.textPrimary,
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '15px'
+                } as React.CSSProperties}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
-      {/* Chat Area - Large and Full Width */}
+      {/* Main Content Area */}
       <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 0,
-        overflow: 'hidden',
-        borderRadius: '20px',
-        background: 'rgba(10, 10, 15, 0.7)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(139, 92, 246, 0.2)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(139, 92, 246, 0.1)'
-      } as React.CSSProperties}>
-        {selectedSession ? (
-          <>
+        position: 'relative',
+        marginLeft: sidebarOpen ? (isMobile ? '0px' : '340px') : '80px',
+        marginRight: '20px',
+        marginTop: isMobile ? '64px' : '76px',
+        marginBottom: '20px',
+        height: `calc(100vh - ${isMobile ? '84px' : '96px'})`,
+        transition: 'margin-left 0.3s ease',
+        zIndex: 10
+      }}>
+        {!selectedSession ? (
+          <div style={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '32px'
+          }}>
+            <div style={{
+              width: '120px',
+              height: '120px',
+              borderRadius: '32px',
+              background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '60px',
+              boxShadow: '0 20px 60px rgba(139, 92, 246, 0.5)',
+              animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }}>
+              🤖
+            </div>
+
+            <div style={{ textAlign: 'center', maxWidth: '600px' }}>
+              <h1 style={{
+                fontSize: isMobile ? '28px' : '42px',
+                fontWeight: '800',
+                margin: '0 0 16px 0',
+                background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                Ask AI Anything
+              </h1>
+              <p style={{
+                fontSize: isMobile ? '16px' : '18px',
+                color: darkTheme.colors.textSecondary,
+                lineHeight: '1.7',
+                margin: '0 0 32px 0'
+              }}>
+                Select a chat from the sidebar or create a new one to start learning with your AI tutor.
+              </p>
+            </div>
+
+            <div style={{
+              width: '100%',
+              maxWidth: '600px',
+              position: 'relative'
+            }}>
+              <input
+                type="text"
+                placeholder="Create a new chat to ask AI anything..."
+                readOnly
+                onClick={() => setShowNewSession(true)}
+                style={{
+                  width: '100%',
+                  padding: '18px 60px 18px 24px',
+                  background: 'rgba(10, 10, 15, 0.9)',
+                  backdropFilter: 'blur(30px)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  borderRadius: '16px',
+                  color: darkTheme.colors.textSecondary,
+                  fontSize: '16px',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+                  transition: 'all 0.3s ease'
+                } as React.CSSProperties}
+              />
+              <button
+                onClick={() => setShowNewSession(true)}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '44px',
+                  height: '44px',
+                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)',
+                  transition: 'transform 0.2s ease'
+                }}
+              >
+                <i className="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'rgba(10, 10, 15, 0.7)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '20px',
+            border: '1px solid rgba(139, 92, 246, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+            overflow: 'hidden'
+          } as React.CSSProperties}>
             {/* Chat Header */}
             <div style={{
-              padding: isMobile ? '16px' : '24px 28px',
-              borderBottom: `1px solid rgba(139, 92, 246, 0.2)`,
+              padding: isMobile ? '16px 20px' : '20px 28px',
+              borderBottom: '1px solid rgba(139, 92, 246, 0.2)',
               background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08))',
-              backdropFilter: 'blur(20px)',
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '16px'
+              alignItems: 'center'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={{
-                  width: isMobile ? '48px' : '56px',
-                  height: isMobile ? '48px' : '56px',
-                  borderRadius: '16px',
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '14px',
                   background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: isMobile ? '24px' : '28px',
-                  boxShadow: '0 8px 24px rgba(139, 92, 246, 0.4)',
-                  flexShrink: 0
+                  fontSize: '24px',
+                  boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)'
                 }}>
                   🤖
                 </div>
                 <div>
                   <h2 style={{
                     margin: 0,
-                    fontSize: isMobile ? '16px' : '20px',
+                    fontSize: isMobile ? '16px' : '18px',
                     fontWeight: '700',
                     background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
                     WebkitBackgroundClip: 'text',
@@ -557,7 +585,7 @@ export default function ChatPage() {
                   </h2>
                   <p style={{
                     margin: '4px 0 0 0',
-                    fontSize: isMobile ? '13px' : '14px',
+                    fontSize: '13px',
                     color: darkTheme.colors.textSecondary,
                     fontWeight: '500'
                   }}>
@@ -565,150 +593,16 @@ export default function ChatPage() {
                   </p>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <button
-                  onClick={toggleFullscreen}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '10px',
-                    background: 'rgba(139, 92, 246, 0.1)',
-                    border: `1px solid rgba(139, 92, 246, 0.3)`,
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    transition: darkTheme.transitions.default,
-                    fontSize: '18px',
-                    color: darkTheme.colors.textPrimary,
-                    width: '42px',
-                    height: '42px'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
-                    e.currentTarget.style.borderColor = darkTheme.colors.accent;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
-                  }}
-                  title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-                >
-                  <i className={`fas fa-${isFullscreen ? 'compress' : 'expand'}`}></i>
-                </button>
-              </div>
             </div>
 
-            {/* Info Section - Uploaded Documents and Key Concepts */}
-            {(uploadedDocuments.length > 0 || (noteAnalysis || keyConcepts.length > 0)) && (
-              <div style={{
-                padding: isMobile ? '14px 16px' : '18px 24px',
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.05))',
-                borderBottom: `1px solid rgba(139, 92, 246, 0.2)`,
-                display: 'flex',
-                gap: '24px',
-                flexWrap: 'wrap',
-                backdropFilter: 'blur(10px)'
-              }}>
-                {/* Uploaded Documents */}
-                {uploadedDocuments.length > 0 && (
-                  <div>
-                    <p style={{
-                      margin: '0 0 10px 0',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      color: '#a78bfa',
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase'
-                    }}>
-                      📎 Documents ({uploadedDocuments.length})
-                    </p>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {uploadedDocuments.map((doc, idx) => (
-                        <span
-                          key={idx}
-                          style={{
-                            padding: '6px 14px',
-                            background: 'rgba(139, 92, 246, 0.12)',
-                            border: '1px solid rgba(139, 92, 246, 0.3)',
-                            borderRadius: '10px',
-                            fontSize: '12px',
-                            color: '#e4e4e7',
-                            fontWeight: '500',
-                            backdropFilter: 'blur(10px)'
-                          }}
-                        >
-                          {doc.fileName}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Key Concepts */}
-                {keyConcepts.length > 0 && (
-                  <div>
-                    <p style={{
-                      margin: '0 0 10px 0',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      color: '#a78bfa',
-                      letterSpacing: '0.5px',
-                      textTransform: 'uppercase'
-                    }}>
-                      💡 Key Concepts
-                    </p>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {keyConcepts.slice(0, 6).map((concept, idx) => (
-                        <span
-                          key={idx}
-                          style={{
-                            padding: '7px 14px',
-                            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                            borderRadius: '10px',
-                            color: 'white',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
-                          }}
-                        >
-                          {concept}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {analyzing && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    fontSize: '13px',
-                    color: '#a78bfa',
-                    fontWeight: '500'
-                  }}>
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid rgba(139, 92, 246, 0.3)',
-                      borderTopColor: '#8b5cf6',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                    Analyzing available notes...
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Messages - Large and Easy to Use */}
+            {/* Messages */}
             <div style={{
               flex: 1,
               overflowY: 'auto',
-              padding: '24px',
+              padding: isMobile ? '20px' : '24px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '20px'
+              gap: '16px'
             }}>
               {messages.length === 0 && (
                 <div style={{
@@ -717,42 +611,42 @@ export default function ChatPage() {
                   justifyContent: 'center',
                   height: '100%',
                   flexDirection: 'column',
-                  gap: '24px'
+                  gap: '20px'
                 }}>
                   <div style={{
-                    width: '100px',
-                    height: '100px',
-                    borderRadius: '28px',
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '24px',
                     background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '52px',
-                    boxShadow: '0 12px 40px rgba(139, 92, 246, 0.4)',
+                    fontSize: '40px',
+                    boxShadow: '0 10px 30px rgba(139, 92, 246, 0.4)',
                     animation: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                   }}>
                     🤖
                   </div>
-                  <div style={{ textAlign: 'center', maxWidth: '450px' }}>
+                  <div style={{ textAlign: 'center', maxWidth: '400px' }}>
                     <h3 style={{
-                      fontSize: '24px',
+                      fontSize: '20px',
                       fontWeight: '700',
                       color: '#e4e4e7',
-                      margin: '0 0 16px 0',
+                      margin: '0 0 12px 0',
                       background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text'
                     }}>
-                      How Can I Help You?
+                      How Can I Help?
                     </h3>
                     <p style={{
-                      fontSize: '15px',
+                      fontSize: '14px',
                       color: darkTheme.colors.textSecondary,
                       lineHeight: '1.6',
                       margin: 0
                     }}>
-                      Ask me anything about {selectedSession.subject}. I'm here to help you master {selectedSession.topic} and more!
+                      Ask me anything about {selectedSession.subject}!
                     </p>
                   </div>
                 </div>
@@ -763,103 +657,62 @@ export default function ChatPage() {
                   style={{
                     display: 'flex',
                     justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    gap: '14px',
+                    gap: '12px',
                     animation: 'fadeIn 0.4s ease-out'
                   }}
                 >
                   {msg.role === 'assistant' && (
                     <div style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '14px',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
                       background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: 'white',
                       flexShrink: 0,
-                      fontSize: '22px',
-                      boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)',
-                      alignSelf: 'flex-start',
-                      marginTop: '2px'
+                      fontSize: '20px',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
                     }}>
                       🤖
                     </div>
                   )}
                   <div style={{
                     maxWidth: isMobile ? '85%' : '75%',
-                    padding: msg.role === 'user' ? '14px 20px' : '18px 24px',
-                    borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                    padding: '14px 18px',
+                    borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                     background: msg.role === 'user'
                       ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)'
-                      : 'rgba(30, 30, 35, 0.6)',
+                      : 'rgba(30, 30, 35, 0.7)',
                     color: msg.role === 'user' ? '#fff' : darkTheme.colors.textPrimary,
-                    wordWrap: 'break-word',
-                    lineHeight: '1.7',
                     fontSize: '15px',
+                    lineHeight: '1.7',
                     boxShadow: msg.role === 'user'
-                      ? '0 4px 16px rgba(139, 92, 246, 0.3)'
-                      : '0 2px 8px rgba(0, 0, 0, 0.15)',
-                    border: msg.role === 'user' ? 'none' : `1px solid rgba(139, 92, 246, 0.15)`,
-                    backdropFilter: msg.role === 'assistant' ? 'blur(10px)' : 'none'
+                      ? '0 4px 12px rgba(139, 92, 246, 0.3)'
+                      : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                    border: msg.role === 'user' ? 'none' : '1px solid rgba(139, 92, 246, 0.15)'
                   }}>
                     {msg.role === 'assistant' ? (
-                      <ReactMarkdown
-                        components={{
-                          p: ({ children }) => <p style={{ margin: '0 0 14px 0', lineHeight: '1.7', color: '#e4e4e7' }}>{children}</p>,
-                          ul: ({ children }) => <ul style={{ margin: '14px 0', paddingLeft: '24px', lineHeight: '1.8', color: '#e4e4e7' }}>{children}</ul>,
-                          ol: ({ children }) => <ol style={{ margin: '14px 0', paddingLeft: '24px', lineHeight: '1.8', color: '#e4e4e7' }}>{children}</ol>,
-                          li: ({ children }) => <li style={{ margin: '6px 0', paddingLeft: '4px' }}>{children}</li>,
-                          strong: ({ children }) => <strong style={{ fontWeight: '700', color: '#a78bfa', textShadow: '0 0 20px rgba(139, 92, 246, 0.3)' }}>{children}</strong>,
-                          em: ({ children }) => <em style={{ fontStyle: 'italic', opacity: 0.95 }}>{children}</em>,
-                          code: ({ children }) => <code style={{
-                            background: 'rgba(139, 92, 246, 0.15)',
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            fontSize: '14px',
-                            fontFamily: 'monospace',
-                            border: '1px solid rgba(139, 92, 246, 0.3)',
-                            color: '#c4b5fd'
-                          }}>{children}</code>,
-                          h1: ({ children }) => <h1 style={{ fontSize: '24px', fontWeight: '700', margin: '18px 0 12px 0', lineHeight: '1.3', color: '#a78bfa' }}>{children}</h1>,
-                          h2: ({ children }) => <h2 style={{ fontSize: '20px', fontWeight: '700', margin: '16px 0 10px 0', lineHeight: '1.3', color: '#a78bfa' }}>{children}</h2>,
-                          h3: ({ children }) => <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '14px 0 8px 0', lineHeight: '1.4', color: '#a78bfa' }}>{children}</h3>,
-                          blockquote: ({ children }) => <blockquote style={{
-                            borderLeft: `4px solid #8b5cf6`,
-                            paddingLeft: '18px',
-                            margin: '14px 0',
-                            fontStyle: 'italic',
-                            opacity: 0.95,
-                            background: 'rgba(139, 92, 246, 0.08)',
-                            paddingTop: '10px',
-                            paddingBottom: '10px',
-                            borderRadius: '0 10px 10px 0',
-                            color: '#c4b5fd'
-                          }}>{children}</blockquote>
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
                     ) : (
                       msg.content
                     )}
                   </div>
                   {msg.role === 'user' && (
                     <div style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '14px',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
                       background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: 'white',
                       flexShrink: 0,
-                      fontSize: '22px',
-                      boxShadow: '0 4px 16px rgba(99, 102, 241, 0.4)',
-                      alignSelf: 'flex-start',
-                      marginTop: '2px',
-                      fontWeight: '600'
+                      fontSize: '20px',
+                      fontWeight: '600',
+                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)'
                     }}>
                       👤
                     </div>
@@ -870,129 +723,104 @@ export default function ChatPage() {
                 <div style={{
                   display: 'flex',
                   justifyContent: 'flex-start',
-                  gap: '14px',
-                  animation: 'fadeIn 0.4s ease-out'
+                  gap: '12px'
                 }}>
                   <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '14px',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '12px',
                     background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'white',
-                    flexShrink: 0,
-                    fontSize: '22px',
-                    boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)',
-                    alignSelf: 'flex-start',
-                    marginTop: '2px',
+                    fontSize: '20px',
                     animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                   }}>
                     🤖
                   </div>
                   <div style={{
-                    padding: '18px 24px',
-                    borderRadius: '18px 18px 18px 4px',
-                    background: 'rgba(30, 30, 35, 0.6)',
+                    padding: '14px 18px',
+                    borderRadius: '16px 16px 16px 4px',
+                    background: 'rgba(30, 30, 35, 0.7)',
                     color: '#e4e4e7',
-                    fontSize: '15px',
+                    fontSize: '14px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                    border: `1px solid rgba(139, 92, 246, 0.15)`,
-                    backdropFilter: 'blur(10px)'
+                    gap: '10px'
                   }}>
                     <div style={{
-                      width: '20px',
-                      height: '20px',
-                      border: '3px solid rgba(139, 92, 246, 0.3)',
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid rgba(139, 92, 246, 0.3)',
                       borderTopColor: '#8b5cf6',
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }} />
-                    <span style={{ fontWeight: '500' }}>Thinking...</span>
+                    Thinking...
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area - AI Chat Input */}
+            {/* Input Area */}
             <div style={{
-              padding: isMobile ? '16px 20px' : '24px 28px',
-              borderTop: `1px solid rgba(139, 92, 246, 0.15)`,
+              padding: isMobile ? '16px' : '20px 24px',
+              borderTop: '1px solid rgba(139, 92, 246, 0.15)',
               background: 'rgba(0, 0, 0, 0.6)',
               backdropFilter: 'blur(20px)'
             }}>
-              <AIChatInput
-                disabled={sending}
-                onSubmit={async (value, options) => {
-                  if (!selectedSession || !value.trim()) return;
-
-                  const userMessage = value;
-                  setSending(true);
-
-                  try {
-                    // Add user message locally
-                    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
-
-                    // Get AI response from Gemini
-                    const response = await api.request(`/api/chat/sessions/${selectedSession.id}/ai-response`, {
-                      method: 'POST',
-                      body: {
-                        message: userMessage,
-                        subject: selectedSession.subject,
-                        think: options?.think,
-                        deepSearch: options?.deepSearch
-                      }
-                    });
-
-                    const aiResponseContent = response.response || 'I apologize, but I could not generate a response.';
-
-                    // Add AI message locally
-                    setMessages((prev) => [...prev, { role: 'assistant', content: aiResponseContent }]);
-                  } catch (error: any) {
-                    console.error('Failed to send message:', error);
-                    // Remove user message if request failed
-                    setMessages((prev) => {
-                      const newMessages = [...prev];
-                      if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'user') {
-                        newMessages.pop();
-                      }
-                      return newMessages;
-                    });
-                    // Show error message
-                    setMessages((prev) => [...prev, {
-                      role: 'assistant',
-                      content: `Error: ${error.message || 'Failed to get response from AI tutor. Please try again.'}`
-                    }]);
-                  } finally {
-                    setSending(false);
-                  }
-                }}
-                onFileUpload={handleDocumentUpload}
-              />
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                <textarea
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder="Ask AI anything..."
+                  disabled={sending}
+                  style={{
+                    flex: 1,
+                    padding: '14px 18px',
+                    background: 'rgba(30, 30, 35, 0.7)',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    borderRadius: '14px',
+                    color: darkTheme.colors.textPrimary,
+                    fontSize: '15px',
+                    outline: 'none',
+                    resize: 'none',
+                    minHeight: '52px',
+                    maxHeight: '120px',
+                    fontFamily: 'inherit'
+                  } as React.CSSProperties}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={sending || !inputValue.trim()}
+                  style={{
+                    padding: '14px 20px',
+                    background: (sending || !inputValue.trim())
+                      ? 'rgba(139, 92, 246, 0.3)'
+                      : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                    border: 'none',
+                    borderRadius: '14px',
+                    color: 'white',
+                    cursor: (sending || !inputValue.trim()) ? 'not-allowed' : 'pointer',
+                    fontWeight: '600',
+                    fontSize: '15px',
+                    minWidth: '80px',
+                    boxShadow: (sending || !inputValue.trim())
+                      ? 'none'
+                      : '0 4px 12px rgba(139, 92, 246, 0.4)'
+                  }}
+                >
+                  {sending ? 'Sending...' : 'Send'}
+                </button>
+              </div>
             </div>
-          </>
-        ) : (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            color: darkTheme.colors.textSecondary,
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
-            <i className="fas fa-comments" style={{ fontSize: '64px', opacity: '0.5' }}></i>
-            <p style={{ fontSize: '18px', textAlign: 'center' }}>
-              Select or create a chat session to get started
-            </p>
-            <p style={{ fontSize: '14px', color: darkTheme.colors.textSecondary, textAlign: 'center', maxWidth: '400px' }}>
-              Click the "New Chat" button above to start a study session with your AI tutor
-            </p>
           </div>
         )}
       </div>
@@ -1022,10 +850,6 @@ export default function ChatPage() {
           }
         }
       `}</style>
-
-      {/* Hidden file input for document upload */}
-      <input type="file" id="docUpload" style={{ display: 'none' }} />
-      </div>
     </div>
   );
 }
