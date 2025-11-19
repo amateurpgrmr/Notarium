@@ -1526,7 +1526,7 @@ async function logAdminActivity(
 
 // Get admin activity logs
 async function getAdminActivityLogs(request: Request, env: Env) {
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -1587,7 +1587,7 @@ async function adminUpvoteNote(noteId: string, request: Request, env: Env) {
 // Admin like note (new endpoint using Bearer token auth)
 async function adminLikeNote(noteId: string, request: Request, env: Env) {
   // Verify admin using Bearer token
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -1638,7 +1638,7 @@ async function adminLikeNote(noteId: string, request: Request, env: Env) {
 // Admin delete note
 async function deleteNote(noteId: string, request: Request, env: Env) {
   // Verify admin using Bearer token
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -1890,7 +1890,7 @@ async function userDeleteNote(noteId: string, request: Request, env: Env) {
 // Admin update note
 async function updateNote(noteId: string, request: Request, env: Env) {
   // Verify admin using Bearer token
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -1977,7 +1977,7 @@ async function updateNote(noteId: string, request: Request, env: Env) {
 // Suspend user
 async function suspendUser(userId: string, request: Request, env: Env) {
   // Verify admin using Bearer token
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -2001,7 +2001,7 @@ async function suspendUser(userId: string, request: Request, env: Env) {
 // Warn user
 async function warnUser(userId: string, request: Request, env: Env) {
   // Verify admin using Bearer token
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -2020,7 +2020,7 @@ async function warnUser(userId: string, request: Request, env: Env) {
 // Remove user (soft delete - keep data but mark as removed)
 async function removeUser(userId: string, request: Request, env: Env) {
   // Verify admin using Bearer token
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -2071,7 +2071,7 @@ async function removeUser(userId: string, request: Request, env: Env) {
 // Unsuspend user (admin only)
 async function unsuspendUser(userId: string, request: Request, env: Env) {
   // Verify admin using Bearer token
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -2088,7 +2088,7 @@ async function unsuspendUser(userId: string, request: Request, env: Env) {
 // Get all users (admin only)
 async function getAllUsers(request: Request, env: Env) {
   // Verify admin using Bearer token
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -2130,7 +2130,7 @@ async function getAllUsers(request: Request, env: Env) {
 // Get all notes (admin only)
 async function getAllNotes(request: Request, env: Env) {
   // Verify admin using Bearer token
-  const adminUser = getUserFromToken(request);
+  const adminUser = await getUserFromToken(request, env);
 
   if (!adminUser || adminUser.role !== 'admin') {
     return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
@@ -2854,6 +2854,21 @@ const MOCK_SUBJECTS = [
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    // Handle CORS preflight FIRST - before any other logic
+    if (request.method === 'OPTIONS') {
+      const allowedOrigin = env.FRONTEND_URL || 'https://notarium-site.vercel.app';
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': allowedOrigin,
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Encrypted-Yw-ID, X-Is-Login',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Max-Age': '86400',
+        }
+      });
+    }
+
     // Initialize database on first request if available
     if (env.DB && !dbInitialized) {
       try {
@@ -2862,20 +2877,6 @@ export default {
       } catch (error) {
         console.log('Database initialization skipped, using mock data');
       }
-    }
-
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          ...getCorsHeaders(env),
-          ...SECURITY_HEADERS,
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Encrypted-Yw-ID, X-Is-Login',
-          'Access-Control-Max-Age': '86400',
-        }
-      });
     }
 
     const url = new URL(request.url);

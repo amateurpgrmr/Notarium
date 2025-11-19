@@ -20,6 +20,7 @@ export default function ChatPage() {
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [initialInputValue, setInitialInputValue] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showNewSession, setShowNewSession] = useState(false);
@@ -81,6 +82,42 @@ export default function ChatPage() {
       setNewSessionTopic('');
     } catch (error) {
       console.error('Failed to create session:', error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleInitialSubmit = async () => {
+    if (!initialInputValue.trim()) return;
+
+    const userMessage = initialInputValue;
+    setInitialInputValue('');
+    setSending(true);
+
+    try {
+      // Auto-create a new chat session
+      const data = await api.chat.createSession('General', 'AI Chat');
+      const newSession = data.session;
+      setSessions([newSession, ...sessions]);
+      setSelectedSession(newSession);
+
+      // Add user message
+      setMessages([{ role: 'user', content: userMessage }]);
+
+      // Get AI response
+      const response = await api.request(`/api/chat/sessions/${newSession.id}/ai-response`, {
+        method: 'POST',
+        body: { message: userMessage, subject: newSession.subject }
+      });
+
+      const aiResponseContent = response.response || 'I apologize, but I could not generate a response.';
+      setMessages((prev) => [...prev, { role: 'assistant', content: aiResponseContent }]);
+    } catch (error: any) {
+      console.error('Failed to send message:', error);
+      setMessages([{
+        role: 'assistant',
+        content: `Error: ${error.message || 'Failed to get response from AI tutor. Please try again.'}`
+      }]);
     } finally {
       setSending(false);
     }
@@ -492,9 +529,16 @@ export default function ChatPage() {
             }}>
               <input
                 type="text"
-                placeholder="Create a new chat to ask AI anything..."
-                readOnly
-                onClick={() => setShowNewSession(true)}
+                placeholder="Ask AI anything..."
+                value={initialInputValue}
+                onChange={(e) => setInitialInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleInitialSubmit();
+                  }
+                }}
+                disabled={sending}
                 style={{
                   width: '100%',
                   padding: '18px 60px 18px 24px',
@@ -502,16 +546,17 @@ export default function ChatPage() {
                   backdropFilter: 'blur(30px)',
                   border: '1px solid rgba(139, 92, 246, 0.3)',
                   borderRadius: '16px',
-                  color: darkTheme.colors.textSecondary,
+                  color: darkTheme.colors.textPrimary,
                   fontSize: '16px',
                   outline: 'none',
-                  cursor: 'pointer',
+                  cursor: sending ? 'not-allowed' : 'text',
                   boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
                   transition: 'all 0.3s ease'
                 } as React.CSSProperties}
               />
               <button
-                onClick={() => setShowNewSession(true)}
+                onClick={handleInitialSubmit}
+                disabled={sending || !initialInputValue.trim()}
                 style={{
                   position: 'absolute',
                   right: '8px',
@@ -519,20 +564,25 @@ export default function ChatPage() {
                   transform: 'translateY(-50%)',
                   width: '44px',
                   height: '44px',
-                  background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                  background: (sending || !initialInputValue.trim())
+                    ? 'rgba(139, 92, 246, 0.3)'
+                    : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
                   border: 'none',
                   borderRadius: '12px',
                   color: 'white',
-                  cursor: 'pointer',
+                  cursor: (sending || !initialInputValue.trim()) ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '18px',
-                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)',
-                  transition: 'transform 0.2s ease'
+                  boxShadow: (sending || !initialInputValue.trim())
+                    ? 'none'
+                    : '0 4px 12px rgba(139, 92, 246, 0.4)',
+                  transition: 'transform 0.2s ease',
+                  opacity: (sending || !initialInputValue.trim()) ? 0.5 : 1
                 }}
               >
-                <i className="fas fa-plus"></i>
+                <i className={`fas fa-${sending ? 'circle-notch fa-spin' : 'arrow-right'}`}></i>
               </button>
             </div>
           </div>
