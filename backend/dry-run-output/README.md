@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "notarium-backend" generated at 2025-11-18T13:43:07.669Z.
