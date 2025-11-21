@@ -19,6 +19,7 @@ import FoundersModal from './components/FoundersModal'
 import { darkThemeStyles, getCurrentTheme } from './theme'
 import { useTheme } from './hooks/useTheme'
 import { ExpandableTabs } from './components/ui/expandable-tabs'
+import { BeamsBackground } from './components/ui/beams-background'
 import { Book, MessageSquare, Trophy, Settings, LogOut, BookOpen } from 'lucide-react'
 import './index.css'
 
@@ -158,14 +159,9 @@ function HomePage() {
   }, [])
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      color: currentTheme.colors.textPrimary,
-      backgroundImage: 'url(/nature.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed'
-    }}>
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
+      <BeamsBackground className="fixed inset-0" intensity="medium" />
+      <div style={{ position: 'relative', zIndex: 10, minHeight: '100vh', color: currentTheme.colors.textPrimary }}>
       <style>{darkThemeStyles}</style>
 
       {/* Navigation */}
@@ -958,6 +954,7 @@ function HomePage() {
       {showFoundersModal && (
         <FoundersModal onClose={() => setShowFoundersModal(false)} />
       )}
+      </div>
     </div>
   )
 }

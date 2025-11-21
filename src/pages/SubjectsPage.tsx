@@ -3,6 +3,8 @@ import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme, cardStyle } from '../theme';
 import { ArrowRight } from 'lucide-react';
+import { Canvas } from '@react-three/fiber';
+import { ShaderPlane } from '../components/ui/background-paper-shaders';
 
 export interface Subject {
   id: number;
@@ -48,9 +50,28 @@ export default function SubjectsPage({
   }, [setIsLoading]);
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      {/* Paper Shader Background - Only for gallery */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        pointerEvents: 'none',
+        opacity: 0.4,
+        borderRadius: '20px',
+        overflow: 'hidden'
+      }}>
+        <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
+          <ShaderPlane position={[0, 0, 0]} color1="#8b5cf6" color2="#3b82f6" />
+          <ShaderPlane position={[2, 1, -1]} color1="#ec4899" color2="#8b5cf6" />
+          <ShaderPlane position={[-2, -1, -1]} color1="#3b82f6" color2="#06b6d4" />
+        </Canvas>
+      </div>
+
       {/* Content */}
-      <div>
+      <div style={{ position: 'relative', zIndex: 1 }}>
         <h2 style={{
           fontSize: '28px',
           fontWeight: 'bold',
