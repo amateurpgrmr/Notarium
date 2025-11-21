@@ -99,19 +99,19 @@ export function ShaderAnimation() {
 
       void main(void) {
         vec2 uv = (gl_FragCoord.xy * 2.0 - resolution.xy) / min(resolution.x, resolution.y);
-        
+
         vec2 fMosaicScal = vec2(4.0, 2.0);
-        vec2 vScreenSize = vec2(256,256);
+        vec2 vScreenSize = vec2(192.0, 192.0);
         uv.x = floor(uv.x * vScreenSize.x / fMosaicScal.x) / (vScreenSize.x / fMosaicScal.x);
-        uv.y = floor(uv.y * vScreenSize.y / fMosaicScal.y) / (vScreenSize.y / fMosaicScal.y);       
-          
+        uv.y = floor(uv.y * vScreenSize.y / fMosaicScal.y) / (vScreenSize.y / fMosaicScal.y);
+
         float t = time*0.06+random(uv.x)*0.4;
-        float lineWidth = 0.0008;
+        float lineWidth = 0.001;
 
         vec3 color = vec3(0.0);
         for(int j = 0; j < 3; j++){
-          for(int i=0; i < 5; i++){
-            color[j] += lineWidth*float(i*i) / abs(fract(t - 0.01*float(j)+float(i)*0.01)*1.0 - length(uv));        
+          for(int i=0; i < 3; i++){
+            color[j] += lineWidth*float(i*i) / abs(fract(t - 0.01*float(j)+float(i)*0.01)*1.0 - length(uv));
           }
         }
 
@@ -130,9 +130,17 @@ export function ShaderAnimation() {
     const mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh)
 
-    // Initialize renderer
-    const renderer = new THREE.WebGLRenderer()
-    renderer.setPixelRatio(window.devicePixelRatio)
+    // Initialize renderer with performance optimizations
+    const renderer = new THREE.WebGLRenderer({
+      antialias: false,
+      alpha: false,
+      powerPreference: "high-performance"
+    })
+    // Limit pixel ratio for better performance
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+    renderer.domElement.style.width = '100%'
+    renderer.domElement.style.height = '100%'
+    renderer.domElement.style.display = 'block'
     container.appendChild(renderer.domElement)
 
     // Store references
@@ -144,15 +152,26 @@ export function ShaderAnimation() {
       animationId: null,
     }
 
-    // Handle resize
-    const onWindowResize = () => {
-      const rect = container.getBoundingClientRect()
-      renderer.setSize(rect.width, rect.height)
+    // Initial size setup
+    const setSize = () => {
+      const width = window.innerWidth
+      const height = window.innerHeight
+      renderer.setSize(width, height)
       uniforms.resolution.value.x = renderer.domElement.width
       uniforms.resolution.value.y = renderer.domElement.height
     }
 
-    onWindowResize()
+    setSize()
+
+    // Handle resize with throttling
+    let resizeTimeout: NodeJS.Timeout
+    const onWindowResize = () => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(() => {
+        setSize()
+      }, 100)
+    }
+
     window.addEventListener("resize", onWindowResize, false)
 
     // Animation loop
@@ -168,7 +187,14 @@ export function ShaderAnimation() {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full absolute" 
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden'
+      }}
     />
   )
 }
