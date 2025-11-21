@@ -3,8 +3,7 @@ import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme } from '../theme';
 import ReactMarkdown from 'react-markdown';
-import { Canvas } from '@react-three/fiber';
-import { ShaderPlane } from '@/components/ui/background-paper-shaders';
+import { ShaderAnimation } from '@/components/ui/shader-lines';
 import { PlaceholdersAndVanishInput } from '@/components/ui/placeholders-and-vanish-input';
 
 interface ChatMessage {
@@ -132,20 +131,15 @@ export default function ChatPage() {
       <div style={{
         position: 'absolute',
         inset: 0,
-        zIndex: 0,
-        opacity: 0.7
+        zIndex: 0
       }}>
-        <Canvas
-          camera={{ position: [0, 0, 3.5], fov: 75 }}
-          gl={{ alpha: true, antialias: true, preserveDrawingBuffer: true }}
-          dpr={[1, 2]}
-        >
-          <ambientLight intensity={0.5} />
-          <ShaderPlane position={[0, 0, 0]} color1="#6366f1" color2="#8b5cf6" />
-          <ShaderPlane position={[1.5, 0.8, -0.5]} color1="#ec4899" color2="#f97316" />
-          <ShaderPlane position={[-1.5, -0.8, -0.5]} color1="#3b82f6" color2="#06b6d4" />
-          <ShaderPlane position={[0, -1.2, -1]} color1="#8b5cf6" color2="#d946ef" />
-        </Canvas>
+        <ShaderAnimation />
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.6) 100%)',
+          pointerEvents: 'none'
+        }} />
       </div>
 
       {/* Left Floating Sidebar */}
