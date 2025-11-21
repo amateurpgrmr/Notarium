@@ -30,9 +30,7 @@ export default function SubjectsPage({
     const loadSubjects = async () => {
       try {
         setIsLoading(true);
-        console.log('Loading subjects...');
         const subjectsData = await api.getSubjects();
-        console.log('Subjects data:', subjectsData);
 
         const normalizedSubjects = Array.isArray(subjectsData)
           ? subjectsData
@@ -50,27 +48,28 @@ export default function SubjectsPage({
   }, [setIsLoading]);
 
   return (
-    <div style={{ position: 'relative' }}>
-      {/* Paper Shader Background - Only for gallery */}
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
       <div style={{
-        position: 'absolute',
+        position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
         pointerEvents: 'none',
-        opacity: 0.4,
-        borderRadius: '20px',
-        overflow: 'hidden'
+        opacity: 0.3,
+        zIndex: 0
       }}>
-        <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
+        <Canvas
+          camera={{ position: [0, 0, 5], fov: 50 }}
+          gl={{ alpha: true, antialias: true }}
+          dpr={[1, 2]}
+        >
           <ShaderPlane position={[0, 0, 0]} color1="#8b5cf6" color2="#3b82f6" />
           <ShaderPlane position={[2, 1, -1]} color1="#ec4899" color2="#8b5cf6" />
           <ShaderPlane position={[-2, -1, -1]} color1="#3b82f6" color2="#06b6d4" />
         </Canvas>
       </div>
 
-      {/* Content */}
       <div style={{ position: 'relative', zIndex: 1 }}>
         <h2 style={{
           fontSize: '28px',
