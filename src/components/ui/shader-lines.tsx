@@ -101,16 +101,16 @@ export function ShaderAnimation() {
         vec2 uv = (gl_FragCoord.xy * 2.0 - resolution.xy) / min(resolution.x, resolution.y);
 
         vec2 fMosaicScal = vec2(4.0, 2.0);
-        vec2 vScreenSize = vec2(192.0, 192.0);
+        vec2 vScreenSize = vec2(256.0, 256.0);
         uv.x = floor(uv.x * vScreenSize.x / fMosaicScal.x) / (vScreenSize.x / fMosaicScal.x);
         uv.y = floor(uv.y * vScreenSize.y / fMosaicScal.y) / (vScreenSize.y / fMosaicScal.y);
 
         float t = time*0.06+random(uv.x)*0.4;
-        float lineWidth = 0.001;
+        float lineWidth = 0.0008;
 
         vec3 color = vec3(0.0);
         for(int j = 0; j < 3; j++){
-          for(int i=0; i < 3; i++){
+          for(int i=0; i < 5; i++){
             color[j] += lineWidth*float(i*i) / abs(fract(t - 0.01*float(j)+float(i)*0.01)*1.0 - length(uv));
           }
         }
@@ -130,14 +130,13 @@ export function ShaderAnimation() {
     const mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh)
 
-    // Initialize renderer with performance optimizations
+    // Initialize renderer
     const renderer = new THREE.WebGLRenderer({
-      antialias: false,
-      alpha: false,
+      antialias: true,
+      alpha: true,
       powerPreference: "high-performance"
     })
-    // Limit pixel ratio for better performance
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+    renderer.setPixelRatio(window.devicePixelRatio)
     renderer.domElement.style.width = '100%'
     renderer.domElement.style.height = '100%'
     renderer.domElement.style.display = 'block'

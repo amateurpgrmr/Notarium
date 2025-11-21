@@ -86,7 +86,7 @@ export function ShaderPlane({
 
   return (
     <mesh ref={mesh} position={position}>
-      <planeGeometry args={[4, 4, 32, 32]} />
+      <planeGeometry args={[4, 4, 64, 64]} />
       <shaderMaterial
         uniforms={uniforms}
         vertexShader={vertexShader}
