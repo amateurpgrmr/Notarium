@@ -18,6 +18,8 @@ import LoadingSpinner from './components/LoadingSpinner'
 import FoundersModal from './components/FoundersModal'
 import { darkThemeStyles, getCurrentTheme } from './theme'
 import { useTheme } from './hooks/useTheme'
+import { ExpandableTabs } from './components/ui/expandable-tabs'
+import { Book, MessageSquare, Trophy, Settings, LogOut, BookOpen } from 'lucide-react'
 import './index.css'
 
 // ==================== AUTH CONTEXT ====================
@@ -251,133 +253,35 @@ function HomePage() {
           onBlur={(e) => e.currentTarget.style.borderColor = currentTheme.colors.borderColor}
         />
 
-        {/* Desktop Navigation Buttons - Hidden on mobile */}
+        {/* Desktop Navigation - Hidden on mobile */}
         {!isMobile && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              onClick={() => navigateTo('subjects')}
-              style={{
-                padding: '10px 18px',
-                background: currentPage === 'subjects' ? currentTheme.colors.accent : 'transparent',
-                border: 'none',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '500',
-                transition: currentTheme.transitions.default,
-                borderRadius: currentTheme.borderRadius.md
-              }}
-              onMouseOver={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-              onMouseOut={(e) => !currentPage.includes('subjects') && (e.currentTarget.style.background = 'transparent')}
-            >
-              <i style={{ marginRight: '6px' }} className="fas fa-book"></i>Subjects
-            </button>
+          <ExpandableTabs
+            tabs={[
+              { title: 'Subjects', icon: Book },
+              { title: 'Chat', icon: MessageSquare },
+              { title: 'Leaderboard', icon: Trophy },
+              ...(user?.role === 'admin' ? [{ title: 'Admin', icon: Settings }] : []),
+              { type: 'separator' as const },
+              { title: 'My Notes', icon: BookOpen },
+              { title: 'Logout', icon: LogOut }
+            ]}
+            onChange={(index) => {
+              if (index === null) return
 
-            <button
-              onClick={() => navigateTo('chat')}
-              style={{
-                padding: '10px 18px',
-                background: currentPage === 'chat' ? currentTheme.colors.accent : 'transparent',
-                border: 'none',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '500',
-                transition: currentTheme.transitions.default,
-                borderRadius: currentTheme.borderRadius.md
-              }}
-              onMouseOver={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-              onMouseOut={(e) => currentPage !== 'chat' && (e.currentTarget.style.background = 'transparent')}
-            >
-              <i style={{ marginRight: '6px' }} className="fas fa-comments"></i>Chat
-            </button>
+              const pages = ['subjects', 'chat', 'leaderboard']
+              if (user?.role === 'admin') pages.push('admin')
 
-            <button
-              onClick={() => navigateTo('leaderboard')}
-              style={{
-                padding: '10px 18px',
-                background: currentPage === 'leaderboard' ? currentTheme.colors.accent : 'transparent',
-                border: 'none',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '500',
-                transition: currentTheme.transitions.default,
-                borderRadius: currentTheme.borderRadius.md
-              }}
-              onMouseOver={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-              onMouseOut={(e) => currentPage !== 'leaderboard' && (e.currentTarget.style.background = 'transparent')}
-            >
-              <i style={{ marginRight: '6px' }} className="fas fa-trophy"></i>Leaderboard
-            </button>
+              const actionIndex = user?.role === 'admin' ? 5 : 4
 
-            {user?.role === 'admin' && (
-              <button
-                onClick={() => navigateTo('admin')}
-                style={{
-                  padding: '10px 18px',
-                  background: currentPage === 'admin' ? currentTheme.colors.accent : 'transparent',
-                  border: 'none',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  transition: currentTheme.transitions.default,
-                  borderRadius: currentTheme.borderRadius.md
-                }}
-                onMouseOver={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-                onMouseOut={(e) => currentPage !== 'admin' && (e.currentTarget.style.background = 'transparent')}
-              >
-                <i style={{ marginRight: '6px' }} className="fas fa-cog"></i>Admin
-              </button>
-            )}
-
-            {/* My Notes Button */}
-            <button
-              onClick={() => window.location.href = '/my-notes'}
-              style={{
-                padding: '10px 18px',
-                background: 'transparent',
-                border: 'none',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '500',
-                transition: currentTheme.transitions.default,
-                borderRadius: currentTheme.borderRadius.md
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              <i style={{ marginRight: '6px' }} className="fas fa-book"></i>My Notes
-            </button>
-
-            {/* Logout Button */}
-            <button
-              onClick={logout}
-              style={{
-                padding: '10px 18px',
-                background: 'transparent',
-                border: `1px solid ${currentTheme.colors.borderColor}`,
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '500',
-                transition: currentTheme.transitions.default,
-                borderRadius: currentTheme.borderRadius.md
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.borderColor = currentTheme.colors.borderColor;
-              }}
-            >
-              <i style={{ marginRight: '6px' }} className="fas fa-sign-out-alt"></i>Logout
-            </button>
-          </div>
+              if (index < pages.length) {
+                navigateTo(pages[index] as typeof currentPage)
+              } else if (index === actionIndex) {
+                window.location.href = '/my-notes'
+              } else if (index === actionIndex + 1) {
+                logout()
+              }
+            }}
+          />
         )}
 
         {/* Account Avatar - Desktop only */}
