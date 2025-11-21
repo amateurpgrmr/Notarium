@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { darkTheme, cardStyle } from '../theme';
+import { GlowingStarsBackgroundCard, GlowingStarsTitle, GlowingStarsDescription } from '../components/ui/glowing-stars';
 
 export interface Subject {
   id: number;
@@ -64,54 +65,32 @@ export default function SubjectsPage({
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
             gap: '24px'
           }}>
             {subjects.map((subject) => (
               <div
                 key={subject.id}
                 onClick={() => onSelectSubject(subject)}
-                style={{
-                  ...cardStyle,
-                  padding: '40px 32px',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  position: 'relative',
-                  minHeight: '220px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: darkTheme.transitions.default,
-                  border: `2px solid ${darkTheme.colors.accent}`,
-                  background: 'rgba(20, 25, 23, 0.6)',
-                  backdropFilter: 'blur(10px)'
-                } as React.CSSProperties}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(20, 25, 23, 0.8)';
-                  e.currentTarget.style.borderColor = darkTheme.colors.accent;
-                  e.currentTarget.style.boxShadow = darkTheme.shadows.lg;
-                  e.currentTarget.style.transform = 'translateY(-6px)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'rgba(20, 25, 23, 0.6)';
-                  e.currentTarget.style.borderColor = darkTheme.colors.accent;
-                  e.currentTarget.style.boxShadow = 'none';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
+                style={{ cursor: 'pointer' }}
               >
-                <i style={{
-                  fontSize: '64px',
-                  marginBottom: '20px',
-                  color: darkTheme.colors.accent,
-                  display: 'block'
-                }} className={`fas ${subject.icon}`}></i>
-                <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '12px', color: darkTheme.colors.textPrimary }}>
-                  {subject.name}
-                </h3>
-                <p style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>
-                  {subject.note_count} notes
-                </p>
+                <GlowingStarsBackgroundCard className="h-full">
+                  <div className="flex flex-col items-center justify-center text-center space-y-4">
+                    <i
+                      className={`fas ${subject.icon}`}
+                      style={{
+                        fontSize: '48px',
+                        color: darkTheme.colors.accent
+                      }}
+                    ></i>
+                    <GlowingStarsTitle>
+                      {subject.name}
+                    </GlowingStarsTitle>
+                    <GlowingStarsDescription>
+                      {subject.note_count} notes available
+                    </GlowingStarsDescription>
+                  </div>
+                </GlowingStarsBackgroundCard>
               </div>
             ))}
           </div>
