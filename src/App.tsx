@@ -174,15 +174,13 @@ function HomePage() {
         top: 0,
         left: 0,
         right: 0,
-        background: 'rgba(0, 0, 0, 0.95)',
         backdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${currentTheme.colors.borderColor}`,
         padding: isMobile ? '12px 16px' : '16px 40px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         zIndex: 1000,
-        gap: '12px',
+        gap: '16px',
         minHeight: isMobile ? '64px' : '76px'
       }}>
         {/* Mobile: Hamburger Button */}
@@ -207,81 +205,88 @@ function HomePage() {
           </button>
         )}
 
-        {/* Logo - Image only on both desktop and mobile */}
-        <button
-          onClick={() => { navigateTo('subjects'); setCurrentSubject(null); }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            transition: currentTheme.transitions.default,
-            padding: 0
-          }}
-          onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
-          onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-        >
-          <img
-            src="/notarium-logo.jpg"
-            alt="Notarium"
-            style={{ height: isMobile ? '44px' : '48px', width: 'auto' }}
-          />
-        </button>
-
-        {/* Search bar - Always visible */}
-        <input
-          type="text"
-          placeholder="Search notes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            padding: '10px 14px 10px 36px',
-            background: currentTheme.colors.bgSecondary,
-            border: `1px solid ${currentTheme.colors.borderColor}`,
-            borderRadius: currentTheme.borderRadius.md,
-            width: isMobile ? '1fr' : '280px',
-            fontSize: '14px',
-            color: currentTheme.colors.textPrimary,
-            outline: 'none',
-            transition: currentTheme.transitions.default,
-            boxSizing: 'border-box',
-            flex: isMobile ? 1 : undefined
-          } as React.CSSProperties}
-          onFocus={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)'}
-          onBlur={(e) => e.currentTarget.style.borderColor = currentTheme.colors.borderColor}
-        />
-
-        {/* Desktop Navigation - Hidden on mobile */}
+        {/* Logo - Desktop only */}
         {!isMobile && (
-          <ExpandableTabs
-            tabs={[
-              { title: 'Subjects', icon: Book },
-              { title: 'Chat', icon: MessageSquare },
-              { title: 'Leaderboard', icon: Trophy },
-              ...(user?.role === 'admin' ? [{ title: 'Admin', icon: Settings }] : []),
-              { type: 'separator' as const },
-              { title: 'My Notes', icon: BookOpen },
-              { title: 'Logout', icon: LogOut }
-            ]}
-            onChange={(index) => {
-              if (index === null) return
-
-              const pages = ['subjects', 'chat', 'leaderboard']
-              if (user?.role === 'admin') pages.push('admin')
-
-              const actionIndex = user?.role === 'admin' ? 5 : 4
-
-              if (index < pages.length) {
-                navigateTo(pages[index] as typeof currentPage)
-              } else if (index === actionIndex) {
-                window.location.href = '/my-notes'
-              } else if (index === actionIndex + 1) {
-                logout()
-              }
+          <button
+            onClick={() => { navigateTo('subjects'); setCurrentSubject(null); }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              transition: currentTheme.transitions.default,
+              padding: 0
             }}
-          />
+            onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
+            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            <img
+              src="/notarium-logo.jpg"
+              alt="Notarium"
+              style={{ height: '48px', width: 'auto' }}
+            />
+          </button>
+        )}
+
+        {/* Mobile Logo */}
+        {isMobile && (
+          <button
+            onClick={() => { navigateTo('subjects'); setCurrentSubject(null); }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              transition: currentTheme.transitions.default,
+              padding: 0
+            }}
+            onMouseOver={(e) => e.currentTarget.style.opacity = '0.8'}
+            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            <img
+              src="/notarium-logo.jpg"
+              alt="Notarium"
+              style={{ height: '44px', width: 'auto' }}
+            />
+          </button>
+        )}
+
+        {/* Desktop Navigation with black theme */}
+        {!isMobile && (
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <ExpandableTabs
+              className="bg-black/95 border-white/10 backdrop-blur-xl shadow-2xl"
+              tabs={[
+                { title: 'Subjects', icon: Book },
+                { title: 'Chat', icon: MessageSquare },
+                { title: 'Leaderboard', icon: Trophy },
+                ...(user?.role === 'admin' ? [{ title: 'Admin', icon: Settings }] : []),
+                { type: 'separator' as const },
+                { title: 'My Notes', icon: BookOpen },
+                { title: 'Logout', icon: LogOut }
+              ]}
+              onChange={(index) => {
+                if (index === null) return
+
+                const pages = ['subjects', 'chat', 'leaderboard']
+                if (user?.role === 'admin') pages.push('admin')
+
+                const actionIndex = user?.role === 'admin' ? 5 : 4
+
+                if (index < pages.length) {
+                  navigateTo(pages[index] as typeof currentPage)
+                } else if (index === actionIndex) {
+                  window.location.href = '/my-notes'
+                } else if (index === actionIndex + 1) {
+                  logout()
+                }
+              }}
+            />
+          </div>
         )}
 
         {/* Account Avatar - Desktop only */}
@@ -292,16 +297,24 @@ function HomePage() {
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              background: 'transparent',
-              border: 'none',
+              background: 'rgba(0, 0, 0, 0.95)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
               color: currentTheme.colors.textPrimary,
               cursor: 'pointer',
               transition: currentTheme.transitions.default,
-              padding: '8px 10px',
-              borderRadius: currentTheme.borderRadius.md
+              padding: '8px 16px',
+              borderRadius: '9999px',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)'
             }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 1)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.95)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            }}
           >
             <div style={{
               width: '40px',
