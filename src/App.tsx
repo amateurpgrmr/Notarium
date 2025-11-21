@@ -205,14 +205,14 @@ function HomePage() {
           </button>
         )}
 
-        {/* Logo - Desktop only */}
+        {/* Logo with Text - Desktop only */}
         {!isMobile && (
           <button
             onClick={() => { navigateTo('subjects'); setCurrentSubject(null); }}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '12px',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -225,8 +225,16 @@ function HomePage() {
             <img
               src="/notarium-logo.jpg"
               alt="Notarium"
-              style={{ height: '48px', width: 'auto' }}
+              style={{ height: '48px', width: 'auto', borderRadius: '8px' }}
             />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: '20px', fontWeight: '700', color: '#fff', lineHeight: '1.2' }}>
+                Notarium
+              </span>
+              <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)', fontWeight: '500', letterSpacing: '0.5px' }}>
+                Share Your Notes
+              </span>
+            </div>
           </button>
         )}
 
