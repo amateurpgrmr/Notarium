@@ -7,15 +7,17 @@ const vertexShader = `
   uniform float intensity;
   varying vec2 vUv;
   varying vec3 vPosition;
-  
+
   void main() {
     vUv = uv;
     vPosition = position;
-    
+
     vec3 pos = position;
-    pos.y += sin(pos.x * 10.0 + time) * 0.1 * intensity;
-    pos.x += cos(pos.y * 8.0 + time * 1.5) * 0.05 * intensity;
-    
+    pos.z += sin(pos.x * 8.0 + time * 0.5) * 0.15 * intensity;
+    pos.z += cos(pos.y * 6.0 + time * 0.7) * 0.15 * intensity;
+    pos.y += sin(pos.x * 5.0 + time * 0.3) * 0.08 * intensity;
+    pos.x += cos(pos.y * 5.0 + time * 0.4) * 0.08 * intensity;
+
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
 `
@@ -27,23 +29,29 @@ const fragmentShader = `
   uniform vec3 color2;
   varying vec2 vUv;
   varying vec3 vPosition;
-  
+
   void main() {
     vec2 uv = vUv;
-    
-    // Create animated noise pattern
-    float noise = sin(uv.x * 20.0 + time) * cos(uv.y * 15.0 + time * 0.8);
-    noise += sin(uv.x * 35.0 - time * 2.0) * cos(uv.y * 25.0 + time * 1.2) * 0.5;
-    
-    // Mix colors based on noise and position
-    vec3 color = mix(color1, color2, noise * 0.5 + 0.5);
-    color = mix(color, vec3(1.0), pow(abs(noise), 2.0) * intensity);
-    
-    // Add glow effect
-    float glow = 1.0 - length(uv - 0.5) * 2.0;
-    glow = pow(glow, 2.0);
-    
-    gl_FragColor = vec4(color * glow, glow * 0.8);
+
+    // Create flowing animated patterns
+    float wave1 = sin(uv.x * 8.0 + time * 0.6) * cos(uv.y * 8.0 + time * 0.4);
+    float wave2 = sin(uv.x * 12.0 - time * 0.5) * cos(uv.y * 12.0 + time * 0.7) * 0.5;
+    float wave3 = sin(length(uv - 0.5) * 10.0 - time * 0.8) * 0.3;
+
+    float pattern = wave1 + wave2 + wave3;
+
+    // Mix colors with smooth transitions
+    vec3 color = mix(color1, color2, pattern * 0.5 + 0.5);
+    color = mix(color, color1 * 1.2, pow(abs(pattern), 1.5) * intensity * 0.3);
+
+    // Softer, more visible glow
+    float glow = 1.0 - length(uv - 0.5) * 1.2;
+    glow = pow(max(glow, 0.0), 1.5);
+
+    // More opacity for better visibility
+    float alpha = glow * 0.9 * (0.8 + pattern * 0.2);
+
+    gl_FragColor = vec4(color * 1.3, alpha);
   }
 `
 
@@ -71,19 +79,21 @@ export function ShaderPlane({
   useFrame((state) => {
     if (mesh.current) {
       uniforms.time.value = state.clock.elapsedTime
-      uniforms.intensity.value = 1.0 + Math.sin(state.clock.elapsedTime * 2) * 0.3
+      uniforms.intensity.value = 1.2 + Math.sin(state.clock.elapsedTime * 1.5) * 0.4
+      mesh.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.2) * 0.1
     }
   })
 
   return (
     <mesh ref={mesh} position={position}>
-      <planeGeometry args={[2, 2, 32, 32]} />
+      <planeGeometry args={[4, 4, 64, 64]} />
       <shaderMaterial
         uniforms={uniforms}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
         transparent
         side={THREE.DoubleSide}
+        blending={THREE.AdditiveBlending}
       />
     </mesh>
   )
