@@ -196,11 +196,33 @@ export default function FoundersModal({ onClose }: FoundersModalProps) {
                       width: isMobile ? '50px' : '60px',
                       height: isMobile ? '50px' : '60px',
                       borderRadius: '50%',
-                      background: `url('${founder.photo}') center/cover, linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                      background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                      backgroundImage: `url('${founder.photo}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
                       border: `2px solid ${darkTheme.colors.accent}`,
-                      flexShrink: 0
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: isMobile ? '20px' : '24px',
+                      fontWeight: 'bold',
+                      color: 'white'
                     }}
-                  />
+                  >
+                    {/* Show initials as fallback if image doesn't load */}
+                    <span style={{
+                      display: 'none',
+                      background: `linear-gradient(135deg, ${darkTheme.colors.accent}, #8b5cf6)`,
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {founder.name.split(' ').map(n => n[0]).join('')}
+                    </span>
+                  </div>
 
                   {/* Founder Name */}
                   <div style={{ flex: 1 }}>
