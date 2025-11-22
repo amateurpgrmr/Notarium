@@ -46,6 +46,8 @@ export function BeamsBackground({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const beamsRef = useRef<Beam[]>([]);
     const animationFrameRef = useRef<number>(0);
+    const isScrollingRef = useRef(false);
+    const scrollTimeoutRef = useRef<number | null>(null);
     const MINIMUM_BEAMS = 3; // Reduced to 3 for ultra-smooth scrolling
 
     const opacityMap = {
@@ -79,6 +81,20 @@ export function BeamsBackground({
 
         updateCanvasSize();
         window.addEventListener("resize", updateCanvasSize);
+
+        // Detect scroll and pause animation for zero-lag scrolling
+        const handleScroll = () => {
+            isScrollingRef.current = true;
+            if (scrollTimeoutRef.current) {
+                window.clearTimeout(scrollTimeoutRef.current);
+            }
+            // Resume animation 100ms after scrolling stops
+            scrollTimeoutRef.current = window.setTimeout(() => {
+                isScrollingRef.current = false;
+            }, 100);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
 
         function resetBeam(beam: Beam, index: number, totalBeams: number) {
             if (!canvas) return beam;
@@ -144,27 +160,30 @@ export function BeamsBackground({
         function animate(currentTime: number) {
             if (!canvas || !ctx) return;
 
-            const deltaTime = currentTime - lastFrameTime;
+            // PAUSE animation completely during scroll for zero-lag scrolling
+            if (!isScrollingRef.current) {
+                const deltaTime = currentTime - lastFrameTime;
 
-            // Only render if enough time has passed
-            if (deltaTime >= frameInterval) {
-                lastFrameTime = currentTime - (deltaTime % frameInterval);
+                // Only render if enough time has passed
+                if (deltaTime >= frameInterval) {
+                    lastFrameTime = currentTime - (deltaTime % frameInterval);
 
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                // Removed blur filter entirely - huge performance boost
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    // Removed blur filter entirely - huge performance boost
 
-                const totalBeams = beamsRef.current.length;
-                beamsRef.current.forEach((beam, index) => {
-                    beam.y -= beam.speed;
-                    beam.pulse += beam.pulseSpeed;
+                    const totalBeams = beamsRef.current.length;
+                    beamsRef.current.forEach((beam, index) => {
+                        beam.y -= beam.speed;
+                        beam.pulse += beam.pulseSpeed;
 
-                    // Reset beam when it goes off screen
-                    if (beam.y + beam.length < -100) {
-                        resetBeam(beam, index, totalBeams);
-                    }
+                        // Reset beam when it goes off screen
+                        if (beam.y + beam.length < -100) {
+                            resetBeam(beam, index, totalBeams);
+                        }
 
-                    drawBeam(ctx, beam);
-                });
+                        drawBeam(ctx, beam);
+                    });
+                }
             }
 
             animationFrameRef.current = requestAnimationFrame(animate);
@@ -174,6 +193,10 @@ export function BeamsBackground({
 
         return () => {
             window.removeEventListener("resize", updateCanvasSize);
+            window.removeEventListener('scroll', handleScroll);
+            if (scrollTimeoutRef.current) {
+                window.clearTimeout(scrollTimeoutRef.current);
+            }
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
@@ -194,7 +217,10 @@ export function BeamsBackground({
                 style={{
                     filter: "blur(20px)", // Increased blur to compensate for lower resolution
                     pointerEvents: 'none',
-                    imageRendering: 'auto'
+                    imageRendering: 'auto',
+                    // Use GPU layer for better performance
+                    transform: 'translateZ(0)',
+                    willChange: 'contents'
                 }}
             />
 
