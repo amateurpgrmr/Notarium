@@ -25,7 +25,7 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
   const [keyConcepts, setKeyConcepts] = useState<string[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start with sidebar closed
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
