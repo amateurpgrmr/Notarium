@@ -133,8 +133,12 @@ export default function ChatPage() {
         inset: 0,
         zIndex: 0,
         // Shift animation to the right to center it with the main content area
-        transform: sidebarOpen ? 'translateX(170px)' : 'translateX(40px)',
-        transition: 'transform 0.3s ease'
+        transform: isMobile
+          ? (sidebarOpen ? 'translateX(0px)' : 'translateX(0px)')
+          : (sidebarOpen ? 'translateX(170px)' : 'translateX(40px)'),
+        transition: 'transform 0.3s ease',
+        // Dim animation when sidebar is open on mobile
+        opacity: (isMobile && sidebarOpen) ? 0.3 : 1
       }}>
         <ShaderAnimation />
         <div style={{
@@ -149,13 +153,13 @@ export default function ChatPage() {
       <div style={{
         position: 'fixed',
         top: isMobile ? '64px' : '76px',
-        left: sidebarOpen ? '20px' : '-280px',
-        width: '260px',
-        height: `calc(100vh - ${isMobile ? '84px' : '96px'})`,
+        left: sidebarOpen ? (isMobile ? '0' : '20px') : (isMobile ? '-100%' : '-280px'),
+        width: isMobile ? '100%' : '260px',
+        height: `calc(100vh - ${isMobile ? '64px' : '96px'})`,
         background: 'rgba(10, 10, 15, 0.95)',
         backdropFilter: 'blur(30px)',
-        borderRadius: '20px',
-        border: '1px solid rgba(139, 92, 246, 0.2)',
+        borderRadius: isMobile ? '0' : '20px',
+        border: isMobile ? 'none' : '1px solid rgba(139, 92, 246, 0.2)',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
         zIndex: 100,
         transition: 'left 0.3s ease',
@@ -235,7 +239,7 @@ export default function ChatPage() {
         style={{
           position: 'fixed',
           top: isMobile ? '80px' : '92px',
-          left: sidebarOpen ? '300px' : '20px',
+          left: sidebarOpen ? (isMobile ? '20px' : '300px') : '20px',
           width: '40px',
           height: '40px',
           background: 'rgba(139, 92, 246, 0.2)',
@@ -253,19 +257,22 @@ export default function ChatPage() {
           boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)'
         }}
       >
-        <i className={`fas fa-${sidebarOpen ? 'chevron-left' : 'bars'}`}></i>
+        <i className={`fas fa-${sidebarOpen ? (isMobile ? 'times' : 'chevron-left') : 'bars'}`}></i>
       </button>
 
       {/* Main Content Area */}
       <div style={{
         position: 'relative',
-        marginLeft: sidebarOpen ? (isMobile ? '0px' : '340px') : '80px',
-        marginRight: '20px',
+        marginLeft: sidebarOpen ? (isMobile ? '0px' : '340px') : (isMobile ? '20px' : '80px'),
+        marginRight: isMobile ? '20px' : '20px',
         marginTop: isMobile ? '64px' : '76px',
         marginBottom: '20px',
         height: `calc(100vh - ${isMobile ? '84px' : '96px'})`,
         transition: 'margin-left 0.3s ease',
-        zIndex: 10
+        zIndex: 10,
+        // Hide main content when sidebar is open on mobile
+        opacity: (isMobile && sidebarOpen) ? 0 : 1,
+        pointerEvents: (isMobile && sidebarOpen) ? 'none' : 'auto'
       }}>
         <div style={{
           height: '100%',
