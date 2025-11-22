@@ -608,12 +608,12 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
     const userNotes = await getUserNotes(userId, subject, env);
     const notesContext = formatNotesForContext(userNotes);
 
-    // Get chat history
+    // Get chat history (reduced from 20 to 8 for faster responses)
     const { results: messages } = await env.DB.prepare(`
       SELECT role, content FROM chat_messages
       WHERE session_id = ?
       ORDER BY created_at DESC
-      LIMIT 20
+      LIMIT 8
     `).bind(sessionId).all();
 
     const reverseMessages = (messages || []).reverse();
@@ -628,29 +628,19 @@ async function chatWithGemini(sessionId: string, userMessage: string, subject: s
     const allMessages = [
       {
         role: 'system',
-        content: `You are a helpful study assistant and tutor.
+        content: `You are a helpful study assistant. Respond concisely and clearly.
 
-📋 RESPONSE FORMAT REQUIREMENTS:
-- Use proper markdown formatting: **bold**, *italic*, \`code\`, etc.
-- Use emojis to make responses engaging (✅ ❌ 📚 💡 🎯 ⚡ etc.)
-- Use bullet points (- or *) and numbered lists (1. 2. 3.) to organize information
-- Use headings (## or ###) for major sections
-- Keep paragraphs short and scannable
-- Add line breaks between sections for readability
+FORMAT:
+- Use markdown: **bold**, *italic*, \`code\`
+- Add emojis for engagement: ✅ ❌ 📚 💡 🎯
+- Use bullet points and numbered lists
+- Keep responses focused and brief
 
-🎯 CONTENT REQUIREMENTS:
-- AT LEAST 60% of your answer MUST come directly from the user's study materials (Knowledge Base)
-- Quote specific facts, definitions, and examples from the provided notes
-- When referencing notes, mention "berdasarkan catatan kamu" (based on your notes)
-- Only use general knowledge to fill gaps or provide additional context
-- If the notes contain the answer, prioritize that information completely
-
-📚 SOURCING RULES:
-- Primary source (60%+): User's study materials/notes
-- Secondary source (40% max): General knowledge only when needed
-- Always cite when using information from the notes
-
-IMPORTANT: Always respond in Indonesian (Bahasa Indonesia).`
+CONTENT:
+- Prioritize user's study materials when available
+- Reference notes with "berdasarkan catatan kamu"
+- Be concise - quality over quantity
+- Respond in Indonesian (Bahasa Indonesia)`
       },
       ...conversationHistory
     ];
@@ -676,8 +666,8 @@ IMPORTANT: Always respond in Indonesian (Bahasa Indonesia).`
       body: JSON.stringify({
         model: 'deepseek-chat',
         messages: allMessages,
-        max_tokens: 2048,
-        temperature: 0.7
+        max_tokens: 1024, // Reduced from 2048 for faster responses
+        temperature: 0.8  // Slightly higher for faster generation
       })
     });
 
