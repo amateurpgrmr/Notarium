@@ -46,7 +46,7 @@ export function BeamsBackground({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const beamsRef = useRef<Beam[]>([]);
     const animationFrameRef = useRef<number>(0);
-    const MINIMUM_BEAMS = 20;
+    const MINIMUM_BEAMS = 10; // Reduced from 20 to 10 for better performance
 
     const opacityMap = {
         subtle: 0.7,
@@ -62,14 +62,16 @@ export function BeamsBackground({
         if (!ctx) return;
 
         const updateCanvasSize = () => {
-            const dpr = window.devicePixelRatio || 1;
+            // Limit pixel ratio for better performance
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
             canvas.width = window.innerWidth * dpr;
             canvas.height = window.innerHeight * dpr;
             canvas.style.width = `${window.innerWidth}px`;
             canvas.style.height = `${window.innerHeight}px`;
             ctx.scale(dpr, dpr);
 
-            const totalBeams = MINIMUM_BEAMS * 1.5;
+            // Reduced total beams for better performance
+            const totalBeams = MINIMUM_BEAMS;
             beamsRef.current = Array.from({ length: totalBeams }, () =>
                 createBeam(canvas.width, canvas.height)
             );
@@ -134,29 +136,41 @@ export function BeamsBackground({
             ctx.restore();
         }
 
-        function animate() {
+        // Throttle animation to 30fps for better performance
+        let lastFrameTime = 0;
+        const targetFPS = 30;
+        const frameInterval = 1000 / targetFPS;
+
+        function animate(currentTime: number) {
             if (!canvas || !ctx) return;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.filter = "blur(35px)";
+            const deltaTime = currentTime - lastFrameTime;
 
-            const totalBeams = beamsRef.current.length;
-            beamsRef.current.forEach((beam, index) => {
-                beam.y -= beam.speed;
-                beam.pulse += beam.pulseSpeed;
+            // Only render if enough time has passed
+            if (deltaTime >= frameInterval) {
+                lastFrameTime = currentTime - (deltaTime % frameInterval);
 
-                // Reset beam when it goes off screen
-                if (beam.y + beam.length < -100) {
-                    resetBeam(beam, index, totalBeams);
-                }
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.filter = "blur(35px)";
 
-                drawBeam(ctx, beam);
-            });
+                const totalBeams = beamsRef.current.length;
+                beamsRef.current.forEach((beam, index) => {
+                    beam.y -= beam.speed;
+                    beam.pulse += beam.pulseSpeed;
+
+                    // Reset beam when it goes off screen
+                    if (beam.y + beam.length < -100) {
+                        resetBeam(beam, index, totalBeams);
+                    }
+
+                    drawBeam(ctx, beam);
+                });
+            }
 
             animationFrameRef.current = requestAnimationFrame(animate);
         }
 
-        animate();
+        animate(0);
 
         return () => {
             window.removeEventListener("resize", updateCanvasSize);

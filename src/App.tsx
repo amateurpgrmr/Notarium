@@ -1,27 +1,29 @@
-import { useEffect, useState, createContext, useContext, useCallback } from 'react'
+import { useEffect, useState, createContext, useContext, useCallback, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import api, { User } from './lib/api'
-import Login from './pages/Login'
-import AdminLogin from './pages/AdminLogin'
-import Signup from './pages/Signup'
-import Suspended from './pages/Suspended'
-import PasswordResetPage from './pages/PasswordResetPage'
-import SubjectsPage from './pages/SubjectsPage'
-import SubjectNotesPage from './pages/SubjectNotesPage'
-import LeaderboardPage from './pages/LeaderboardPage'
-import ChatPage from './pages/ChatPage'
-import AdminPage from './pages/AdminPage'
-import MyNotesPage from './pages/MyNotesPage'
-import ProfileEditor from './components/ProfileEditor'
-import ProfileStats from './components/ProfileStats'
 import LoadingSpinner from './components/LoadingSpinner'
-import FoundersModal from './components/FoundersModal'
 import { darkThemeStyles, getCurrentTheme } from './theme'
 import { useTheme } from './hooks/useTheme'
 import { ExpandableTabs } from './components/ui/expandable-tabs'
 import { BeamsBackground } from './components/ui/beams-background'
 import { Book, MessageSquare, Trophy, Settings, LogOut, BookOpen } from 'lucide-react'
 import './index.css'
+
+// Lazy load pages for better initial load performance
+const Login = lazy(() => import('./pages/Login'))
+const AdminLogin = lazy(() => import('./pages/AdminLogin'))
+const Signup = lazy(() => import('./pages/Signup'))
+const Suspended = lazy(() => import('./pages/Suspended'))
+const PasswordResetPage = lazy(() => import('./pages/PasswordResetPage'))
+const SubjectsPage = lazy(() => import('./pages/SubjectsPage'))
+const SubjectNotesPage = lazy(() => import('./pages/SubjectNotesPage'))
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
+const ChatPage = lazy(() => import('./pages/ChatPage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const MyNotesPage = lazy(() => import('./pages/MyNotesPage'))
+const ProfileEditor = lazy(() => import('./components/ProfileEditor'))
+const ProfileStats = lazy(() => import('./components/ProfileStats'))
+const FoundersModal = lazy(() => import('./components/FoundersModal'))
 
 // ==================== AUTH CONTEXT ====================
 
@@ -891,15 +893,19 @@ function HomePage() {
 
       {/* Profile Stats Modal - Mobile only */}
       {showProfileStats && (
-        <ProfileStats
-          onClose={() => setShowProfileStats(false)}
-          onEditProfile={() => setShowProfileEditor(true)}
-        />
+        <Suspense fallback={<LoadingSpinner />}>
+          <ProfileStats
+            onClose={() => setShowProfileStats(false)}
+            onEditProfile={() => setShowProfileEditor(true)}
+          />
+        </Suspense>
       )}
 
       {/* Profile Editor Modal - Desktop only */}
       {showProfileEditor && !showProfileStats && (
-        <ProfileEditor onClose={() => setShowProfileEditor(false)} />
+        <Suspense fallback={<LoadingSpinner />}>
+          <ProfileEditor onClose={() => setShowProfileEditor(false)} />
+        </Suspense>
       )}
 
       {/* Copyright Footer */}
@@ -952,7 +958,9 @@ function HomePage() {
 
       {/* Founders Modal */}
       {showFoundersModal && (
-        <FoundersModal onClose={() => setShowFoundersModal(false)} />
+        <Suspense fallback={<LoadingSpinner />}>
+          <FoundersModal onClose={() => setShowFoundersModal(false)} />
+        </Suspense>
       )}
       </div>
     </div>
@@ -1010,29 +1018,42 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/suspended" element={<Suspended />} />
-          <Route path="/pwd-reset" element={<PasswordResetPage />} />
-          <Route
-            path="/my-notes"
-            element={
-              <ProtectedRoute>
-                <MyNotesPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
+        <Suspense fallback={
+          <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#0a0a0f',
+            color: '#fff'
+          }}>
+            <LoadingSpinner message="Loading..." size="lg" />
+          </div>
+        }>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/suspended" element={<Suspended />} />
+            <Route path="/pwd-reset" element={<PasswordResetPage />} />
+            <Route
+              path="/my-notes"
+              element={
+                <ProtectedRoute>
+                  <MyNotesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   )

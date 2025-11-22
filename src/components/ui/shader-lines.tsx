@@ -77,15 +77,15 @@ export function ShaderAnimation() {
       }
     `
 
-    // Fragment shader
+    // Optimized fragment shader (reduced loop iterations for better performance)
     const fragmentShader = `
       #define TWO_PI 6.2831853072
       #define PI 3.14159265359
 
-      precision highp float;
+      precision mediump float; // Use medium precision for better performance
       uniform vec2 resolution;
       uniform float time;
-        
+
       float random (in float x) {
           return fract(sin(x)*1e4);
       }
@@ -94,7 +94,7 @@ export function ShaderAnimation() {
                                vec2(12.9898,78.233)))*
               43758.5453123);
       }
-      
+
       varying vec2 vUv;
 
       void main(void) {
@@ -109,11 +109,14 @@ export function ShaderAnimation() {
         float lineWidth = 0.0008;
 
         vec3 color = vec3(0.0);
-        for(int j = 0; j < 3; j++){
-          for(int i=0; i < 5; i++){
+        // Reduced iterations from 3x5 to 2x3 for better performance
+        for(int j = 0; j < 2; j++){
+          for(int i=0; i < 3; i++){
             color[j] += lineWidth*float(i*i) / abs(fract(t - 0.01*float(j)+float(i)*0.01)*1.0 - length(uv));
           }
         }
+        // Fill blue channel with simplified calculation
+        color[2] = color[0] * 0.8;
 
         gl_FragColor = vec4(color[2],color[1],color[0],1.0);
       }
@@ -130,13 +133,14 @@ export function ShaderAnimation() {
     const mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh)
 
-    // Initialize renderer
+    // Initialize renderer with performance optimizations
     const renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: false, // Disable antialiasing for better performance
       alpha: true,
-      powerPreference: "high-performance"
+      powerPreference: "low-power" // Use low-power mode
     })
-    renderer.setPixelRatio(window.devicePixelRatio)
+    // Limit pixel ratio to improve performance on high-DPI displays
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
     renderer.domElement.style.width = '100%'
     renderer.domElement.style.height = '100%'
     renderer.domElement.style.display = 'block'
@@ -173,14 +177,25 @@ export function ShaderAnimation() {
 
     window.addEventListener("resize", onWindowResize, false)
 
-    // Animation loop
-    const animate = () => {
+    // Animation loop with frame rate throttling for better performance
+    let lastFrameTime = 0
+    const targetFPS = 30 // Throttle to 30fps instead of 60fps
+    const frameInterval = 1000 / targetFPS
+
+    const animate = (currentTime: number) => {
       sceneRef.current.animationId = requestAnimationFrame(animate)
-      uniforms.time.value += 0.05
-      renderer.render(scene, camera)
+
+      const deltaTime = currentTime - lastFrameTime
+
+      // Only render if enough time has passed (throttle to 30fps)
+      if (deltaTime >= frameInterval) {
+        lastFrameTime = currentTime - (deltaTime % frameInterval)
+        uniforms.time.value += 0.05
+        renderer.render(scene, camera)
+      }
     }
 
-    animate()
+    animate(0)
   }
 
   return (
