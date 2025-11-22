@@ -32,22 +32,15 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* GPU acceleration for smoother scrolling */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
 }
 
 #root {
   min-height: 100vh;
-  /* Optimize rendering */
-  contain: layout style paint;
 }
 
-/* Smooth scrolling with performance optimization */
+/* Smooth scrolling */
 html {
-  scroll-behavior: smooth;
-  /* Use GPU for scrolling */
-  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
 }
 
 /* Custom scrollbar */

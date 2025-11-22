@@ -46,9 +46,7 @@ export function BeamsBackground({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const beamsRef = useRef<Beam[]>([]);
     const animationFrameRef = useRef<number>(0);
-    const isScrollingRef = useRef<boolean>(false);
-    const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const MINIMUM_BEAMS = 10; // Reduced from 20 to 10 for better performance
+    const MINIMUM_BEAMS = 5; // Reduced to 5 for better scroll performance
 
     const opacityMap = {
         subtle: 0.7,
@@ -81,19 +79,6 @@ export function BeamsBackground({
 
         updateCanvasSize();
         window.addEventListener("resize", updateCanvasSize);
-
-        // Pause animation during scroll for better performance
-        const handleScroll = () => {
-            isScrollingRef.current = true;
-            if (scrollTimeoutRef.current) {
-                clearTimeout(scrollTimeoutRef.current);
-            }
-            scrollTimeoutRef.current = setTimeout(() => {
-                isScrollingRef.current = false;
-            }, 150);
-        };
-
-        window.addEventListener("scroll", handleScroll, { passive: true });
 
         function resetBeam(beam: Beam, index: number, totalBeams: number) {
             if (!canvas) return beam;
@@ -151,9 +136,9 @@ export function BeamsBackground({
             ctx.restore();
         }
 
-        // Throttle animation to 30fps for better performance
+        // Throttle animation to 20fps for better scroll performance
         let lastFrameTime = 0;
-        const targetFPS = 30;
+        const targetFPS = 20;
         const frameInterval = 1000 / targetFPS;
 
         function animate(currentTime: number) {
@@ -161,12 +146,12 @@ export function BeamsBackground({
 
             const deltaTime = currentTime - lastFrameTime;
 
-            // Only render if enough time has passed AND not scrolling
-            if (deltaTime >= frameInterval && !isScrollingRef.current) {
+            // Only render if enough time has passed
+            if (deltaTime >= frameInterval) {
                 lastFrameTime = currentTime - (deltaTime % frameInterval);
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.filter = "blur(35px)";
+                ctx.filter = "blur(25px)"; // Reduced blur for better performance
 
                 const totalBeams = beamsRef.current.length;
                 beamsRef.current.forEach((beam, index) => {
@@ -189,10 +174,6 @@ export function BeamsBackground({
 
         return () => {
             window.removeEventListener("resize", updateCanvasSize);
-            window.removeEventListener("scroll", handleScroll);
-            if (scrollTimeoutRef.current) {
-                clearTimeout(scrollTimeoutRef.current);
-            }
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
@@ -211,9 +192,8 @@ export function BeamsBackground({
                 ref={canvasRef}
                 className="absolute inset-0"
                 style={{
-                    filter: "blur(15px)",
-                    pointerEvents: 'none',
-                    willChange: 'auto' // Let browser optimize
+                    filter: "blur(10px)",
+                    pointerEvents: 'none'
                 }}
             />
 
