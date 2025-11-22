@@ -46,7 +46,7 @@ export function BeamsBackground({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const beamsRef = useRef<Beam[]>([]);
     const animationFrameRef = useRef<number>(0);
-    const MINIMUM_BEAMS = 5; // Reduced to 5 for better scroll performance
+    const MINIMUM_BEAMS = 3; // Reduced to 3 for ultra-smooth scrolling
 
     const opacityMap = {
         subtle: 0.7,
@@ -62,15 +62,15 @@ export function BeamsBackground({
         if (!ctx) return;
 
         const updateCanvasSize = () => {
-            // Limit pixel ratio for better performance
-            const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            // Use very low resolution for ultra performance - 0.5x
+            const dpr = 0.5;
             canvas.width = window.innerWidth * dpr;
             canvas.height = window.innerHeight * dpr;
             canvas.style.width = `${window.innerWidth}px`;
             canvas.style.height = `${window.innerHeight}px`;
             ctx.scale(dpr, dpr);
 
-            // Reduced total beams for better performance
+            // Minimal beams
             const totalBeams = MINIMUM_BEAMS;
             beamsRef.current = Array.from({ length: totalBeams }, () =>
                 createBeam(canvas.width, canvas.height)
@@ -136,9 +136,9 @@ export function BeamsBackground({
             ctx.restore();
         }
 
-        // Throttle animation to 20fps for better scroll performance
+        // Throttle animation to 15fps for ultra-smooth scrolling
         let lastFrameTime = 0;
-        const targetFPS = 20;
+        const targetFPS = 15;
         const frameInterval = 1000 / targetFPS;
 
         function animate(currentTime: number) {
@@ -151,7 +151,7 @@ export function BeamsBackground({
                 lastFrameTime = currentTime - (deltaTime % frameInterval);
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.filter = "blur(25px)"; // Reduced blur for better performance
+                // Removed blur filter entirely - huge performance boost
 
                 const totalBeams = beamsRef.current.length;
                 beamsRef.current.forEach((beam, index) => {
@@ -192,8 +192,9 @@ export function BeamsBackground({
                 ref={canvasRef}
                 className="absolute inset-0"
                 style={{
-                    filter: "blur(10px)",
-                    pointerEvents: 'none'
+                    filter: "blur(20px)", // Increased blur to compensate for lower resolution
+                    pointerEvents: 'none',
+                    imageRendering: 'auto'
                 }}
             />
 
