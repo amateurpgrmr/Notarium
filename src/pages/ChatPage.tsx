@@ -287,10 +287,7 @@ export default function ChatPage() {
                   fontSize: isMobile ? '28px' : '42px',
                   fontWeight: '800',
                   margin: '0 0 16px 0',
-                  background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
+                  color: 'white'
                 }}>
                   Ask AI Anything
                 </h1>
