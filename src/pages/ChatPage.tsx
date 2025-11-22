@@ -131,7 +131,10 @@ export default function ChatPage() {
       <div style={{
         position: 'absolute',
         inset: 0,
-        zIndex: 0
+        zIndex: 0,
+        // Shift animation to the right to center it with the main content area
+        transform: sidebarOpen ? 'translateX(170px)' : 'translateX(40px)',
+        transition: 'transform 0.3s ease'
       }}>
         <ShaderAnimation />
         <div style={{
