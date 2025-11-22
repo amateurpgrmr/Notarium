@@ -186,11 +186,12 @@ export function BeamsBackground({
                 "relative min-h-screen w-full overflow-hidden bg-neutral-950",
                 className
             )}
+            style={{ pointerEvents: 'none' }}
         >
             <canvas
                 ref={canvasRef}
                 className="absolute inset-0"
-                style={{ filter: "blur(15px)" }}
+                style={{ filter: "blur(15px)", pointerEvents: 'none' }}
             />
 
             <motion.div
@@ -205,6 +206,7 @@ export function BeamsBackground({
                 }}
                 style={{
                     backdropFilter: "blur(50px)",
+                    pointerEvents: 'none'
                 }}
             />
 
