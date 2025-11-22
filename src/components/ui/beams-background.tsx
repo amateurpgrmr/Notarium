@@ -46,6 +46,8 @@ export function BeamsBackground({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const beamsRef = useRef<Beam[]>([]);
     const animationFrameRef = useRef<number>(0);
+    const isScrollingRef = useRef<boolean>(false);
+    const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const MINIMUM_BEAMS = 10; // Reduced from 20 to 10 for better performance
 
     const opacityMap = {
@@ -79,6 +81,19 @@ export function BeamsBackground({
 
         updateCanvasSize();
         window.addEventListener("resize", updateCanvasSize);
+
+        // Pause animation during scroll for better performance
+        const handleScroll = () => {
+            isScrollingRef.current = true;
+            if (scrollTimeoutRef.current) {
+                clearTimeout(scrollTimeoutRef.current);
+            }
+            scrollTimeoutRef.current = setTimeout(() => {
+                isScrollingRef.current = false;
+            }, 150);
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
 
         function resetBeam(beam: Beam, index: number, totalBeams: number) {
             if (!canvas) return beam;
@@ -146,8 +161,8 @@ export function BeamsBackground({
 
             const deltaTime = currentTime - lastFrameTime;
 
-            // Only render if enough time has passed
-            if (deltaTime >= frameInterval) {
+            // Only render if enough time has passed AND not scrolling
+            if (deltaTime >= frameInterval && !isScrollingRef.current) {
                 lastFrameTime = currentTime - (deltaTime % frameInterval);
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -174,6 +189,10 @@ export function BeamsBackground({
 
         return () => {
             window.removeEventListener("resize", updateCanvasSize);
+            window.removeEventListener("scroll", handleScroll);
+            if (scrollTimeoutRef.current) {
+                clearTimeout(scrollTimeoutRef.current);
+            }
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
@@ -191,7 +210,11 @@ export function BeamsBackground({
             <canvas
                 ref={canvasRef}
                 className="absolute inset-0"
-                style={{ filter: "blur(15px)", pointerEvents: 'none' }}
+                style={{
+                    filter: "blur(15px)",
+                    pointerEvents: 'none',
+                    willChange: 'auto' // Let browser optimize
+                }}
             />
 
             <motion.div
