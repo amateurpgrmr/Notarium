@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AdminNoteEditModal from '../components/AdminNoteEditModal';
+import AdminUsageReport from './AdminUsageReport';
 import { darkTheme, cardStyle } from '../theme';
 
 interface AdminUser {
@@ -587,6 +588,7 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
 }
 
 export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState<'users' | 'usage'>('users');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -699,7 +701,48 @@ export default function AdminPage() {
         Admin Dashboard
       </h2>
 
-      {loading ? (
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: `2px solid ${darkTheme.colors.borderColor}` }}>
+        <button
+          onClick={() => setActiveTab('users')}
+          style={{
+            padding: '12px 24px',
+            background: 'none',
+            border: 'none',
+            color: activeTab === 'users' ? darkTheme.colors.accent : darkTheme.colors.textSecondary,
+            fontSize: '16px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'users' ? `3px solid ${darkTheme.colors.accent}` : '3px solid transparent',
+            marginBottom: '-2px',
+            transition: darkTheme.transitions.default
+          }}
+        >
+          👥 Users & Activity
+        </button>
+        <button
+          onClick={() => setActiveTab('usage')}
+          style={{
+            padding: '12px 24px',
+            background: 'none',
+            border: 'none',
+            color: activeTab === 'usage' ? darkTheme.colors.accent : darkTheme.colors.textSecondary,
+            fontSize: '16px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'usage' ? `3px solid ${darkTheme.colors.accent}` : '3px solid transparent',
+            marginBottom: '-2px',
+            transition: darkTheme.transitions.default
+          }}
+        >
+          📊 Usage Report
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'usage' ? (
+        <AdminUsageReport />
+      ) : loading ? (
         <LoadingSpinner message="Loading admin data..." />
       ) : (
         <div>

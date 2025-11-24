@@ -1535,6 +1535,186 @@ async function getAdminActivityLogs(request: Request, env: Env) {
   return jsonResponse({ logs: results });
 }
 
+// Get comprehensive usage statistics
+async function getUsageStatistics(request: Request, env: Env) {
+  const adminUser = await getUserFromToken(request, env);
+
+  if (!adminUser || adminUser.role !== 'admin') {
+    return jsonResponse({ error: 'Unauthorized - Admin access required' }, 403);
+  }
+
+  try {
+    // Get total users count
+    const totalUsers = await env.DB.prepare('SELECT COUNT(*) as count FROM users').first() as any;
+
+    // Get active users (last 7 days)
+    const activeUsers7d = await env.DB.prepare(`
+      SELECT COUNT(DISTINCT user_id) as count FROM (
+        SELECT author_id as user_id FROM notes WHERE created_at >= datetime('now', '-7 days')
+        UNION
+        SELECT user_id FROM chat_sessions WHERE created_at >= datetime('now', '-7 days')
+        UNION
+        SELECT user_id FROM note_likes WHERE created_at >= datetime('now', '-7 days')
+      )
+    `).first() as any;
+
+    // Get active users (last 30 days)
+    const activeUsers30d = await env.DB.prepare(`
+      SELECT COUNT(DISTINCT user_id) as count FROM (
+        SELECT author_id as user_id FROM notes WHERE created_at >= datetime('now', '-30 days')
+        UNION
+        SELECT user_id FROM chat_sessions WHERE created_at >= datetime('now', '-30 days')
+        UNION
+        SELECT user_id FROM note_likes WHERE created_at >= datetime('now', '-30 days')
+      )
+    `).first() as any;
+
+    // Get total notes
+    const totalNotes = await env.DB.prepare('SELECT COUNT(*) as count FROM notes').first() as any;
+
+    // Get notes created in last 7 days
+    const notes7d = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM notes WHERE created_at >= datetime('now', '-7 days')
+    `).first() as any;
+
+    // Get notes created in last 30 days
+    const notes30d = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM notes WHERE created_at >= datetime('now', '-30 days')
+    `).first() as any;
+
+    // Get total likes
+    const totalLikes = await env.DB.prepare('SELECT COUNT(*) as count FROM note_likes').first() as any;
+
+    // Get total admin upvotes
+    const totalAdminUpvotes = await env.DB.prepare('SELECT COUNT(*) as count FROM admin_note_likes').first() as any;
+
+    // Get total chat sessions
+    const totalChatSessions = await env.DB.prepare('SELECT COUNT(*) as count FROM chat_sessions').first() as any;
+
+    // Get chat sessions in last 7 days
+    const chatSessions7d = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM chat_sessions WHERE created_at >= datetime('now', '-7 days')
+    `).first() as any;
+
+    // Get chat sessions in last 30 days
+    const chatSessions30d = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM chat_sessions WHERE created_at >= datetime('now', '-30 days')
+    `).first() as any;
+
+    // Get top contributors (users with most notes)
+    const { results: topContributors } = await env.DB.prepare(`
+      SELECT
+        u.id,
+        u.display_name,
+        u.email,
+        u.class,
+        u.notes_uploaded,
+        u.total_likes,
+        u.total_admin_upvotes
+      FROM users u
+      WHERE u.role = 'student'
+      ORDER BY u.notes_uploaded DESC
+      LIMIT 10
+    `).all();
+
+    // Get user distribution by class
+    const { results: usersByClass } = await env.DB.prepare(`
+      SELECT
+        class,
+        COUNT(*) as count
+      FROM users
+      WHERE role = 'student' AND class IS NOT NULL
+      GROUP BY class
+      ORDER BY class
+    `).all();
+
+    // Get notes distribution by class
+    const { results: notesByClass } = await env.DB.prepare(`
+      SELECT
+        author_class as class,
+        COUNT(*) as count
+      FROM notes
+      WHERE author_class IS NOT NULL
+      GROUP BY author_class
+      ORDER BY author_class
+    `).all();
+
+    // Get popular subjects
+    const { results: popularSubjects } = await env.DB.prepare(`
+      SELECT
+        s.id,
+        s.name,
+        s.icon,
+        COUNT(n.id) as note_count,
+        SUM(n.likes) as total_likes
+      FROM subjects s
+      LEFT JOIN notes n ON n.subject_id = s.id
+      GROUP BY s.id, s.name, s.icon
+      ORDER BY note_count DESC
+      LIMIT 10
+    `).all();
+
+    // Get daily activity for last 14 days
+    const { results: dailyActivity } = await env.DB.prepare(`
+      SELECT
+        DATE(created_at) as date,
+        COUNT(*) as count
+      FROM notes
+      WHERE created_at >= datetime('now', '-14 days')
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `).all();
+
+    // Get daily user registrations for last 14 days
+    const { results: dailyRegistrations } = await env.DB.prepare(`
+      SELECT
+        DATE(created_at) as date,
+        COUNT(*) as count
+      FROM users
+      WHERE created_at >= datetime('now', '-14 days')
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `).all();
+
+    // Get suspended users count
+    const suspendedUsers = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM users WHERE suspended = 1
+    `).first() as any;
+
+    // Get warned users count
+    const warnedUsers = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM users WHERE warning = 1
+    `).first() as any;
+
+    return jsonResponse({
+      overview: {
+        totalUsers: totalUsers?.count || 0,
+        activeUsers7d: activeUsers7d?.count || 0,
+        activeUsers30d: activeUsers30d?.count || 0,
+        totalNotes: totalNotes?.count || 0,
+        notes7d: notes7d?.count || 0,
+        notes30d: notes30d?.count || 0,
+        totalLikes: totalLikes?.count || 0,
+        totalAdminUpvotes: totalAdminUpvotes?.count || 0,
+        totalChatSessions: totalChatSessions?.count || 0,
+        chatSessions7d: chatSessions7d?.count || 0,
+        chatSessions30d: chatSessions30d?.count || 0,
+        suspendedUsers: suspendedUsers?.count || 0,
+        warnedUsers: warnedUsers?.count || 0
+      },
+      topContributors: topContributors || [],
+      usersByClass: usersByClass || [],
+      notesByClass: notesByClass || [],
+      popularSubjects: popularSubjects || [],
+      dailyActivity: dailyActivity || [],
+      dailyRegistrations: dailyRegistrations || []
+    });
+  } catch (error: any) {
+    console.error('Error fetching usage statistics:', error);
+    return jsonResponse({ error: 'Failed to fetch usage statistics' }, 500);
+  }
+}
+
 // Admin verification
 async function verifyAdmin(request: Request, env: Env) {
   const body = await request.json() as any;
@@ -3633,6 +3813,10 @@ Tags:`
 
       if (path === '/api/admin/activity-log' && request.method === 'GET') {
         return await getAdminActivityLogs(request, env);
+      }
+
+      if (path === '/api/admin/usage-stats' && request.method === 'GET') {
+        return await getUsageStatistics(request, env);
       }
 
       return jsonResponse({ error: 'Not found' }, 404);
