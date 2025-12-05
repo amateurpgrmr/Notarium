@@ -281,7 +281,7 @@ function WarnUserModal({ user, onClose, onWarn }: WarnUserModalProps) {
             borderBottom: `1px solid ${darkTheme.colors.borderColor}`
           }}
         >
-          <h2 style={{ fontSize: '20px', margin: 0, fontWeight: '600' }}>⚠️ Warn User</h2>
+          <h2 style={{ fontSize: '20px', margin: 0, fontWeight: '600' }}>Warn User</h2>
           <button
             onClick={onClose}
             style={{
@@ -309,7 +309,7 @@ function WarnUserModal({ user, onClose, onWarn }: WarnUserModalProps) {
 
           <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: darkTheme.borderRadius.md }}>
             <div style={{ fontSize: '13px', color: '#fbbf24' }}>
-              💡 Warnings show a yellow banner but don't block any actions. Use this for first-time offenses or reminders.
+              Warnings show a yellow banner but don't block any actions. Use this for first-time offenses or reminders.
             </div>
           </div>
 
@@ -370,7 +370,7 @@ function WarnUserModal({ user, onClose, onWarn }: WarnUserModalProps) {
                 opacity: isSubmitting ? 0.7 : 1
               }}
             >
-              {isSubmitting ? 'Sending...' : '⚠️ Send Warning'}
+              {isSubmitting ? 'Sending...' : 'Send Warning'}
             </button>
           </div>
         </form>
@@ -479,7 +479,7 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
                 {(user as any).points || 0}
               </div>
               <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginTop: '4px' }}>
-                🏆 Total Points
+                Total Points
               </div>
             </div>
             <div style={{ padding: '16px', background: darkTheme.colors.bgSecondary, borderRadius: darkTheme.borderRadius.md }}>
@@ -487,7 +487,7 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
                 {user.points || 0}
               </div>
               <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginTop: '4px' }}>
-                🪙 Total Points
+                Points
               </div>
             </div>
             <div style={{ padding: '16px', background: darkTheme.colors.bgSecondary, borderRadius: darkTheme.borderRadius.md }}>
@@ -495,7 +495,7 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
                 {user.notes_uploaded || user.notes_count || 0}
               </div>
               <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginTop: '4px' }}>
-                📝 Notes Uploaded
+                Notes Uploaded
               </div>
             </div>
             <div style={{ padding: '16px', background: darkTheme.colors.bgSecondary, borderRadius: darkTheme.borderRadius.md }}>
@@ -503,7 +503,7 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
                 {user.total_likes || 0}
               </div>
               <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginTop: '4px' }}>
-                ❤️ Total Likes
+                Total Likes
               </div>
             </div>
             <div style={{ padding: '16px', background: darkTheme.colors.bgSecondary, borderRadius: darkTheme.borderRadius.md }}>
@@ -511,7 +511,7 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
                 {user.total_admin_upvotes || 0}
               </div>
               <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary, marginTop: '4px' }}>
-                ⭐ Admin Likes
+                Admin Likes
               </div>
             </div>
           </div>
@@ -551,7 +551,7 @@ function UserDetailModal({ user, onClose }: UserDetailModalProps) {
               marginBottom: '20px'
             }}>
               <div style={{ fontSize: '14px', fontWeight: '600', color: '#fca5a5', marginBottom: '12px' }}>
-                ⚠️ Suspension Details
+                Suspension Details
               </div>
               {user.suspension_end_date && (
                 <div style={{ marginBottom: '8px' }}>
@@ -718,7 +718,7 @@ export default function AdminPage() {
             transition: darkTheme.transitions.default
           }}
         >
-          👥 Users & Activity
+          Users & Activity
         </button>
         <button
           onClick={() => setActiveTab('usage')}
@@ -735,7 +735,7 @@ export default function AdminPage() {
             transition: darkTheme.transitions.default
           }}
         >
-          📊 Usage Report
+          Usage Report
         </button>
       </div>
 
@@ -815,15 +815,15 @@ export default function AdminPage() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                        <span style={{ color: darkTheme.colors.textSecondary }}>🏆 Points:</span>
+                        <span style={{ color: darkTheme.colors.textSecondary }}>Points:</span>
                         <span style={{ fontWeight: '600', color: '#fbbf24' }}>{(user as any).points || 0}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                        <span style={{ color: darkTheme.colors.textSecondary }}>🪙 Points:</span>
+                        <span style={{ color: darkTheme.colors.textSecondary }}>Total Points:</span>
                         <span style={{ fontWeight: '600', color: darkTheme.colors.accent }}>{user.points || 0}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                        <span style={{ color: darkTheme.colors.textSecondary }}>📝 Notes:</span>
+                        <span style={{ color: darkTheme.colors.textSecondary }}>Notes:</span>
                         <span style={{ fontWeight: '600' }}>{user.notes_uploaded || user.notes_count || 0}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
