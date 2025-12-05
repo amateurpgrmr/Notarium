@@ -105,7 +105,7 @@ export default function AdminUsageReport() {
           fontSize: '28px',
           fontWeight: 'bold',
           marginBottom: '24px',
-          color: darkTheme.colors.textPrimary
+          color: 'white'
         }}
       >
         Usage Report
@@ -114,81 +114,81 @@ export default function AdminUsageReport() {
       {/* Overview Stats Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
         <div style={{ ...cardStyle, padding: '20px' }}>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: darkTheme.colors.accent, marginBottom: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
             {overview.totalUsers}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Total Users</div>
+          <div style={{ fontSize: '14px', color: 'white' }}>Total Users</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#86efac', marginBottom: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
             {overview.activeUsers7d}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Active (7d)</div>
+          <div style={{ fontSize: '14px', color: 'white' }}>Active (7d)</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#60a5fa', marginBottom: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
             {overview.activeUsers30d}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Active (30d)</div>
+          <div style={{ fontSize: '14px', color: 'white' }}>Active (30d)</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#fbbf24', marginBottom: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
             {overview.totalNotes}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Total Notes</div>
+          <div style={{ fontSize: '14px', color: 'white' }}>Total Notes</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#f472b6', marginBottom: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
             {overview.totalLikes}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Total Likes</div>
+          <div style={{ fontSize: '14px', color: 'white' }}>Total Likes</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#c084fc', marginBottom: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
             {overview.totalAdminUpvotes}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Admin Likes</div>
+          <div style={{ fontSize: '14px', color: 'white' }}>Admin Likes</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#38bdf8', marginBottom: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
             {overview.totalChatSessions}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Chat Sessions</div>
+          <div style={{ fontSize: '14px', color: 'white' }}>Chat Sessions</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#fca5a5', marginBottom: '8px' }}>
+          <div style={{ fontSize: '32px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
             {overview.suspendedUsers}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Suspended</div>
+          <div style={{ fontSize: '14px', color: 'white' }}>Suspended</div>
         </div>
       </div>
 
       {/* Recent Activity */}
       <div style={{ marginBottom: '32px' }}>
-        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
+        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: 'white' }}>
           Recent Activity (Last 7 Days)
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
           <div style={{ ...cardStyle, padding: '20px' }}>
-            <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary, marginBottom: '8px' }}>
+            <div style={{ fontSize: '14px', color: 'white', marginBottom: '8px' }}>
               New Notes
             </div>
-            <div style={{ fontSize: '28px', fontWeight: '700', color: '#86efac' }}>
+            <div style={{ fontSize: '28px', fontWeight: '700', color: 'white' }}>
               {overview.notes7d}
             </div>
           </div>
           <div style={{ ...cardStyle, padding: '20px' }}>
-            <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary, marginBottom: '8px' }}>
+            <div style={{ fontSize: '14px', color: 'white', marginBottom: '8px' }}>
               New Chat Sessions
             </div>
-            <div style={{ fontSize: '28px', fontWeight: '700', color: '#60a5fa' }}>
+            <div style={{ fontSize: '28px', fontWeight: '700', color: 'white' }}>
               {overview.chatSessions7d}
             </div>
           </div>
@@ -199,7 +199,7 @@ export default function AdminUsageReport() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '32px' }}>
         {/* Users by Class */}
         <div style={{ ...cardStyle, padding: '24px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: darkTheme.colors.textPrimary }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: 'white' }}>
             Users by Class
           </h3>
           {usersByClass.length > 0 ? (
@@ -207,8 +207,8 @@ export default function AdminUsageReport() {
               {usersByClass.map((item) => (
                 <div key={item.class}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500' }}>{item.class}</span>
-                    <span style={{ fontSize: '14px', color: darkTheme.colors.accent }}>{item.count}</span>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: 'white' }}>{item.class}</span>
+                    <span style={{ fontSize: '14px', color: 'white' }}>{item.count}</span>
                   </div>
                   <div
                     style={{
@@ -231,7 +231,7 @@ export default function AdminUsageReport() {
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', color: darkTheme.colors.textSecondary, padding: '20px' }}>
+            <div style={{ textAlign: 'center', color: 'white', padding: '20px' }}>
               No data available
             </div>
           )}
@@ -239,7 +239,7 @@ export default function AdminUsageReport() {
 
         {/* Notes by Class */}
         <div style={{ ...cardStyle, padding: '24px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: darkTheme.colors.textPrimary }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: 'white' }}>
             Notes by Class
           </h3>
           {notesByClass.length > 0 ? (
@@ -247,8 +247,8 @@ export default function AdminUsageReport() {
               {notesByClass.map((item) => (
                 <div key={item.class}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500' }}>{item.class}</span>
-                    <span style={{ fontSize: '14px', color: '#fbbf24' }}>{item.count}</span>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: 'white' }}>{item.class}</span>
+                    <span style={{ fontSize: '14px', color: 'white' }}>{item.count}</span>
                   </div>
                   <div
                     style={{
@@ -271,43 +271,7 @@ export default function AdminUsageReport() {
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', color: darkTheme.colors.textSecondary, padding: '20px' }}>
-              No data available
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Popular Subjects */}
-      <div style={{ marginBottom: '32px' }}>
-        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
-          Popular Subjects
-        </h3>
-        <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
-          {popularSubjects.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1px', background: darkTheme.colors.borderColor }}>
-              {popularSubjects.map((subject) => (
-                <div
-                  key={subject.id}
-                  style={{
-                    padding: '16px',
-                    background: darkTheme.colors.bgPrimary,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center'
-                  }}
-                >
-                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>{subject.icon}</div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>{subject.name}</div>
-                  <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>
-                    {subject.note_count} notes • {subject.total_likes || 0} likes
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', color: darkTheme.colors.textSecondary, padding: '40px' }}>
+            <div style={{ textAlign: 'center', color: 'white', padding: '20px' }}>
               No data available
             </div>
           )}
@@ -316,7 +280,7 @@ export default function AdminUsageReport() {
 
       {/* Top Contributors */}
       <div style={{ marginBottom: '32px' }}>
-        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
+        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: 'white' }}>
           Top Contributors
         </h3>
         <div style={{ ...cardStyle, padding: 0, overflow: 'auto' }}>
@@ -324,12 +288,12 @@ export default function AdminUsageReport() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead style={{ background: darkTheme.colors.bgSecondary, position: 'sticky', top: 0 }}>
                 <tr>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>Rank</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>User</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', fontSize: '13px' }}>Class</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', fontSize: '13px' }}>Notes</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', fontSize: '13px' }}>Likes</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', fontSize: '13px' }}>Admin Likes</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', fontSize: '13px', color: 'white' }}>Rank</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', fontSize: '13px', color: 'white' }}>User</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', fontSize: '13px', color: 'white' }}>Class</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', fontSize: '13px', color: 'white' }}>Notes</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', fontSize: '13px', color: 'white' }}>Likes</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', fontSize: '13px', color: 'white' }}>Admin Likes</th>
                 </tr>
               </thead>
               <tbody>
@@ -361,24 +325,25 @@ export default function AdminUsageReport() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: '700',
-                          fontSize: '14px'
+                          fontSize: '14px',
+                          color: 'white'
                         }}
                       >
                         {index + 1}
                       </div>
                     </td>
                     <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: '500', fontSize: '14px' }}>{user.display_name}</div>
-                      <div style={{ fontSize: '12px', color: darkTheme.colors.textSecondary }}>{user.email}</div>
+                      <div style={{ fontWeight: '500', fontSize: '14px', color: 'white' }}>{user.display_name}</div>
+                      <div style={{ fontSize: '12px', color: 'white' }}>{user.email}</div>
                     </td>
-                    <td style={{ padding: '12px 16px', fontSize: '14px' }}>{user.class}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#fbbf24' }}>
+                    <td style={{ padding: '12px 16px', fontSize: '14px', color: 'white' }}>{user.class}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: 'white' }}>
                       {user.notes_uploaded}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#f472b6' }}>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: 'white' }}>
                       {user.total_likes}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#c084fc' }}>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: 'white' }}>
                       {user.total_admin_upvotes}
                     </td>
                   </tr>
@@ -386,7 +351,7 @@ export default function AdminUsageReport() {
               </tbody>
             </table>
           ) : (
-            <div style={{ textAlign: 'center', color: darkTheme.colors.textSecondary, padding: '40px' }}>
+            <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
               No data available
             </div>
           )}
@@ -395,7 +360,7 @@ export default function AdminUsageReport() {
 
       {/* Daily Activity Chart */}
       <div style={{ marginBottom: '32px' }}>
-        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
+        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: 'white' }}>
           Daily Notes Activity (Last 14 Days)
         </h3>
         <div style={{ ...cardStyle, padding: '24px' }}>
@@ -412,7 +377,7 @@ export default function AdminUsageReport() {
                     gap: '8px'
                   }}
                 >
-                  <div style={{ fontSize: '12px', fontWeight: '600', color: darkTheme.colors.accent }}>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: 'white' }}>
                     {day.count}
                   </div>
                   <div
@@ -426,66 +391,20 @@ export default function AdminUsageReport() {
                     }}
                     title={`${day.date}: ${day.count} notes`}
                   />
-                  <div style={{ fontSize: '10px', color: darkTheme.colors.textSecondary, transform: 'rotate(-45deg)', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '10px', color: 'white', transform: 'rotate(-45deg)', whiteSpace: 'nowrap' }}>
                     {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', color: darkTheme.colors.textSecondary, padding: '40px' }}>
+            <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
               No activity data available
             </div>
           )}
         </div>
       </div>
 
-      {/* Daily Registrations */}
-      <div>
-        <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
-          Daily User Registrations (Last 14 Days)
-        </h3>
-        <div style={{ ...cardStyle, padding: '24px' }}>
-          {dailyRegistrations.length > 0 ? (
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '200px' }}>
-              {dailyRegistrations.map((day) => (
-                <div
-                  key={day.date}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#86efac' }}>
-                    {day.count}
-                  </div>
-                  <div
-                    style={{
-                      width: '100%',
-                      height: `${Math.max(...dailyRegistrations.map((d) => d.count)) > 0 ? (day.count / Math.max(...dailyRegistrations.map((d) => d.count))) * 150 : 4}px`,
-                      minHeight: '4px',
-                      background: 'linear-gradient(180deg, #86efac, #22c55e)',
-                      borderRadius: '4px 4px 0 0',
-                      transition: 'all 0.3s ease'
-                    }}
-                    title={`${day.date}: ${day.count} registrations`}
-                  />
-                  <div style={{ fontSize: '10px', color: darkTheme.colors.textSecondary, transform: 'rotate(-45deg)', whiteSpace: 'nowrap' }}>
-                    {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', color: darkTheme.colors.textSecondary, padding: '40px' }}>
-              No registration data available
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
