@@ -108,7 +108,7 @@ export default function AdminUsageReport() {
           color: darkTheme.colors.textPrimary
         }}
       >
-        📊 Usage Report
+        Usage Report
       </h2>
 
       {/* Overview Stats Grid */}
@@ -117,63 +117,63 @@ export default function AdminUsageReport() {
           <div style={{ fontSize: '32px', fontWeight: '700', color: darkTheme.colors.accent, marginBottom: '8px' }}>
             {overview.totalUsers}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>👥 Total Users</div>
+          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Total Users</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
           <div style={{ fontSize: '32px', fontWeight: '700', color: '#86efac', marginBottom: '8px' }}>
             {overview.activeUsers7d}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>✅ Active (7d)</div>
+          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Active (7d)</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
           <div style={{ fontSize: '32px', fontWeight: '700', color: '#60a5fa', marginBottom: '8px' }}>
             {overview.activeUsers30d}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>✅ Active (30d)</div>
+          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Active (30d)</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
           <div style={{ fontSize: '32px', fontWeight: '700', color: '#fbbf24', marginBottom: '8px' }}>
             {overview.totalNotes}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>📝 Total Notes</div>
+          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Total Notes</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
           <div style={{ fontSize: '32px', fontWeight: '700', color: '#f472b6', marginBottom: '8px' }}>
             {overview.totalLikes}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>❤️ Total Likes</div>
+          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Total Likes</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
           <div style={{ fontSize: '32px', fontWeight: '700', color: '#c084fc', marginBottom: '8px' }}>
             {overview.totalAdminUpvotes}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>⭐ Admin Likes</div>
+          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Admin Likes</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
           <div style={{ fontSize: '32px', fontWeight: '700', color: '#38bdf8', marginBottom: '8px' }}>
             {overview.totalChatSessions}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>💬 Chat Sessions</div>
+          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Chat Sessions</div>
         </div>
 
         <div style={{ ...cardStyle, padding: '20px' }}>
           <div style={{ fontSize: '32px', fontWeight: '700', color: '#fca5a5', marginBottom: '8px' }}>
             {overview.suspendedUsers}
           </div>
-          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>🚫 Suspended</div>
+          <div style={{ fontSize: '14px', color: darkTheme.colors.textSecondary }}>Suspended</div>
         </div>
       </div>
 
       {/* Recent Activity */}
       <div style={{ marginBottom: '32px' }}>
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
-          📈 Recent Activity (Last 7 Days)
+          Recent Activity (Last 7 Days)
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
           <div style={{ ...cardStyle, padding: '20px' }}>
@@ -200,7 +200,7 @@ export default function AdminUsageReport() {
         {/* Users by Class */}
         <div style={{ ...cardStyle, padding: '24px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: darkTheme.colors.textPrimary }}>
-            👥 Users by Class
+            Users by Class
           </h3>
           {usersByClass.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -240,7 +240,7 @@ export default function AdminUsageReport() {
         {/* Notes by Class */}
         <div style={{ ...cardStyle, padding: '24px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', color: darkTheme.colors.textPrimary }}>
-            📝 Notes by Class
+            Notes by Class
           </h3>
           {notesByClass.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -281,7 +281,7 @@ export default function AdminUsageReport() {
       {/* Popular Subjects */}
       <div style={{ marginBottom: '32px' }}>
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
-          🔥 Popular Subjects
+          Popular Subjects
         </h3>
         <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
           {popularSubjects.length > 0 ? (
@@ -317,7 +317,7 @@ export default function AdminUsageReport() {
       {/* Top Contributors */}
       <div style={{ marginBottom: '32px' }}>
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
-          🏆 Top Contributors
+          Top Contributors
         </h3>
         <div style={{ ...cardStyle, padding: 0, overflow: 'auto' }}>
           {topContributors.length > 0 ? (
@@ -396,7 +396,7 @@ export default function AdminUsageReport() {
       {/* Daily Activity Chart */}
       <div style={{ marginBottom: '32px' }}>
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
-          📅 Daily Notes Activity (Last 14 Days)
+          Daily Notes Activity (Last 14 Days)
         </h3>
         <div style={{ ...cardStyle, padding: '24px' }}>
           {dailyActivity.length > 0 ? (
@@ -443,7 +443,7 @@ export default function AdminUsageReport() {
       {/* Daily Registrations */}
       <div>
         <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: darkTheme.colors.textPrimary }}>
-          👤 Daily User Registrations (Last 14 Days)
+          Daily User Registrations (Last 14 Days)
         </h3>
         <div style={{ ...cardStyle, padding: '24px' }}>
           {dailyRegistrations.length > 0 ? (
