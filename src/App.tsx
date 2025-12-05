@@ -263,7 +263,7 @@ function HomePage() {
 
         {/* Desktop Navigation with black theme */}
         {!isMobile && (
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
             <ExpandableTabs
               className="bg-black/95 border-white/10 backdrop-blur-xl shadow-2xl"
               tabs={[
@@ -292,34 +292,6 @@ function HomePage() {
                 }
               }}
             />
-            <button
-              onClick={() => setShowFoundersModal(true)}
-              style={{
-                padding: '8px 16px',
-                background: currentTheme.colors.accent,
-                border: `2px solid ${currentTheme.colors.accent}`,
-                color: '#fff',
-                borderRadius: '9999px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: '600',
-                transition: currentTheme.transitions.default,
-                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)',
-                whiteSpace: 'nowrap'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.8)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.6)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = currentTheme.colors.accent;
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
-              }}
-            >
-              Meet the Team
-            </button>
           </div>
         )}
 
@@ -776,41 +748,6 @@ function HomePage() {
               background: currentTheme.colors.borderColor,
               margin: '8px 0'
             }}></div>
-
-            {/* Meet the Team Button */}
-            <button
-              onClick={() => {
-                closeMobileMenu()
-                setShowFoundersModal(true)
-              }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: currentTheme.colors.accent,
-                border: `2px solid ${currentTheme.colors.accent}`,
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '15px',
-                fontWeight: '600',
-                transition: currentTheme.transitions.default,
-                borderRadius: currentTheme.borderRadius.md,
-                textAlign: 'left',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.8)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = currentTheme.colors.accent;
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <i className="fas fa-users" style={{ width: '20px' }}></i>Meet the Team
-            </button>
 
             {/* My Notes Button */}
             <button
