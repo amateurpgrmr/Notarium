@@ -933,23 +933,26 @@ function HomePage() {
         <button
           onClick={() => setShowFoundersModal(true)}
           style={{
-            padding: '6px 14px',
-            background: 'rgba(139, 92, 246, 0.15)',
-            border: `1px solid ${currentTheme.colors.accent}`,
-            color: currentTheme.colors.accent,
+            padding: '8px 18px',
+            background: currentTheme.colors.accent,
+            border: `2px solid ${currentTheme.colors.accent}`,
+            color: '#fff',
             borderRadius: currentTheme.borderRadius.md,
             cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: '500',
-            transition: currentTheme.transitions.default
+            fontSize: '13px',
+            fontWeight: '600',
+            transition: currentTheme.transitions.default,
+            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.background = currentTheme.colors.accent;
-            e.currentTarget.style.color = '#fff';
+            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.8)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.6)';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
-            e.currentTarget.style.color = currentTheme.colors.accent;
+            e.currentTarget.style.background = currentTheme.colors.accent;
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
           }}
         >
           Meet the Team
