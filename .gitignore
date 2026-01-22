@@ -43,6 +43,10 @@ coverage/
 # Temporary files
 tmp/
 temp/
+*.tmp
+*_tmp
+tmpclaude-*
+.claude/
 
 # Node version
 .node-version
@@ -55,3 +59,31 @@ temp/
 SETUP_INTERNAL.md
 SETUP.md
 README_INTERNAL.md
+
+# Cache directories
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+
+# Lock files (keep package-lock.json, ignore others)
+yarn.lock
+pnpm-lock.yaml
+
+# Editor directories and files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Debug files
+*.dmp
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Misc
+.turbo
